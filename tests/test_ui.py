@@ -418,3 +418,106 @@ def test_redimensionar_una_imagen_por_la_esquina_mantiene_la_proporcion(
     assert imagen.rect().width() / imagen.rect().height() == pytest.approx(
         200 / 120, rel=0.02
     )
+
+
+def test_crear_un_documento_en_blanco_y_anadir_paginas(ventana, tmp_path):
+    ventana._modified = False
+    ventana.view.undo_stack.setClean()
+    ventana.new_document()
+    assert ventana.view.page_count == 1
+    assert "Documento nuevo" in ventana.windowTitle()
+
+    ventana.view.add_annotation(
+        Annotation(kind=Kind.TEXT, page=0, rect=(60, 60, 400, 110), text="Hola"),
+        undoable=False,
+    )
+    ventana.add_page_end()
+    ventana.add_page_end()
+    assert ventana.view.page_count == 3
+
+    ventana.duplicate_current_page()
+    assert ventana.view.page_count == 4
+
+    destino = tmp_path / "nuevo.pdf"
+    ventana.view.document.save_as(str(destino), ventana.view.annotations())
+    guardado = pymupdf.open(str(destino))
+    assert guardado.page_count == 4
+    assert len(list(guardado[0].annots())) == 1
+
+
+def test_borrar_una_pagina_se_puede_deshacer(ventana):
+    ventana.view.add_annotation(
+        Annotation(kind=Kind.RECT, page=1, rect=(50, 50, 200, 150)), undoable=False
+    )
+    assert ventana.view.page_count == 3
+    ventana.view.delete_page(1)
+    assert ventana.view.page_count == 2
+    assert ventana.view.annotation_count() == 0     # se va con su pagina
+
+    ventana.view.undo_stack.undo()
+    assert ventana.view.page_count == 3
+    assert ventana.view.annotation_count() == 1
+    assert ventana.view.annotations()[0].page == 1
+
+
+def test_insertar_una_pagina_recoloca_las_anotaciones(ventana):
+    ventana.view.add_annotation(
+        Annotation(kind=Kind.RECT, page=2, rect=(50, 50, 200, 150)), undoable=False
+    )
+    ventana.view.add_page(0)
+    assert ventana.view.annotations()[0].page == 3
+    ventana.view.undo_stack.undo()
+    assert ventana.view.annotations()[0].page == 2
+
+
+def test_guardar_y_reutilizar_una_plantilla(ventana, tmp_path, sample_image_bytes):
+    carpeta = tmp_path / "plantillas"
+    ventana.templates_dir = lambda: str(carpeta)
+
+    ventana.view.add_annotation(
+        Annotation(kind=Kind.TEXT, page=0, rect=(50, 40, 500, 80), text="ACME", bold=True),
+        undoable=False,
+    )
+    ventana.view.add_annotation(
+        Annotation(
+            kind=Kind.IMAGE, page=0, rect=(400, 300, 520, 380),
+            image_data=sample_image_bytes, image_name="logo.png",
+        ),
+        undoable=False,
+    )
+    from easypdf.templates import list_templates, save_template
+
+    ruta = save_template(
+        str(carpeta), "Membrete", ventana.view.annotations(),
+        ventana.view.document.page_sizes(),
+    )
+    assert [t.name for t in list_templates(str(carpeta))] == ["Membrete"]
+
+    # aplicarla sobre el documento abierto, desde la pagina actual
+    ventana.view.go_to_page(1)
+    assert ventana.apply_template(ruta)
+    assert ventana.view.annotation_count() == 4
+    assert sorted({a.page for a in ventana.view.annotations()}) == [0, 1]
+    # y un solo Ctrl+Z deshace toda la plantilla
+    ventana.view.undo_stack.undo()
+    assert ventana.view.annotation_count() == 2
+
+
+def test_documento_nuevo_desde_una_plantilla(ventana, tmp_path):
+    carpeta = tmp_path / "plantillas"
+    ventana.templates_dir = lambda: str(carpeta)
+    from easypdf.templates import save_template
+
+    ruta = save_template(
+        str(carpeta),
+        "Dos paginas",
+        [Annotation(kind=Kind.TEXT, page=1, rect=(50, 50, 400, 90), text="Anexo")],
+        [(595, 842), (842, 595)],
+    )
+    ventana._modified = False
+    ventana.view.undo_stack.setClean()
+    assert ventana.new_from_template(ruta)
+    assert ventana.view.page_count == 2
+    assert [round(v) for v in ventana.view.document.page_size(1)] == [842, 595]
+    assert ventana.view.annotation_count() == 1
+    assert ventana.view.annotations()[0].page == 1

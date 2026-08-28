@@ -11,6 +11,19 @@ import pymupdf
 from .annotations import apply_annotations
 from .model import Annotation
 
+#: Tamanos de pagina habituales, en puntos PDF (ancho, alto).
+PAGE_SIZES: dict[str, tuple[float, float]] = {
+    "A4": (595.0, 842.0),
+    "A4 horizontal": (842.0, 595.0),
+    "Carta": (612.0, 792.0),
+    "Carta horizontal": (792.0, 612.0),
+    "A5": (420.0, 595.0),
+    "A3": (842.0, 1191.0),
+    "Oficio": (612.0, 1008.0),
+}
+
+DEFAULT_PAGE_SIZE = "A4"
+
 
 class PdfError(RuntimeError):
     """Error al abrir o guardar un PDF."""
@@ -61,6 +74,25 @@ class PdfDocument:
 
     # -- construccion ----------------------------------------------------
     @classmethod
+    def blank(
+        cls,
+        pages: int = 1,
+        size: str | tuple[float, float] = DEFAULT_PAGE_SIZE,
+        title: str | None = None,
+    ) -> PdfDocument:
+        """Crea un documento nuevo con paginas en blanco."""
+        ancho, alto = PAGE_SIZES.get(size, size) if isinstance(size, str) else size
+        doc = pymupdf.open()
+        for _ in range(max(1, pages)):
+            doc.new_page(width=ancho, height=alto)
+        doc.set_metadata({"producer": "easypdf.surf", "title": title or ""})
+        datos = doc.tobytes()
+        doc.close()
+        documento = cls(datos)
+        documento._untitled = title or "Documento nuevo.pdf"
+        return documento
+
+    @classmethod
     def open(cls, path: str, password: str = "") -> PdfDocument:
         try:
             with open(path, "rb") as fh:
@@ -82,7 +114,9 @@ class PdfDocument:
 
     @property
     def name(self) -> str:
-        return os.path.basename(self._path) if self._path else "Sin titulo.pdf"
+        if self._path:
+            return os.path.basename(self._path)
+        return getattr(self, "_untitled", "Sin titulo.pdf")
 
     @property
     def page_count(self) -> int:
@@ -104,6 +138,76 @@ class PdfDocument:
 
     def page_sizes(self) -> list[tuple[float, float]]:
         return [self.page_size(i) for i in range(self.page_count)]
+
+    # -- edicion de paginas ----------------------------------------------
+    def _refresh_data(self) -> None:
+        """Rehace los bytes base tras cambiar la estructura del documento."""
+        self._data = self._doc.tobytes()
+        self._password = ""
+
+    def add_blank_page(
+        self, index: int | None = None, size: str | tuple[float, float] | None = None
+    ) -> int:
+        """Inserta una pagina en blanco y devuelve su posicion."""
+        if size is None:
+            ancho, alto = self.page_size(max(0, min(index or 0, self.page_count - 1)))
+        elif isinstance(size, str):
+            ancho, alto = PAGE_SIZES.get(size, PAGE_SIZES[DEFAULT_PAGE_SIZE])
+        else:
+            ancho, alto = size
+        posicion = self.page_count if index is None else max(0, min(index, self.page_count))
+        self._doc.new_page(pno=posicion, width=ancho, height=alto)
+        self._refresh_data()
+        return posicion
+
+    def duplicate_page(self, index: int) -> int:
+        """Copia una pagina justo detras de ella."""
+        if not (0 <= index < self.page_count):
+            raise IndexError(f"la pagina {index} no existe")
+        destino = index + 1
+        # PyMuPDF usa -1 para "al final"; el rango valido llega hasta la ultima.
+        self._doc.fullcopy_page(index, to=destino if destino < self.page_count else -1)
+        self._refresh_data()
+        return index + 1
+
+    def delete_page(self, index: int) -> None:
+        if self.page_count <= 1:
+            raise PdfError("El documento no puede quedarse sin paginas.")
+        if not (0 <= index < self.page_count):
+            raise IndexError(f"la pagina {index} no existe")
+        self._doc.delete_page(index)
+        self._refresh_data()
+
+    def move_page(self, index: int, destino: int) -> None:
+        """Mueve una pagina a otra posicion."""
+        if not (0 <= index < self.page_count):
+            raise IndexError(f"la pagina {index} no existe")
+        destino = max(0, min(destino, self.page_count - 1))
+        if destino == index:
+            return
+        # PyMuPDF inserta "delante de" la pagina indicada; -1 significa al final.
+        delante = destino if destino < index else destino + 1
+        self._doc.move_page(index, delante if delante < self.page_count else -1)
+        self._refresh_data()
+
+    def extract_page(self, index: int) -> bytes:
+        """Devuelve esa pagina suelta como PDF (para poder deshacer un borrado)."""
+        if not (0 <= index < self.page_count):
+            raise IndexError(f"la pagina {index} no existe")
+        suelta = pymupdf.open()
+        suelta.insert_pdf(self._doc, from_page=index, to_page=index)
+        datos = suelta.tobytes()
+        suelta.close()
+        return datos
+
+    def insert_page_bytes(self, data: bytes, index: int) -> None:
+        """Vuelve a meter en el documento una pagina extraida."""
+        otra = pymupdf.open(stream=data, filetype="pdf")
+        try:
+            self._doc.insert_pdf(otra, start_at=max(0, min(index, self.page_count)))
+        finally:
+            otra.close()
+        self._refresh_data()
 
     # -- render ----------------------------------------------------------
     def render_page(self, index: int, scale: float = 1.0) -> RenderedPage:

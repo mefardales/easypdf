@@ -30,8 +30,11 @@ from ..document import PdfDocument, SearchHit
 from ..model import Align, Annotation, AnnotationStore, Font, Kind
 from .commands import (
     AddAnnotationCommand,
+    AddPageCommand,
     ChangeAnnotationsCommand,
     DeleteAnnotationsCommand,
+    DeletePageCommand,
+    MovePageCommand,
 )
 from .items import (
     AnnotationItemMixin,
@@ -248,9 +251,21 @@ class PdfView(QGraphicsView):
         if doc is None:
             self._scene.setSceneRect(QRectF())
             return
+        self._build_page_items()
+        self.verticalScrollBar().setValue(0)
+        self.apply_fit()
+        self._render_visible_pages()
+        self.pageChanged.emit(0)
+
+    def _build_page_items(self) -> None:
+        """Crea un item por pagina y ajusta el tamano de la escena."""
+        doc = self.document
+        if doc is None:
+            return
         y = PAGE_MARGIN
-        max_width = max((w for w, _ in doc.page_sizes()), default=0.0)
-        for index, (width, height) in enumerate(doc.page_sizes()):
+        tamanos = doc.page_sizes()
+        max_width = max((w for w, _ in tamanos), default=0.0)
+        for index, (width, height) in enumerate(tamanos):
             item = PageItem(index, width, height)
             item.setPos(PAGE_MARGIN + (max_width - width) / 2.0, y)
             self._scene.addItem(item)
@@ -260,10 +275,63 @@ class PdfView(QGraphicsView):
         self._scene.setSceneRect(
             0, 0, max_width + 2 * PAGE_MARGIN, max(total_height, 1.0)
         )
-        self.verticalScrollBar().setValue(0)
+
+    def refresh_pages(self) -> None:
+        """Rehace la disposicion tras anadir, duplicar o borrar paginas."""
+        if self.document is None:
+            return
+        self.clear_search()
+        for item in self._items.values():
+            item.setParentItem(None)
+            if item.scene() is not None:
+                self._scene.removeItem(item)
+        for pagina in self._page_items:
+            self._scene.removeItem(pagina)
+        self._page_items = []
+        self._build_page_items()
+        for item in list(self._items.values()):
+            if 0 <= item.ann.page < len(self._page_items):
+                item.setParentItem(self._page_items[item.ann.page])
+                item.apply_model()
+            else:  # pragma: no cover - defensivo
+                self._items.pop(item.ann.id, None)
+        self._current_page = min(self._current_page, max(0, len(self._page_items) - 1))
         self.apply_fit()
         self._render_visible_pages()
-        self.pageChanged.emit(0)
+        self.pageChanged.emit(self._current_page)
+        self.notify_modified()
+
+    # -- operaciones sobre paginas ---------------------------------------
+    def add_page(self, index: int | None = None, size=None) -> None:
+        """Inserta una pagina en blanco (al final si no se indica donde)."""
+        if self.document is None:
+            return
+        destino = self.document.page_count if index is None else index
+        self.undo_stack.push(AddPageCommand(self, destino, size))
+
+    def duplicate_page(self, index: int) -> None:
+        if self.document is None:
+            return
+        self.undo_stack.push(AddPageCommand(self, index + 1, duplicate=True))
+
+    def delete_page(self, index: int) -> None:
+        if self.document is None or self.document.page_count <= 1:
+            return
+        self.undo_stack.push(DeletePageCommand(self, index))
+
+    def move_page(self, index: int, destino: int) -> None:
+        if self.document is None or index == destino:
+            return
+        self.undo_stack.push(MovePageCommand(self, index, destino))
+
+    def shift_annotation_pages(self, desde: int, delta: int) -> None:
+        """Recoloca las anotaciones cuando se insertan o quitan paginas."""
+        for ann in self.store:
+            if ann.page >= desde:
+                ann.page += delta
+
+    def items_on_page(self, index: int) -> list:
+        return [item for item in self._items.values() if item.ann.page == index]
 
     @property
     def page_count(self) -> int:
@@ -537,6 +605,22 @@ class PdfView(QGraphicsView):
         self.undo_stack.push(AddAnnotationCommand(self, ann, item))
         item.setSelected(True)
         return item
+
+    def apply_template(self, annotations, first_page: int | None = None) -> int:
+        """Anade las anotaciones de una plantilla. Devuelve cuantas ha colocado."""
+        if self.document is None:
+            return 0
+        from ..templates import shift_to_page
+
+        inicio = self.current_page if first_page is None else first_page
+        colocadas = shift_to_page(annotations, inicio, self.page_count)
+        if not colocadas:
+            return 0
+        self.undo_stack.beginMacro(f"Aplicar plantilla ({len(colocadas)} anotaciones)")
+        for ann in colocadas:
+            self.add_annotation(ann)
+        self.undo_stack.endMacro()
+        return len(colocadas)
 
     def add_annotation(self, ann: Annotation, undoable: bool = True):
         """Anade al documento una anotacion ya definida y devuelve su item.

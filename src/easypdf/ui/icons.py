@@ -293,6 +293,13 @@ def _pencil(p: QPainter, tip: QPointF, angle_deg: float, length: float, half: fl
     band(length * 0.86, length, QColor("#ff5a4d"))         # goma
 
 
+def _draw_new(p: QPainter) -> None:
+    _page_outline(p)
+    _pen(p, 4.5, QColor("#2e7d32"))
+    p.drawLine(32, 26, 32, 44)
+    p.drawLine(23, 35, 41, 35)
+
+
 def _draw_image(p: QPainter) -> None:
     _pen(p, 4)
     p.drawRect(QRectF(8, 14, 48, 36))
@@ -438,6 +445,7 @@ def _draw_app(p: QPainter) -> None:
 
 
 _DRAWINGS: dict[str, Callable[[QPainter], None]] = {
+    "new": _draw_new,
     "open": _draw_open,
     "save": _draw_save,
     "save_as": _draw_save_as,
