@@ -222,11 +222,28 @@ class MainWindow(QMainWindow):
         self.act_find_prev = action("find_prev", self.view.previous_hit,
                                     shortcut=QKeySequence.FindPrevious)
 
-        self.act_zoom_in = action("zoom_in", lambda: self.zoom_or_eraser(1),
-                                  "zoom_in", QKeySequence.ZoomIn)
-        self.act_zoom_in.setShortcuts([QKeySequence.ZoomIn, QKeySequence("Ctrl++")])
-        self.act_zoom_out = action("zoom_out", lambda: self.zoom_or_eraser(-1),
-                                   "zoom_out", QKeySequence.ZoomOut)
+        # Los botones y el menu siempre amplian o reducen, tambien con la goma
+        # en la mano: si no, no habria forma de acercarse para borrar fino.
+        self.act_zoom_in = action("zoom_in", self.view.zoom_in, "zoom_in")
+        self.act_zoom_out = action("zoom_out", self.view.zoom_out, "zoom_out")
+
+        # Los atajos si dependen de la herramienta: con la goma cambian su
+        # tamano, que es lo que se quiere ajustar mientras se borra.
+        self._sc_zoom_in = QAction(self)
+        self._sc_zoom_in.setShortcuts([QKeySequence.ZoomIn, QKeySequence("Ctrl++")])
+        self._sc_zoom_in.triggered.connect(lambda: self.zoom_or_eraser(1))
+        self._sc_zoom_out = QAction(self)
+        self._sc_zoom_out.setShortcuts([QKeySequence.ZoomOut, QKeySequence("Ctrl+-")])
+        self._sc_zoom_out.triggered.connect(lambda: self.zoom_or_eraser(-1))
+        # y ademas los corchetes, como en cualquier programa de dibujo
+        self._sc_brush_up = QAction(self)
+        self._sc_brush_up.setShortcut(QKeySequence("]"))
+        self._sc_brush_up.triggered.connect(lambda: self.view.step_eraser_size(1))
+        self._sc_brush_down = QAction(self)
+        self._sc_brush_down.setShortcut(QKeySequence("["))
+        self._sc_brush_down.triggered.connect(lambda: self.view.step_eraser_size(-1))
+        self.addActions([self._sc_zoom_in, self._sc_zoom_out,
+                         self._sc_brush_up, self._sc_brush_down])
         self.act_zoom_reset = action("zoom_reset", self.view.reset_zoom, shortcut="Ctrl+0")
         self.act_fit_width = action("fit_width", self.view.fit_width, "fit_width",
                                     shortcut="Ctrl+1")
@@ -470,6 +487,17 @@ class MainWindow(QMainWindow):
         self.color_button.setMenu(self._color_menu(self._set_color, allow_none=False))
         tools.addWidget(self.color_button)
 
+        # Color con el que tapa la goma: blanco por defecto, que es el color
+        # del papel, pero se puede elegir otro para tapar sobre fondos de color.
+        self.eraser_color_button = QToolButton(self)
+        self.eraser_color_button.setPopupMode(QToolButton.InstantPopup)
+        self.eraser_color_button.setToolTip(tr("eraser_color_tip"))
+        self.eraser_color_button.setIcon(_swatch(QColor("#ffffff")))
+        self.eraser_color_button.setMenu(
+            self._color_menu(self._set_eraser_color, allow_none=False)
+        )
+        tools.addWidget(self.eraser_color_button)
+
         # Color de relleno
         self.fill_button = QToolButton(self)
         self.fill_button.setPopupMode(QToolButton.InstantPopup)
@@ -622,6 +650,14 @@ class MainWindow(QMainWindow):
         more.triggered.connect(lambda: self._pick_custom_color(slot))
         menu.addAction(more)
         return menu
+
+    def _set_eraser_color(self, color: QColor) -> None:
+        """Cambia el color con el que la goma tapa el documento."""
+        if color is None:
+            return
+        self.view.set_eraser_color(to_rgb(color))
+        self.eraser_color_button.setIcon(_swatch(color))
+        self.settings.set_value("tools/eraser_color", color.name())
 
     def _pick_custom_color(self, slot) -> None:
         color = QColorDialog.getColor(QColor("#d81b1b"), self, tr("pick_colour"))
