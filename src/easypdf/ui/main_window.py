@@ -243,6 +243,12 @@ class MainWindow(QMainWindow):
         self.act_page_insert = action("page_insert", self.insert_page_here)
         self.act_page_duplicate = action("page_duplicate", self.duplicate_current_page)
         self.act_page_delete = action("page_delete", self.delete_current_page)
+        self.act_rotate_left = action("page_rotate_left",
+                                      lambda: self.rotate_current_page(-90))
+        self.act_rotate_right = action("page_rotate_right",
+                                       lambda: self.rotate_current_page(90))
+        self.act_rotate_180 = action("page_rotate_180",
+                                     lambda: self.rotate_current_page(180))
         self.act_page_up = action("page_up", lambda: self.move_current_page(-1),
                                   shortcut="Ctrl+Shift+Up")
         self.act_page_down = action("page_down", lambda: self.move_current_page(1),
@@ -335,6 +341,13 @@ class MainWindow(QMainWindow):
         doc_menu.addSeparator()
         doc_menu.addAction(self.act_page_up)
         doc_menu.addAction(self.act_page_down)
+        doc_menu.addSeparator()
+        girar_menu = doc_menu.addMenu(tr("page_rotate_menu"))
+        girar_menu.addAction(self.act_rotate_left)
+        girar_menu.addAction(self.act_rotate_right)
+        girar_menu.addAction(self.act_rotate_180)
+        self.rotate_menu = girar_menu
+        self._menu_keys[girar_menu] = "page_rotate_menu"
         doc_menu.addSeparator()
         tamano_menu = doc_menu.addMenu(tr("page_size_menu"))
         self._menu_keys[tamano_menu] = "page_size_menu"
@@ -580,15 +593,12 @@ class MainWindow(QMainWindow):
     def _create_thumbnails(self) -> None:
         from PySide6.QtWidgets import QDockWidget
 
-        self.thumb_list = QListWidget(self)
-        self.thumb_list.setViewMode(QListWidget.IconMode)
-        self.thumb_list.setIconSize(QSize(THUMB_WIDTH, int(THUMB_WIDTH * 1.5)))
-        self.thumb_list.setResizeMode(QListWidget.Adjust)
-        self.thumb_list.setMovement(QListWidget.Static)
-        self.thumb_list.setSpacing(6)
-        self.thumb_list.setUniformItemSizes(False)
-        self.thumb_list.setWordWrap(True)
+        from .thumbnails import ThumbnailList
+
+        self.thumb_list = ThumbnailList(THUMB_WIDTH, self)
         self.thumb_list.currentRowChanged.connect(self._on_thumbnail_selected)
+        self.thumb_list.page_moved.connect(self._on_thumbnail_dropped)
+        self.thumb_list.customContextMenuRequested.connect(self._thumbnail_menu)
 
         dock = QDockWidget(tr("pages_dock"), self)
         dock.setObjectName("dock_thumbnails")
@@ -847,6 +857,12 @@ class MainWindow(QMainWindow):
             return
         self.view.delete_page(actual)
         self._after_page_change(min(actual, self.view.page_count - 1))
+
+    def rotate_current_page(self, delta: int) -> None:
+        if self.view.has_document():
+            actual = self.view.current_page
+            self.view.rotate_page(actual, delta)
+            self._after_page_change(actual)
 
     def move_current_page(self, delta: int) -> None:
         if not self.view.has_document():
@@ -1150,6 +1166,7 @@ class MainWindow(QMainWindow):
         self.view.set_document(None)
         if document is not None:
             document.close()
+        self._thumb_timer.stop()
         self.thumb_list.clear()
         self._thumb_queue.clear()
         self._modified = False
@@ -1247,18 +1264,24 @@ class MainWindow(QMainWindow):
 
     # ------------------------------------------------------------------ miniaturas
     def _build_thumbnails(self) -> None:
-        self.thumb_list.clear()
-        self._thumb_queue.clear()
-        document = self.view.document
-        if document is None:
-            return
-        placeholder = _framed(QPixmap(THUMB_WIDTH, int(THUMB_WIDTH * 1.4)), fill=True)
-        for index in range(document.page_count):
-            item = QListWidgetItem(QIcon(placeholder), str(index + 1))
-            item.setTextAlignment(Qt.AlignHCenter)
-            self.thumb_list.addItem(item)
-            self._thumb_queue.append(index)
-        self.thumb_list.setCurrentRow(0)
+        # Se rehace la lista entera sin avisar: quien llama coloca despues la
+        # pagina que toca, y sin esto el setCurrentRow(0) saltaria a la primera.
+        bloqueado = self.thumb_list.blockSignals(True)
+        try:
+            self.thumb_list.clear()
+            self._thumb_queue.clear()
+            document = self.view.document
+            if document is None:
+                return
+            placeholder = _framed(QPixmap(THUMB_WIDTH, int(THUMB_WIDTH * 1.4)), fill=True)
+            for index in range(document.page_count):
+                item = QListWidgetItem(QIcon(placeholder), str(index + 1))
+                item.setTextAlignment(Qt.AlignHCenter)
+                self.thumb_list.addItem(item)
+                self._thumb_queue.append(index)
+            self.thumb_list.setCurrentRow(min(self.view.current_page, document.page_count - 1))
+        finally:
+            self.thumb_list.blockSignals(bloqueado)
         self._thumb_timer.start()
 
     def _render_next_thumbnail(self) -> None:
@@ -1272,14 +1295,20 @@ class MainWindow(QMainWindow):
             index = self._thumb_queue.popleft()
             if index >= self.thumb_list.count():
                 continue
-            width, height = document.page_size(index)
-            if width <= 0:
-                continue
-            scale = THUMB_WIDTH / width
+            # El documento se puede cerrar entre dos disparos del temporizador
+            # (cerrar el archivo o la ventana), asi que aqui no se da por hecho
+            # que la pagina siga existiendo.
             try:
-                page = document.render_page(index, scale)
-            except Exception:  # pragma: no cover - PDF danado
-                continue
+                if index >= document.page_count:
+                    continue
+                width, _alto = document.page_size(index)
+                if width <= 0:
+                    continue
+                page = document.render_page(index, THUMB_WIDTH / width)
+            except Exception:  # pragma: no cover - PDF cerrado o danado
+                self._thumb_timer.stop()
+                self._thumb_queue.clear()
+                return
             image = QImage(
                 page.samples, page.width, page.height, page.stride, QImage.Format_RGB888
             )
@@ -1292,6 +1321,93 @@ class MainWindow(QMainWindow):
     def _on_thumbnail_selected(self, row: int) -> None:
         if row >= 0 and row != self.view.current_page:
             self.view.go_to_page(row)
+
+    def _on_thumbnail_dropped(self, origen: int, destino: int) -> None:
+        """Reordena el documento tras arrastrar una miniatura."""
+        if not self.view.has_document():
+            return
+        if not (0 <= origen < self.view.page_count):
+            return
+        destino = max(0, min(destino, self.view.page_count - 1))
+        if destino == origen:
+            return
+        self.view.move_page(origen, destino)
+        self._after_page_change(destino)
+        self.statusBar().showMessage(
+            tr("page_move_undo", origin=origen + 1, target=destino + 1), 6000
+        )
+
+    def _thumbnail_menu(self, pos) -> None:
+        """Menu contextual de una miniatura: duplicar, insertar y eliminar."""
+        if not self.view.has_document():
+            return
+        item = self.thumb_list.itemAt(pos)
+        if item is None:
+            return
+        pagina = self.thumb_list.row(item)
+        self.thumb_list.setCurrentRow(pagina)
+        menu, acciones = self.build_page_menu(pagina)
+        elegido = menu.exec(self.thumb_list.viewport().mapToGlobal(pos))
+        if elegido is not None:
+            self.run_page_action(acciones.get(elegido), pagina)
+
+    def build_page_menu(self, pagina: int):
+        """Menu de una pagina. Separado del gesto para poder probarlo."""
+        menu = QMenu(self)
+        antes = menu.addAction(tr("page_insert_before"))
+        despues = menu.addAction(tr("page_insert_after"))
+        menu.addSeparator()
+        duplicar = menu.addAction(tr("page_duplicate"))
+        menu.addSeparator()
+        girar_izq = menu.addAction(tr("page_rotate_left"))
+        girar_der = menu.addAction(tr("page_rotate_right"))
+        girar_180 = menu.addAction(tr("page_rotate_180"))
+        menu.addSeparator()
+        arriba = menu.addAction(tr("page_up"))
+        abajo = menu.addAction(tr("page_down"))
+        arriba.setEnabled(pagina > 0)
+        abajo.setEnabled(pagina < self.view.page_count - 1)
+        menu.addSeparator()
+        borrar = menu.addAction(tr("page_delete"))
+        borrar.setEnabled(self.view.page_count > 1)
+        return menu, {
+            antes: "insert_before",
+            despues: "insert_after",
+            duplicar: "duplicate",
+            girar_izq: "rotate_left",
+            girar_der: "rotate_right",
+            girar_180: "rotate_180",
+            arriba: "up",
+            abajo: "down",
+            borrar: "delete",
+        }
+
+    def run_page_action(self, accion: str | None, pagina: int) -> None:
+        """Ejecuta una de las opciones del menu de pagina."""
+        if accion is None or not self.view.has_document():
+            return
+        if accion == "insert_before":
+            self.view.add_page(pagina, self.new_page_size)
+            self._after_page_change(pagina)
+        elif accion == "insert_after":
+            self.view.add_page(pagina + 1, self.new_page_size)
+            self._after_page_change(pagina + 1)
+        elif accion == "duplicate":
+            self.view.duplicate_page(pagina)
+            self._after_page_change(pagina + 1)
+        elif accion in ("rotate_left", "rotate_right", "rotate_180"):
+            grados = {"rotate_left": -90, "rotate_right": 90, "rotate_180": 180}[accion]
+            self.view.rotate_page(pagina, grados)
+            self._after_page_change(pagina)
+        elif accion == "up" and pagina > 0:
+            self.view.move_page(pagina, pagina - 1)
+            self._after_page_change(pagina - 1)
+        elif accion == "down" and pagina < self.view.page_count - 1:
+            self.view.move_page(pagina, pagina + 1)
+            self._after_page_change(pagina + 1)
+        elif accion == "delete":
+            self.view.go_to_page(pagina)
+            self.delete_current_page()
 
     # ------------------------------------------------------------------ busqueda
     def show_search(self) -> None:
@@ -1401,7 +1517,8 @@ class MainWindow(QMainWindow):
             self.act_fit_width, self.act_fit_page, self.act_prev_page,
             self.act_next_page, self.act_goto, self.act_page_add,
             self.act_page_insert, self.act_page_duplicate, self.act_page_up,
-            self.act_page_down,
+            self.act_page_down, self.act_rotate_left, self.act_rotate_right,
+            self.act_rotate_180,
         ):
             act.setEnabled(has_doc)
         for act in self.tool_group.actions():
@@ -1444,6 +1561,10 @@ class MainWindow(QMainWindow):
         self.settings.set_window_state(self.saveState())
         self.settings.set_show_thumbnails(self.thumb_dock.isVisible())
         self.settings.sync()
+        # Antes de cerrar el documento hay que parar el temporizador: si no,
+        # sigue pidiendo miniaturas de un PDF que ya no esta abierto.
+        self._thumb_timer.stop()
+        self._thumb_queue.clear()
         document = self.view.document
         if document is not None:
             document.close()

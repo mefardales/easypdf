@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from PySide6.QtGui import QUndoCommand
 
 from ..i18n import tr
-from ..model import Annotation, Kind
+from ..model import Annotation, Kind, rotate_annotation
 
 
 class AddAnnotationCommand(QUndoCommand):
@@ -170,6 +170,35 @@ class DeletePageCommand(QUndoCommand):
             self._view.store.add(item.ann)
             self._view.attach_item(item, item.ann)
         self._view.refresh_pages()
+
+
+class RotatePageCommand(QUndoCommand):
+    """Gira una pagina y lleva consigo lo que hubiera anotado en ella."""
+
+    def __init__(self, view, index: int, delta: int) -> None:
+        super().__init__(tr("cmd_page_rotate", page=index + 1))
+        self._view = view
+        self._index = index
+        self._delta = int(delta) % 360
+
+    def _girar(self, delta: int) -> None:
+        documento = self._view.document
+        # El tamano de antes del giro es el que necesita la conversion de
+        # coordenadas, asi que se toma primero.
+        ancho, alto = documento.page_size(self._index)
+        documento.set_page_rotation(
+            self._index, documento.page_rotation(self._index) + delta
+        )
+        for ann in self._view.store:
+            if ann.page == self._index:
+                rotate_annotation(ann, delta, ancho, alto)
+        self._view.refresh_pages()
+
+    def redo(self) -> None:
+        self._girar(self._delta)
+
+    def undo(self) -> None:
+        self._girar(-self._delta % 360)
 
 
 class MovePageCommand(QUndoCommand):

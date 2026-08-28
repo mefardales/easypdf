@@ -164,3 +164,35 @@ def test_las_paginas_nuevas_se_guardan(tmp_path):
     assert guardado.page_count == 2
     assert len(list(guardado[1].annots())) == 1
     doc.close()
+
+
+def test_girar_una_pagina_cambia_su_orientacion():
+    documento = PdfDocument.blank(pages=1, size="A4")
+    ancho, alto = documento.page_size(0)
+    assert documento.page_rotation(0) == 0
+
+    documento.set_page_rotation(0, 90)
+    assert documento.page_rotation(0) == 90
+    assert documento.page_size(0) == (alto, ancho)
+
+    documento.set_page_rotation(0, 180)
+    assert documento.page_size(0) == (ancho, alto)   # 180 no cambia el tamano
+
+    documento.set_page_rotation(0, 0)
+    assert documento.page_rotation(0) == 0
+    assert documento.page_size(0) == (ancho, alto)
+    documento.close()
+
+
+def test_el_giro_se_normaliza_y_se_guarda_en_el_pdf(tmp_path):
+    documento = PdfDocument.blank(pages=1, size="A4")
+    documento.set_page_rotation(0, 450)             # 450 = 90
+    assert documento.page_rotation(0) == 90
+
+    destino = tmp_path / "girado.pdf"
+    documento.save_as(str(destino))
+    documento.close()
+
+    guardado = PdfDocument.open(str(destino))
+    assert guardado.page_rotation(0) == 90
+    guardado.close()

@@ -139,6 +139,15 @@ class PdfDocument:
     def page_sizes(self) -> list[tuple[float, float]]:
         return [self.page_size(i) for i in range(self.page_count)]
 
+    def page_rotation(self, index: int) -> int:
+        """Giro de la pagina, en grados horarios (0, 90, 180 o 270)."""
+        return int(self._doc[index].rotation) % 360
+
+    def set_page_rotation(self, index: int, degrees: int) -> None:
+        """Fija el giro de la pagina (absoluto, no acumulativo)."""
+        self._doc[index].set_rotation(int(degrees) % 360)
+        self._refresh_data()
+
     # -- edicion de paginas ----------------------------------------------
     def _refresh_data(self) -> None:
         """Rehace los bytes base tras cambiar la estructura del documento."""

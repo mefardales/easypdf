@@ -598,3 +598,88 @@ def test_el_item_no_pinta_fuera_de_su_bounding_rect(qapp, nombre):
         and imagen.pixelColor(x, y) != fondo
     )
     assert fuera == 0, f"{nombre} pinta {fuera} pixeles fuera de su boundingRect()"
+
+
+# --------------------------------------------------------------------------
+# Panel de miniaturas: reordenar arrastrando y menu contextual
+# --------------------------------------------------------------------------
+
+def _primera_linea(ventana, pagina):
+    """Primera linea de texto de una pagina ('' si esta en blanco)."""
+    lineas = ventana.view.document.page_text(pagina).strip().splitlines()
+    return lineas[0] if lineas else ""
+
+
+def test_arrastrar_una_miniatura_reordena_el_documento(ventana, qapp):
+    assert ventana.view.page_count >= 3   # el PDF de prueba ya trae varias
+    antes = [_primera_linea(ventana, i) for i in range(ventana.view.page_count)]
+
+    ventana._on_thumbnail_dropped(0, 2)
+    qapp.processEvents()
+    despues = [_primera_linea(ventana, i) for i in range(ventana.view.page_count)]
+
+    assert despues[2] == antes[0]
+    assert sorted(despues) == sorted(antes)          # no se pierde ninguna
+    assert ventana.view.current_page == 2
+
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
+    assert [_primera_linea(ventana, i) for i in range(ventana.view.page_count)] == antes
+
+
+def test_el_menu_de_una_miniatura_ofrece_todas_las_operaciones(ventana):
+    _menu, acciones = ventana.build_page_menu(0)
+    assert set(acciones.values()) == {
+        "insert_before", "insert_after", "duplicate",
+        "rotate_left", "rotate_right", "rotate_180",
+        "up", "down", "delete",
+    }
+
+
+def test_insertar_y_duplicar_desde_el_menu_de_la_miniatura(ventana, qapp):
+    total = ventana.view.page_count
+
+    ventana.run_page_action("insert_after", 0)
+    qapp.processEvents()
+    assert ventana.view.page_count == total + 1
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
+    assert ventana.view.page_count == total
+
+    ventana.run_page_action("duplicate", 0)
+    qapp.processEvents()
+    assert ventana.view.page_count == total + 1
+    assert _primera_linea(ventana, 1) == _primera_linea(ventana, 0)
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
+    assert ventana.view.page_count == total
+
+
+def test_girar_la_pagina_arrastra_consigo_las_anotaciones(ventana, qapp):
+    ancho, alto = ventana.view.document.page_size(0)
+    ann = Annotation(kind=Kind.RECT, page=0, rect=(50.0, 100.0, 150.0, 200.0), width=2)
+    ventana.view.add_annotation(ann)
+    qapp.processEvents()
+
+    ventana.run_page_action("rotate_right", 0)
+    qapp.processEvents()
+    assert ventana.view.document.page_rotation(0) == 90
+    assert ventana.view.document.page_size(0) == (alto, ancho)
+    # la anotacion se ha movido, y sigue dentro de la pagina ya girada
+    assert ann.rect != (50.0, 100.0, 150.0, 200.0)
+    assert 0 <= ann.rect[0] and ann.rect[2] <= alto
+    assert 0 <= ann.rect[1] and ann.rect[3] <= ancho
+
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
+    assert ventana.view.document.page_rotation(0) == 0
+    assert ventana.view.document.page_size(0) == (ancho, alto)
+    assert ann.rect == (50.0, 100.0, 150.0, 200.0)
+
+
+def test_girar_180_conserva_el_tamano_de_la_pagina(ventana, qapp):
+    tamano = ventana.view.document.page_size(0)
+    ventana.run_page_action("rotate_180", 0)
+    qapp.processEvents()
+    assert ventana.view.document.page_rotation(0) == 180
+    assert ventana.view.document.page_size(0) == tamano
