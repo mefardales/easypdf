@@ -52,9 +52,9 @@ if ($LASTEXITCODE -ne 0) { throw "Las pruebas han fallado; no se empaqueta." }
 
 # 5. PyInstaller -----------------------------------------------------------
 Write-Host "-- Empaquetando con PyInstaller" -ForegroundColor Yellow
-Remove-Item -Recurse -Force (Join-Path $root "build") -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force (Join-Path $root ".pyinstaller") -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force (Join-Path $root "dist\EasyPDF") -ErrorAction SilentlyContinue
-& $py -m PyInstaller (Join-Path $root "packaging\easypdf.spec") --noconfirm --clean
+& $py -m PyInstaller (Join-Path $root "packaging\easypdf.spec") --noconfirm --clean --workpath (Join-Path $root ".pyinstaller")
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller ha fallado." }
 
 $exe = Join-Path $root "dist\EasyPDF\EasyPDF.exe"
@@ -87,6 +87,19 @@ Write-Host "-- Compilando el instalador con $iscc" -ForegroundColor Yellow
 & $iscc (Join-Path $root "packaging\installer.iss")
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup ha fallado." }
 
+# 7. Copia a build\ ------------------------------------------------------
+$buildDir = Join-Path $root "build"
+New-Item -ItemType Directory -Force -Path $buildDir | Out-Null
+$version = (Select-String -Path (Join-Path $root "src\easypdf\__init__.py") -Pattern '__version__ = "(.+)"').Matches[0].Groups[1].Value
+
 Get-ChildItem (Join-Path $root "dist\installer") -Filter *.exe |
-    ForEach-Object { Write-Host "   OK -> $($_.FullName)" -ForegroundColor Green }
+    ForEach-Object {
+        Copy-Item $_.FullName (Join-Path $buildDir $_.Name) -Force
+        Write-Host "   OK -> $(Join-Path $buildDir $_.Name)" -ForegroundColor Green
+    }
+
+$zip = Join-Path $buildDir "EasyPDF-$version-windows-x64-portable.zip"
+Remove-Item $zip -ErrorAction SilentlyContinue
+Compress-Archive -Path (Join-Path $root "dist\EasyPDF\*") -DestinationPath $zip
+Write-Host "   OK -> $zip" -ForegroundColor Green
 Write-Host "== Listo" -ForegroundColor Cyan

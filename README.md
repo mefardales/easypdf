@@ -35,19 +35,20 @@ Todo con una interfaz en espanol, sin cuentas, sin publicidad y sin conexion a i
   <img src="docs/captura-principal.png" width="820" alt="Ventana principal de EasyPDF">
 </p>
 
-## Instalar en Windows
+## Descargar
 
-Descarga la ultima version desde la pagina de
-[**releases**](https://github.com/mefardales/easypdf/releases):
+Los programas ya compilados estan en la carpeta [**`build/`**](build/) de este
+mismo repositorio (y tambien adjuntos a cada
+[release](https://github.com/mefardales/easypdf/releases)):
 
-- **`EasyPDF-1.0.0-Setup.exe`** — instalador. No necesita permisos de administrador
-  (puede instalarse solo para tu usuario), crea el acceso directo en el menu Inicio,
-  registra EasyPDF en *Abrir con* y permite desinstalarlo desde
-  *Configuracion -> Aplicaciones*.
-- **`EasyPDF-portable-windows-x64.zip`** — version portable. Descomprime y ejecuta
-  `EasyPDF.exe`; no instala nada y funciona desde un pendrive.
+| Archivo | Plataforma |
+|---|---|
+| `EasyPDF-1.0.0-Setup.exe` | Windows 10/11 — instalador (sin permisos de administrador) |
+| `EasyPDF-1.0.0-windows-x64-portable.zip` | Windows 10/11 — portable, se ejecuta desde la carpeta |
+| `EasyPDF-1.0.0-linux-x64.tar.xz` | Linux x86-64 — portable |
 
-No hace falta tener Python instalado: el ejecutable lo lleva todo dentro.
+No hace falta tener Python instalado: el ejecutable lo lleva todo dentro. En
+[`build/README.md`](build/README.md) estan las instrucciones y los `sha256`.
 
 ## Guia rapida
 
@@ -97,7 +98,7 @@ sudo apt install libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libdbus-1-3
 
 ## Compilar el .exe y el instalador
 
-### Todo de una vez
+### Windows: todo de una vez
 
 Con [Inno Setup 6](https://jrsoftware.org/isdl.php) instalado (opcional):
 
@@ -109,31 +110,43 @@ El script crea el entorno virtual, instala dependencias, regenera el icono, pasa
 pruebas y deja el resultado en:
 
 ```
-dist\EasyPDF\EasyPDF.exe                      <- version portable (carpeta completa)
-dist\installer\EasyPDF-1.0.0-Setup.exe        <- instalador
+dist\EasyPDF\EasyPDF.exe                              <- carpeta ejecutable
+build\EasyPDF-1.0.0-Setup.exe                         <- instalador
+build\EasyPDF-1.0.0-windows-x64-portable.zip          <- portable
 ```
 
-### Paso a paso
+### Windows: paso a paso
 
 ```powershell
 pip install -r requirements-dev.txt
 python tools\make_icon.py                     # genera assets\easypdf.ico
-pyinstaller packaging\easypdf.spec --noconfirm --clean
+pyinstaller packaging\easypdf.spec --noconfirm --clean --workpath .pyinstaller
 & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\installer.iss
 ```
 
+### Linux
+
+```bash
+bash packaging/build_linux.sh                 # -> build/EasyPDF-1.0.0-linux-x64.tar.xz
+```
+
+> Los ejecutables de Windows solo se generan desde Windows: PyInstaller no compila
+> para una plataforma distinta de aquella en la que corre.
+
 ### Compilacion automatica
 
-El flujo de trabajo `.github/workflows/build-windows.yml` compila el `.exe` y el
-instalador en cada etiqueta. Para publicar una version:
+Los flujos `.github/workflows/build-windows.yml` y `build-linux.yml` compilan en
+runners de Windows y de Linux. Se pueden lanzar a mano desde la pestana *Actions*
+(guardan el resultado en `build/`) y ademas se disparan con cada etiqueta. Para
+publicar una version:
 
 ```bash
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-GitHub Actions ejecuta las pruebas, empaqueta y adjunta el instalador y el zip
-portable a la release. Tambien puede lanzarse a mano desde la pestana *Actions*.
+GitHub Actions ejecuta las pruebas, empaqueta y adjunta los tres archivos a la
+release.
 
 > Para cambiar el numero de version, actualizalo en `src/easypdf/__init__.py`,
 > `pyproject.toml`, `packaging/installer.iss` y `packaging/version_info.txt`.
@@ -189,7 +202,8 @@ src/easypdf/
     items.py        Anotaciones dibujadas en pantalla
     commands.py     Deshacer / rehacer
     icons.py        Iconos dibujados por codigo
-packaging/          PyInstaller + Inno Setup + script de compilacion
+packaging/          PyInstaller + Inno Setup + guiones de compilacion
+build/              Ejecutables publicados (Windows y Linux)
 tools/make_icon.py  Genera assets/easypdf.ico
 tests/              48 pruebas (modelo, PDF, interfaz e impresion)
 ```
