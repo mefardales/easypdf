@@ -24,6 +24,16 @@ REPO = "https://github.com/mefardales/easypdf"
 RAW = f"{REPO}/raw/main/build"
 VERSION = "1.0.0"
 
+#: De donde salen los numeros que se ensenan en la portada.
+#:
+#: * Descargas: las cuenta GitHub en cada archivo de una release. Es un numero
+#:   real del servidor, no se puede falsear desde el navegador.
+#: * Visitas: contador publico y sin cookies (counterapi.dev). No guarda nada
+#:   de quien visita: solo suma uno. Si algun dia se prefiere una analitica de
+#:   verdad, basta con cambiar estas dos constantes.
+RELEASES_API = "https://api.github.com/repos/mefardales/easypdf/releases"
+VISITS_API = "https://api.counterapi.dev/v1/easypdf-surf"
+
 FILES = {
     "setup": f"{RAW}/EasyPDF-{VERSION}-Setup.exe",
     "portable": f"{RAW}/EasyPDF-{VERSION}-windows-x64-portable.zip",
@@ -31,100 +41,11 @@ FILES = {
 }
 
 TEXTS = {
-    "es": {
-        "lang": "es",
-        "path": "",
-        "other_lang": "en",
-        "other_path": "en/",
-        "title": "easypdf.surf - Lector de PDF gratis con anotaciones y tablas",
-        "description": (
-            "Abre, lee, anota e imprime PDF. Escribe encima, resalta, dibuja "
-            "tablas y coloca imagenes. Gratis, sin cuentas y sin publicidad. "
-            "Para Windows y Linux."
-        ),
-        "keywords": "lector pdf gratis, anotar pdf, editar pdf, rellenar pdf, pdf windows",
-        "skip": "Ir al contenido",
-        "nav_download": "Descargas",
-        "nav_cta": "Descargar",
-        "nav_how": "Como funciona",
-        "nav_faq": "Preguntas",
-        "theme": "Cambiar entre claro y oscuro",
-        "eyebrow": "libre y gratis, sin cuentas",
-        "h1": "Lee, anota e imprime tus PDF",
-        "h1_html": "Escribe <em>encima</em> de tus PDF",
-        "switch": "English",
-        "features_kicker": "Funciones",
-        "how_kicker": "En un minuto",
-        "downloads_kicker": "Descargas",
-        "cta_linux": "Descargar para Linux",
-        "cta_note_linux": "Portable - 62 MB - Linux 64 bits",
-        "sub": (
-            "Escribe encima del documento, resalta lo importante, anade tablas, "
-            "flechas e imagenes, y guarda o imprime el resultado. Como Adobe "
-            "Reader, pero mucho mas simple."
-        ),
-        "cta": "Descargar para Windows",
-        "cta_note": "Instalador de 42 MB - Windows 10 y 11 - sin permisos de administrador",
-        "cta_second": "Otras descargas",
-        "trust": "Gratis de verdad - Funciona sin internet - Tus documentos no salen de tu ordenador",
-        "shot_alt": "Ventana de easypdf.surf con un informe anotado: resaltado, recuadro, flecha, nota y tabla",
-        "features_title": "Lo que de verdad hace falta",
-        "features_sub": "Seis cosas bien hechas, en vez de doscientas escondidas en menus.",
-        "features": [
-            ("read", "Leer comodo",
-             "Pasa paginas, acerca la letra pequena y busca cualquier palabra del documento."),
-            ("write", "Escribir encima",
-             "Recuadra, subraya con marcador, anade flechas, notas de texto o dibuja a mano."),
-            ("table", "Tablas e imagenes",
-             "Coloca tablas con celdas que se escriben, y anade fotos, firmas o logotipos."),
-            ("print", "Imprimir",
-             "Con vista previa y seleccion de paginas. Lo que anotas es lo que sale en papel."),
-            ("create", "Crear documentos",
-             "Empieza con una hoja en blanco, anade las paginas que quieras y guarda el PDF."),
-            ("template", "Plantillas",
-             "Guarda tu membrete o tu tabla y vuelve a usarlos en otro documento con un clic."),
-        ],
-        "how_title": "Empezar cuesta un minuto",
-        "how": [
-            ("Descarga", "Pulsa el boton y guarda el archivo."),
-            ("Instala", "Doble clic y siguiente, siguiente. No hace falta ser administrador."),
-            ("Abre tu PDF", "Arrastralo a la ventana y empieza a escribir encima."),
-        ],
-        "warn_title": "Si Windows avisa de que el editor es desconocido",
-        "warn": (
-            "Pulsa <b>Mas informacion</b> y luego <b>Ejecutar de todas formas</b>. "
-            "Ese aviso sale con todos los programas pequenos que no han pagado un "
-            "certificado; no significa que el archivo tenga nada malo."
-        ),
-        "downloads_title": "Descargas",
-        "downloads_sub": f"Version {VERSION}. No hace falta instalar nada mas.",
-        "downloads": [
-            ("setup", "Para Windows", "La opcion normal. Se instala como cualquier programa.", "42 MB"),
-            ("portable", "Windows sin instalar", "No instala nada. Puedes llevarlo en un pendrive.", "60 MB"),
-            ("linux", "Para Linux", "Se descomprime y se abre. Para 64 bits.", "62 MB"),
-        ],
-        "download_verb": "Descargar",
-        "mac": "Por ahora no hay version para Mac.",
-        "faq_title": "Preguntas rapidas",
-        "faq": [
-            ("Es gratis del todo?", "Si. No hay version de pago, ni suscripcion, ni limite de documentos."),
-            ("Tengo que registrarme?", "No. Se abre y se usa, sin cuenta ni correo electronico."),
-            ("Lleva publicidad?", "Ninguna. Y tampoco instala cosas raras de propina."),
-            ("Funciona sin internet?", "Si. Solo hace falta conexion para descargarlo la primera vez."),
-            ("Mis documentos se suben a algun sitio?", "No. Todo ocurre en tu ordenador."),
-            ("Y si no me gusta?", "Se desinstala como cualquier otro programa, desde Configuracion."),
-        ],
-        "footer_free": "gratis y libre para todo el mundo",
-        "footer_issues": "Algo no funciona o se te ocurre una mejora?",
-        "footer_issues_link": "Cuentanoslo aqui",
-        "footer_source": "Ver el codigo y la licencia",
-        "footer_warranty": "Se ofrece tal cual, sin garantias.",
-    },
     "en": {
         "lang": "en",
-        "path": "en/",
+        "path": "",
         "other_lang": "es",
-        "other_path": "",
+        "other_path": "es/",
         "title": "easypdf.surf - Free PDF reader with annotations and tables",
         "description": (
             "Open, read, annotate and print PDFs. Write on top, highlight, draw "
@@ -138,7 +59,10 @@ TEXTS = {
         "nav_how": "How it works",
         "nav_faq": "FAQ",
         "theme": "Switch between light and dark",
-        "eyebrow": "free and open, no accounts",
+        "badge": "for Windows and Linux",
+        "stat_downloads": "downloads",
+        "stat_today": "visits today",
+        "stat_total": "visits",
         "h1": "Read, annotate and print your PDFs",
         "h1_html": "Write <em>on top</em> of your PDFs",
         "switch": "Espanol",
@@ -208,6 +132,98 @@ TEXTS = {
         "footer_issues_link": "Tell us here",
         "footer_source": "See the code and the licence",
         "footer_warranty": "Provided as is, without warranty.",
+    },
+    "es": {
+        "lang": "es",
+        "path": "es/",
+        "other_lang": "en",
+        "other_path": "",
+        "title": "easypdf.surf - Lector de PDF gratis con anotaciones y tablas",
+        "description": (
+            "Abre, lee, anota e imprime PDF. Escribe encima, resalta, dibuja "
+            "tablas y coloca imagenes. Gratis, sin cuentas y sin publicidad. "
+            "Para Windows y Linux."
+        ),
+        "keywords": "lector pdf gratis, anotar pdf, editar pdf, rellenar pdf, pdf windows",
+        "skip": "Ir al contenido",
+        "nav_download": "Descargas",
+        "nav_cta": "Descargar",
+        "nav_how": "Como funciona",
+        "nav_faq": "Preguntas",
+        "theme": "Cambiar entre claro y oscuro",
+        "badge": "para Windows y Linux",
+        "stat_downloads": "descargas",
+        "stat_today": "visitas hoy",
+        "stat_total": "visitas",
+        "h1": "Lee, anota e imprime tus PDF",
+        "h1_html": "Escribe <em>encima</em> de tus PDF",
+        "switch": "English",
+        "features_kicker": "Funciones",
+        "how_kicker": "En un minuto",
+        "downloads_kicker": "Descargas",
+        "cta_linux": "Descargar para Linux",
+        "cta_note_linux": "Portable - 62 MB - Linux 64 bits",
+        "sub": (
+            "Escribe encima del documento, resalta lo importante, anade tablas, "
+            "flechas e imagenes, y guarda o imprime el resultado. Como Adobe "
+            "Reader, pero mucho mas simple."
+        ),
+        "cta": "Descargar para Windows",
+        "cta_note": "Instalador de 42 MB - Windows 10 y 11 - sin permisos de administrador",
+        "cta_second": "Otras descargas",
+        "trust": "Gratis de verdad - Funciona sin internet - Tus documentos no salen de tu ordenador",
+        "shot_alt": "Ventana de easypdf.surf con un informe anotado: resaltado, recuadro, flecha, nota y tabla",
+        "features_title": "Lo que de verdad hace falta",
+        "features_sub": "Seis cosas bien hechas, en vez de doscientas escondidas en menus.",
+        "features": [
+            ("read", "Leer comodo",
+             "Pasa paginas, acerca la letra pequena y busca cualquier palabra del documento."),
+            ("write", "Escribir encima",
+             "Recuadra, subraya con marcador, anade flechas, notas de texto o dibuja a mano."),
+            ("table", "Tablas e imagenes",
+             "Coloca tablas con celdas que se escriben, y anade fotos, firmas o logotipos."),
+            ("print", "Imprimir",
+             "Con vista previa y seleccion de paginas. Lo que anotas es lo que sale en papel."),
+            ("create", "Crear documentos",
+             "Empieza con una hoja en blanco, anade las paginas que quieras y guarda el PDF."),
+            ("template", "Plantillas",
+             "Guarda tu membrete o tu tabla y vuelve a usarlos en otro documento con un clic."),
+        ],
+        "how_title": "Empezar cuesta un minuto",
+        "how": [
+            ("Descarga", "Pulsa el boton y guarda el archivo."),
+            ("Instala", "Doble clic y siguiente, siguiente. No hace falta ser administrador."),
+            ("Abre tu PDF", "Arrastralo a la ventana y empieza a escribir encima."),
+        ],
+        "warn_title": "Si Windows avisa de que el editor es desconocido",
+        "warn": (
+            "Pulsa <b>Mas informacion</b> y luego <b>Ejecutar de todas formas</b>. "
+            "Ese aviso sale con todos los programas pequenos que no han pagado un "
+            "certificado; no significa que el archivo tenga nada malo."
+        ),
+        "downloads_title": "Descargas",
+        "downloads_sub": f"Version {VERSION}. No hace falta instalar nada mas.",
+        "downloads": [
+            ("setup", "Para Windows", "La opcion normal. Se instala como cualquier programa.", "42 MB"),
+            ("portable", "Windows sin instalar", "No instala nada. Puedes llevarlo en un pendrive.", "60 MB"),
+            ("linux", "Para Linux", "Se descomprime y se abre. Para 64 bits.", "62 MB"),
+        ],
+        "download_verb": "Descargar",
+        "mac": "Por ahora no hay version para Mac.",
+        "faq_title": "Preguntas rapidas",
+        "faq": [
+            ("Es gratis del todo?", "Si. No hay version de pago, ni suscripcion, ni limite de documentos."),
+            ("Tengo que registrarme?", "No. Se abre y se usa, sin cuenta ni correo electronico."),
+            ("Lleva publicidad?", "Ninguna. Y tampoco instala cosas raras de propina."),
+            ("Funciona sin internet?", "Si. Solo hace falta conexion para descargarlo la primera vez."),
+            ("Mis documentos se suben a algun sitio?", "No. Todo ocurre en tu ordenador."),
+            ("Y si no me gusta?", "Se desinstala como cualquier otro programa, desde Configuracion."),
+        ],
+        "footer_free": "gratis y libre para todo el mundo",
+        "footer_issues": "Algo no funciona o se te ocurre una mejora?",
+        "footer_issues_link": "Cuentanoslo aqui",
+        "footer_source": "Ver el codigo y la licencia",
+        "footer_warranty": "Se ofrece tal cual, sin garantias.",
     },
 }
 
@@ -383,8 +399,8 @@ def build_page(lang: str) -> str:
 <meta name="keywords" content="{esc(t['keywords'])}">
 <meta name="theme-color" content="#0a0a0b">
 <link rel="canonical" href="{base}">
-<link rel="alternate" hreflang="es" href="{DOMAIN}/">
-<link rel="alternate" hreflang="en" href="{DOMAIN}/en/">
+<link rel="alternate" hreflang="en" href="{DOMAIN}/">
+<link rel="alternate" hreflang="es" href="{DOMAIN}/es/">
 <link rel="alternate" hreflang="x-default" href="{DOMAIN}/">
 <link rel="icon" href="{prefijo}easypdf.png" type="image/png">
 <link rel="apple-touch-icon" href="{prefijo}easypdf.png">
@@ -450,8 +466,9 @@ def build_page(lang: str) -> str:
   nav .nl{{color:var(--muted);font-size:14.5px;padding:8px 11px;border-radius:9px}}
   nav .nl:hover{{color:var(--fg);background:var(--panel-2)}}
   .icon-btn{{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;
-    border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px}}
-  .icon-btn:hover{{color:var(--fg);border-color:var(--muted)}}
+    border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;
+    font-size:13px;font-weight:600;letter-spacing:.02em;opacity:.75}}
+  .icon-btn:hover{{opacity:1;border-color:var(--muted)}}
   .nav-cta{{background:var(--fg);color:var(--bg);font-weight:600;font-size:14px;
     padding:9px 15px;border-radius:10px;margin-left:6px}}
   .nav-cta:hover{{opacity:.88}}
@@ -483,6 +500,14 @@ def build_page(lang: str) -> str:
   .trust span{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}}
   .trust span+span::before{{content:"/";margin-right:22px;opacity:.45}}
+
+  .stats{{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:26px 0 0}}
+  .stat{{border:1px solid var(--line);background:var(--panel);border-radius:12px;
+    padding:10px 18px;min-width:110px}}
+  .stat dt{{font-size:22px;font-weight:700;letter-spacing:-.6px;
+    font-variant-numeric:tabular-nums;line-height:1.15}}
+  .stat dd{{margin:2px 0 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}}
 
   /* ---------- captura ---------- */
   .shot{{margin:58px auto 0;max-width:1000px;border:1px solid var(--line);border-radius:14px;
@@ -590,10 +615,10 @@ def build_page(lang: str) -> str:
          lang="{otro['lang']}" title="{otro['lang'].upper()}">{otro['lang'].upper()}</a>
       <button class="icon-btn" id="theme" type="button"
               aria-label="{esc(t['theme'])}" title="{esc(t['theme'])}">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
-             stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <g id="i-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/></g>
-          <g id="i-moon" style="display:none"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></g>
+          <g id="i-moon" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></g>
         </svg>
       </button>
       <a class="nav-cta" href="#downloads">{esc(t['nav_cta'])}</a>
@@ -603,7 +628,7 @@ def build_page(lang: str) -> str:
 
 <main id="main">
 <div class="wrap hero">
-  <span class="badge"><b>v{VERSION}</b> {esc(t['eyebrow'])}</span>
+  <span class="badge"><b>v{VERSION}</b> {esc(t['badge'])}</span>
   <h1>{t['h1_html']}</h1>
   <p class="sub">{esc(t['sub'])}</p>
   <div class="actions">
@@ -614,6 +639,12 @@ def build_page(lang: str) -> str:
   </div>
   <p class="hint" id="cta-note">{esc(t['cta_note'])}</p>
   <div class="trust">{trust}</div>
+
+  <dl class="stats" id="stats" hidden>
+    <div class="stat" id="stat-dl" hidden><dt id="n-dl">-</dt><dd>{esc(t['stat_downloads'])}</dd></div>
+    <div class="stat" id="stat-today" hidden><dt id="n-today">-</dt><dd>{esc(t['stat_today'])}</dd></div>
+    <div class="stat" id="stat-total" hidden><dt id="n-total">-</dt><dd>{esc(t['stat_total'])}</dd></div>
+  </dl>
 
   <figure class="shot reveal" style="margin-bottom:0">
     <div class="chrome"><i></i><i></i><i></i><b>easypdf.surf</b></div>
@@ -712,6 +743,74 @@ def build_page(lang: str) -> str:
     nota.textContent = {json.dumps(t['mac'])};
   }}
 
+  // ---- numeros de la portada -------------------------------------------
+  // Si alguna peticion falla, el numero simplemente no aparece: nunca se
+  // ensena una cifra inventada ni se rompe la pagina.
+  var tira = document.getElementById("stats");
+  function poner(caja, valor, texto) {{
+    if (valor === null || valor === undefined || isNaN(valor)) return;
+    document.getElementById(texto).textContent = Number(valor).toLocaleString();
+    document.getElementById(caja).hidden = false;
+    tira.hidden = false;
+  }}
+  function leerCache(clave) {{
+    try {{
+      var crudo = localStorage.getItem(clave);
+      if (!crudo) return null;
+      var dato = JSON.parse(crudo);
+      return (Date.now() - dato.t) < 3600000 ? dato.v : null;
+    }} catch (e) {{ return null; }}
+  }}
+  function recordar(clave, valor) {{
+    try {{ localStorage.setItem(clave, JSON.stringify({{v: valor, t: Date.now()}})); }} catch (e) {{}}
+  }}
+
+  // Descargas: las cuenta GitHub en los archivos de cada release.
+  var cacheDl = leerCache("dl");
+  if (cacheDl !== null) {{
+    poner("stat-dl", cacheDl, "n-dl");
+  }} else {{
+    fetch({json.dumps(RELEASES_API)}, {{headers: {{Accept: "application/vnd.github+json"}}}})
+      .then(function (r) {{ return r.ok ? r.json() : null; }})
+      .then(function (releases) {{
+        if (!Array.isArray(releases)) return;
+        var total = 0;
+        releases.forEach(function (rel) {{
+          (rel.assets || []).forEach(function (a) {{
+            if (a.name && a.name.slice(-7) !== ".sha256") total += a.download_count || 0;
+          }});
+        }});
+        recordar("dl", total);
+        poner("stat-dl", total, "n-dl");
+      }})
+      .catch(function () {{}});
+  }}
+
+  // Visitas: contador publico sin cookies. Se suma una vez por dia y navegador.
+  var hoy = new Date().toISOString().slice(0, 10);
+  var yaContado = false;
+  try {{ yaContado = localStorage.getItem("visita") === hoy; }} catch (e) {{}}
+  var verbo = yaContado ? "" : "/up";
+  function numero(dato) {{
+    if (dato === null || typeof dato !== "object") return null;
+    if (typeof dato.count === "number") return dato.count;
+    if (typeof dato.value === "number") return dato.value;
+    if (dato.data && typeof dato.data.up_count === "number") return dato.data.up_count;
+    if (dato.data && typeof dato.data.count === "number") return dato.data.count;
+    return null;
+  }}
+  function contar(clave, caja, texto) {{
+    return fetch({json.dumps(VISITS_API)} + "/" + clave + (verbo || "/"))
+      .then(function (r) {{ return r.ok ? r.json() : null; }})
+      .then(function (d) {{ poner(caja, numero(d), texto); }})
+      .catch(function () {{}});
+  }}
+  contar("visitas-" + hoy, "stat-today", "n-today");
+  contar("visitas", "stat-total", "n-total");
+  if (!yaContado) {{
+    try {{ localStorage.setItem("visita", hoy); }} catch (e) {{}}
+  }}
+
   if ("IntersectionObserver" in window) {{
     var obs = new IntersectionObserver(function (entradas) {{
       entradas.forEach(function (e) {{
@@ -731,7 +830,8 @@ def build_page(lang: str) -> str:
 
 def main() -> int:
     hoy = datetime.date.today().isoformat()
-    os.makedirs(os.path.join(SITE, "en"), exist_ok=True)
+    for carpeta in ("es",):
+        os.makedirs(os.path.join(SITE, carpeta), exist_ok=True)
 
     for lang, t in TEXTS.items():
         destino = os.path.join(SITE, t["path"], "index.html")
@@ -752,9 +852,9 @@ Sitemap: {DOMAIN}/sitemap.xml
     <loc>{DOMAIN}/{t['path']}</loc>
     <lastmod>{hoy}</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>{'1.0' if lang == 'es' else '0.9'}</priority>
-    <xhtml:link rel="alternate" hreflang="es" href="{DOMAIN}/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="{DOMAIN}/en/"/>
+    <priority>{'1.0' if lang == 'en' else '0.9'}</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="{DOMAIN}/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="{DOMAIN}/es/"/>
   </url>"""
         for lang, t in TEXTS.items()
     )
