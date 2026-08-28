@@ -726,3 +726,55 @@ def test_los_tamanos_de_pagina_se_traducen(ventana):
     # un nombre desconocido se deja tal cual
     assert page_size_label("Cuartilla") == "Cuartilla"
     set_language("en")
+
+
+def test_soltar_en_el_hueco_entre_miniaturas_no_manda_la_pagina_al_final(ventana, qapp):
+    """Entre dos miniaturas hay un hueco de separacion.
+
+    Soltar justo ahi es el gesto natural para decir "ponla aqui", pero
+    indexAt() no devuelve nada en ese punto y antes se daba la posicion por
+    perdida mandando la pagina al final de todas.
+    """
+    from PySide6.QtCore import QPoint
+
+    lista = ventana.thumb_list
+    assert lista.count() >= 3
+    r0 = lista.visualRect(lista.model().index(0, 0))
+    r1 = lista.visualRect(lista.model().index(1, 0))
+    ultima = lista.count() - 1
+
+    # el hueco entre la primera y la segunda
+    hueco = QPoint(r0.center().x(), (r0.bottom() + r1.top()) // 2)
+    assert not lista.indexAt(hueco).isValid()      # Qt no ve ninguna ahi
+    destino = lista.drop_row(hueco)
+    assert destino == 1, f"el hueco deberia dar la posicion 1, dio {destino}"
+    assert destino != ultima or ultima == 1
+
+    # por encima de la primera tampoco puede mandar al final
+    encima = QPoint(r0.center().x(), max(0, r0.top() - 3))
+    if not lista.indexAt(encima).isValid():
+        assert lista.drop_row(encima) == 0
+
+
+def test_el_destino_al_soltar_nunca_retrocede_al_bajar_el_raton(ventana):
+    """Bajar el raton solo puede dar una posicion igual o mayor."""
+    from PySide6.QtCore import QPoint
+
+    lista = ventana.thumb_list
+    r0 = lista.visualRect(lista.model().index(0, 0))
+    r1 = lista.visualRect(lista.model().index(1, 0))
+    x = r0.center().x()
+
+    anterior = None
+    for y in range(max(0, r0.top() - 4), r1.bottom() + 1, 3):
+        destino = lista.drop_row(QPoint(x, y))
+        if anterior is not None:
+            assert destino >= anterior, f"en y={y} bajo de {anterior} a {destino}"
+        anterior = destino
+
+
+def test_soltar_sobre_una_miniatura_da_su_posicion_o_la_siguiente(ventana):
+    lista = ventana.thumb_list
+    for fila in range(min(3, lista.count())):
+        centro = lista.visualRect(lista.model().index(fila, 0)).center()
+        assert lista.drop_row(centro) in (fila, fila + 1)

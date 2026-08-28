@@ -39,18 +39,44 @@ class ThumbnailList(QListWidget):
     # -- arrastre --------------------------------------------------------
     def drop_row(self, pos) -> int:
         """Posicion en la que caeria un arrastre soltado en ``pos``."""
+        if self.count() == 0:
+            return 0
         indice = self.indexAt(pos)
-        if not indice.isValid():
-            return self.count() - 1
-        fila = indice.row()
+        # Entre dos miniaturas hay un hueco de separacion, y soltar justo ahi
+        # es el gesto natural para decir "ponla aqui". Ahi indexAt no devuelve
+        # nada, asi que se busca la miniatura mas cercana en vez de dar la
+        # posicion por perdida: antes se mandaba la pagina al final de todas.
+        fila = indice.row() if indice.isValid() else self.nearest_row(pos)
+        rect = self.visualRect(self.model().index(fila, 0))
         # Soltar en la mitad de abajo (o derecha) de una miniatura coloca la
         # pagina detras de ella, que es lo que espera quien la esta arrastrando.
-        rect = self.visualRect(indice)
         if self.stacked_vertically():
             despues = pos.y() > rect.center().y()
         else:
             despues = pos.x() > rect.center().x()
         return fila + 1 if despues else fila
+
+    def nearest_row(self, pos) -> int:
+        """Miniatura mas cercana a un punto, aunque el punto caiga en un hueco."""
+        vertical = self.stacked_vertically()
+        mejor, mejor_distancia = 0, None
+        for fila in range(self.count()):
+            rect = self.visualRect(self.model().index(fila, 0))
+            if vertical:
+                inicio, fin, punto = rect.top(), rect.bottom(), pos.y()
+            else:
+                inicio, fin, punto = rect.left(), rect.right(), pos.x()
+            if punto < inicio:
+                distancia = inicio - punto
+            elif punto > fin:
+                distancia = punto - fin
+            else:
+                distancia = 0
+            if mejor_distancia is None or distancia < mejor_distancia:
+                mejor, mejor_distancia = fila, distancia
+                if distancia == 0:
+                    break
+        return mejor
 
     def stacked_vertically(self) -> bool:
         """True si las miniaturas van una debajo de otra.
