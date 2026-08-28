@@ -3,7 +3,7 @@
 import pymupdf
 import pytest
 
-from easypdf.annotations import apply_annotations
+from easypdf.annotations import AUTHOR, apply_annotations
 from easypdf.model import Annotation, Kind
 
 
@@ -36,7 +36,7 @@ def test_cada_tipo_genera_su_anotacion(documento, ann, esperado):
     assert apply_annotations(doc, [ann]) == 1
     creadas = list(page.annots())
     assert [a.type[1] for a in creadas] == [esperado]
-    assert creadas[0].info.get("title") == "EasyPDF"
+    assert creadas[0].info.get("title") == AUTHOR
 
 
 def test_la_flecha_lleva_punta(documento):

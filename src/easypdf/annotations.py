@@ -1,4 +1,4 @@
-"""Traduccion del modelo de EasyPDF a anotaciones reales de PDF (PyMuPDF).
+"""Traduccion del modelo de easypdf.surf a anotaciones reales de PDF (PyMuPDF).
 
 Las anotaciones se escriben como objetos PDF estandar (Square, Line, FreeText,
 Ink, Highlight), asi que cualquier otro lector -Adobe Reader, Edge, Firefox-
@@ -14,7 +14,7 @@ import pymupdf
 from .model import Annotation, Kind
 
 #: Nombre que se guarda en el campo /T de la anotacion.
-AUTHOR = "EasyPDF"
+AUTHOR = "easypdf.surf"
 
 
 def _clamp01(value: float) -> float:

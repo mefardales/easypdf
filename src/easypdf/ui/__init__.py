@@ -1,1 +1,1 @@
-"""Interfaz grafica de EasyPDF (PySide6)."""
+"""Interfaz grafica de easypdf.surf (PySide6)."""

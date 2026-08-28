@@ -1,6 +1,6 @@
-# Contribuir a EasyPDF
+# Contribuir a easypdf.surf
 
-Gracias por querer echar una mano. EasyPDF quiere seguir siendo **sencillo**: antes de
+Gracias por querer echar una mano. easypdf.surf quiere seguir siendo **sencillo**: antes de
 anadir una funcion, piensa si una persona que solo quiere leer y anotar un PDF la
 echaria de menos.
 

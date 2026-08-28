@@ -1,4 +1,4 @@
-"""Ventana principal de EasyPDF."""
+"""Ventana principal de easypdf.surf."""
 
 from __future__ import annotations
 
@@ -70,7 +70,7 @@ def _swatch(color: QColor | None, size: int = 22) -> QIcon:
 
 
 class AboutDialog(QDialog):
-    """Ventana 'Acerca de EasyPDF'."""
+    """Ventana 'Acerca de easypdf.surf'."""
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -114,7 +114,7 @@ class HelpDialog(QDialog):
         text = QTextBrowser()
         text.setHtml(
             """
-            <h2>Guia rapida de EasyPDF</h2>
+            <h2>Guia rapida</h2>
             <h3>Abrir e imprimir</h3>
             <ul>
               <li><b>Ctrl+O</b> abre un PDF. Tambien puedes arrastrarlo sobre la ventana.</li>
@@ -141,7 +141,7 @@ class HelpDialog(QDialog):
               <li><b>Esc</b> vuelve siempre a la herramienta Seleccionar.</li>
             </ul>
             <h3>Como se guardan las anotaciones</h3>
-            <p>EasyPDF escribe anotaciones PDF estandar (cuadro, linea, texto libre,
+            <p>El programa escribe anotaciones PDF estandar (cuadro, linea, texto libre,
             resaltado y tinta), asi que se ven igual en Adobe Reader, Edge o Firefox.
             El contenido original del documento no se modifica.</p>
             """

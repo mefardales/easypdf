@@ -140,7 +140,7 @@ def print_document(
             parent,
             "Imprimir",
             "Este PDF pide no ser impreso.\n\nEsa restriccion no esta protegida por "
-            "contrasena, asi que EasyPDF puede imprimirlo igualmente.\n\n"
+            "contrasena, asi que el programa puede imprimirlo igualmente.\n\n"
             "Solo hazlo si tienes derecho a ello. Continuar?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,

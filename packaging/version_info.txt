@@ -17,13 +17,13 @@ VSVersionInfo(
         StringTable(
           '040a04b0',
           [
-            StringStruct('CompanyName', 'EasyPDF contributors'),
-            StringStruct('FileDescription', 'EasyPDF - Lector y anotador de PDF'),
+            StringStruct('CompanyName', 'easypdf.surf'),
+            StringStruct('FileDescription', 'easypdf.surf - Lector y anotador de PDF'),
             StringStruct('FileVersion', '1.0.0.0'),
             StringStruct('InternalName', 'EasyPDF'),
             StringStruct('LegalCopyright', 'Licencia GNU AGPL v3 o posterior'),
             StringStruct('OriginalFilename', 'EasyPDF.exe'),
-            StringStruct('ProductName', 'EasyPDF'),
+            StringStruct('ProductName', 'easypdf.surf'),
             StringStruct('ProductVersion', '1.0.0.0'),
           ],
         )

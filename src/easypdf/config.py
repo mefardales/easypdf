@@ -1,4 +1,8 @@
-"""Preferencias persistentes de EasyPDF (QSettings)."""
+"""Preferencias persistentes de easypdf.surf (QSettings).
+
+ORG y APP no cambian aunque cambie el nombre mostrado: son la ruta donde el
+sistema guarda los ajustes, y moverla haria perder las preferencias.
+"""
 
 from __future__ import annotations
 

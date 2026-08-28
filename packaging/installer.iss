@@ -1,5 +1,5 @@
 ; ---------------------------------------------------------------------------
-; Instalador de EasyPDF para Windows (Inno Setup 6)
+; Instalador de easypdf.surf para Windows (Inno Setup 6)
 ;
 ;   1) pyinstaller packaging/easypdf.spec --noconfirm     -> dist/EasyPDF/
 ;   2) iscc packaging/installer.iss                       -> dist/installer/
@@ -7,9 +7,12 @@
 ; Se instala sin permisos de administrador si el usuario lo prefiere.
 ; ---------------------------------------------------------------------------
 
-#define MyAppName "EasyPDF"
+#define MyAppName "easypdf.surf"
+; Los archivos y carpetas siguen llamandose EasyPDF (un ejecutable llamado
+; easypdf.surf.exe pareceria tener una extension rara).
+#define MyAppFolder "EasyPDF"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "EasyPDF contributors"
+#define MyAppPublisher "easypdf.surf"
 #define MyAppURL "https://github.com/mefardales/easypdf"
 #define MyAppExeName "EasyPDF.exe"
 #define SourceDir "..\dist\EasyPDF"
@@ -25,7 +28,7 @@ AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}/issues
 AppUpdatesURL={#MyAppURL}/releases
 VersionInfoVersion={#MyAppVersion}
-DefaultDirName={autopf}\{#MyAppName}
+DefaultDirName={autopf}\{#MyAppFolder}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 LicenseFile=..\LICENSE
@@ -51,7 +54,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "associate"; Description: "Abrir los archivos .pdf con EasyPDF"; GroupDescription: "Asociaciones de archivo:"; Flags: unchecked
+Name: "associate"; Description: "Abrir los archivos .pdf con easypdf.surf"; GroupDescription: "Asociaciones de archivo:"; Flags: unchecked
 
 [Files]
 Source: "{#SourceDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
@@ -65,17 +68,17 @@ Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Registry]
-; Identificador propio de documento: siempre se registra, para que EasyPDF
-; aparezca en "Abrir con" aunque no sea el programa predeterminado.
+; Identificador propio de documento: siempre se registra, para que la
+; aplicacion aparezca en "Abrir con" aunque no sea la predeterminada.
 Root: HKA; Subkey: "Software\Classes\EasyPDF.Document"; ValueType: string; ValueName: ""; ValueData: "Documento PDF"; Flags: uninsdeletekey
 Root: HKA; Subkey: "Software\Classes\EasyPDF.Document\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"; Flags: uninsdeletekey
 Root: HKA; Subkey: "Software\Classes\EasyPDF.Document\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Flags: uninsdeletekey
 Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExeName}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Flags: uninsdeletekey
 Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExeName}\SupportedTypes"; ValueType: string; ValueName: ".pdf"; ValueData: ""; Flags: uninsdeletekey
 Root: HKA; Subkey: "Software\Classes\.pdf\OpenWithProgids"; ValueType: string; ValueName: "EasyPDF.Document"; ValueData: ""; Flags: uninsdeletevalue
-; Solo si el usuario marca la casilla: EasyPDF pasa a ser el predeterminado.
+; Solo si el usuario marca la casilla: pasa a ser el programa predeterminado.
 Root: HKA; Subkey: "Software\Classes\.pdf"; ValueType: string; ValueName: ""; ValueData: "EasyPDF.Document"; Tasks: associate; Flags: uninsdeletevalue
-Root: HKA; Subkey: "Software\{#MyAppName}"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\{#MyAppFolder}"; ValueType: string; ValueName: "InstallDir"; ValueData: "{app}"; Flags: uninsdeletekey
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
