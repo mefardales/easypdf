@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EasyPDF - Lector de PDF sencillo con anotaciones</title>
+<meta name="description" content="Abre, lee, anota e imprime PDF. Dibuja cuadros, lineas, flechas y texto encima del documento. Gratis, libre y sin cuentas. Para Windows y Linux.">
+<link rel="icon" href="easypdf.png" type="image/png">
+<meta property="og:title" content="EasyPDF - Lector de PDF sencillo con anotaciones">
+<meta property="og:description" content="Como Adobe Reader, pero mucho mas simple. Gratis y sin cuentas.">
+<meta property="og:image" content="captura.png">
+<meta property="og:type" content="website">
+<style>
+  :root{
+    --rojo:#d81b1b; --rojo-osc:#a91414;
+    --fondo:#ffffff; --fondo-alt:#f6f7f9; --borde:#e3e6ea;
+    --texto:#1b1f24; --tenue:#5b6570; --tarjeta:#ffffff;
+    --sombra:0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --fondo:#0f1419; --fondo-alt:#151b22; --borde:#2a323c;
+      --texto:#e8ecf1; --tenue:#9aa5b1; --tarjeta:#161d25;
+      --sombra:0 1px 3px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.3);
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--fondo); color:var(--texto);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--rojo)}
+  .contenedor{max-width:960px;margin:0 auto;padding:0 20px}
+
+  header{border-bottom:1px solid var(--borde);background:var(--fondo)}
+  .barra{display:flex;align-items:center;gap:12px;height:64px}
+  .barra img{width:32px;height:32px}
+  .barra b{font-size:19px;letter-spacing:-.2px}
+  .barra nav{margin-left:auto;display:flex;gap:22px;font-size:15px}
+  .barra nav a{color:var(--tenue);text-decoration:none}
+  .barra nav a:hover{color:var(--texto)}
+
+  .hero{text-align:center;padding:64px 0 8px}
+  .hero img.icono{width:96px;height:96px;margin-bottom:18px}
+  .hero h1{font-size:clamp(32px,5vw,46px);line-height:1.15;margin:0 0 14px;letter-spacing:-1px}
+  .hero p.lema{font-size:clamp(17px,2.4vw,20px);color:var(--tenue);margin:0 auto 34px;max-width:620px}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    background:var(--rojo);color:#fff;text-decoration:none;font-weight:700;
+    font-size:18px;padding:16px 30px;border-radius:10px;
+    box-shadow:0 4px 14px rgba(216,27,27,.32);transition:background .15s, transform .15s;
+  }
+  .btn:hover{background:var(--rojo-osc);transform:translateY(-1px)}
+  .btn small{display:block;font-weight:400;font-size:13px;opacity:.9}
+  .btn-sub{margin-top:12px;font-size:14px;color:var(--tenue)}
+  .btn-sub a{color:var(--tenue)}
+
+  .captura{margin:52px 0 8px}
+  .captura img{width:100%;border:1px solid var(--borde);border-radius:12px;box-shadow:var(--sombra);display:block}
+
+  section{padding:56px 0}
+  h2{font-size:26px;margin:0 0 8px;letter-spacing:-.4px}
+  .sub{color:var(--tenue);margin:0 0 28px}
+
+  .rejilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+  .tarjeta{background:var(--tarjeta);border:1px solid var(--borde);border-radius:12px;padding:22px}
+  .tarjeta h3{margin:0 0 6px;font-size:17px}
+  .tarjeta p{margin:0;color:var(--tenue);font-size:15px}
+  .emoji{font-size:24px;display:block;margin-bottom:10px}
+
+  .descargas{background:var(--fondo-alt);border-top:1px solid var(--borde);border-bottom:1px solid var(--borde)}
+  .fila{
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    background:var(--tarjeta);border:1px solid var(--borde);border-radius:12px;
+    padding:18px 20px;margin-bottom:12px;text-decoration:none;color:inherit;
+    transition:border-color .15s, transform .15s;
+  }
+  .fila:hover{border-color:var(--rojo);transform:translateY(-1px)}
+  .fila .que{flex:1;min-width:210px}
+  .fila .que b{display:block;font-size:16px}
+  .fila .que span{color:var(--tenue);font-size:14px}
+  .fila .peso{color:var(--tenue);font-size:14px;white-space:nowrap}
+  .fila .flecha{color:var(--rojo);font-weight:700;white-space:nowrap}
+
+  ol.pasos{padding-left:22px;margin:0}
+  ol.pasos li{margin-bottom:12px}
+  .aviso{
+    background:var(--fondo-alt);border:1px solid var(--borde);border-left:4px solid #f0a500;
+    border-radius:8px;padding:16px 18px;margin-top:22px;font-size:15px;color:var(--tenue);
+  }
+  .aviso b{color:var(--texto)}
+
+  footer{border-top:1px solid var(--borde);padding:32px 0 48px;color:var(--tenue);font-size:14px}
+  footer p{margin:6px 0}
+  code{background:var(--fondo-alt);border:1px solid var(--borde);border-radius:5px;padding:1px 6px;font-size:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="contenedor barra">
+    <img src="easypdf.png" alt="">
+    <b>EasyPDF</b>
+    <nav>
+      <a href="#descargas">Descargas</a>
+      <a href="#instalar">Instalar</a>
+      <a href="https://github.com/mefardales/easypdf">Codigo</a>
+    </nav>
+  </div>
+</header>
+
+<div class="contenedor hero">
+  <img class="icono" src="easypdf.png" alt="Icono de EasyPDF">
+  <h1>Lee, anota e imprime tus PDF</h1>
+  <p class="lema">
+    Dibuja cuadros, lineas, flechas y texto encima del documento, como en Adobe Reader
+    pero mucho mas simple. Gratis, libre y sin cuentas ni publicidad.
+  </p>
+
+  <a class="btn" id="principal" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-Setup.exe">
+    <span>&#11015;</span>
+    <span>Descargar para Windows<small id="principal-detalle">Instalador · 42 MB · Windows 10 y 11</small></span>
+  </a>
+  <p class="btn-sub" id="alternativa">
+    Tambien hay <a href="#descargas">version portable y para Linux</a>. Version 1.0.0.
+  </p>
+
+  <div class="captura">
+    <img src="captura.png" alt="Ventana de EasyPDF con un documento anotado">
+  </div>
+</div>
+
+<section class="contenedor">
+  <h2>Que puedes hacer</h2>
+  <p class="sub">Lo justo para trabajar con un PDF, sin menus que sobran.</p>
+  <div class="rejilla">
+    <div class="tarjeta">
+      <span class="emoji">&#128214;</span>
+      <h3>Leer comodo</h3>
+      <p>Desplazamiento continuo, miniaturas de paginas, zoom, ajuste al ancho y busqueda de texto.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="emoji">&#9999;</span>
+      <h3>Anotar encima</h3>
+      <p>Cuadros, resaltado, lineas, flechas, cuadros de texto y dibujo a mano alzada, en el color que quieras.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="emoji">&#128424;</span>
+      <h3>Imprimir</h3>
+      <p>Con vista previa y seleccion de paginas. Lo que ves anotado es lo que sale en papel.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="emoji">&#128190;</span>
+      <h3>Guardar sin estropear nada</h3>
+      <p>Las anotaciones se guardan como anotaciones PDF normales: se ven igual en Adobe Reader, Edge o Firefox.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="emoji">&#128274;</span>
+      <h3>Todo en tu ordenador</h3>
+      <p>Sin cuentas, sin publicidad y sin enviar tus documentos a ningun sitio. Funciona sin internet.</p>
+    </div>
+    <div class="tarjeta">
+      <span class="emoji">&#129309;</span>
+      <h3>Libre y gratis</h3>
+      <p>Codigo abierto con licencia AGPL v3. Puedes usarlo, copiarlo y modificarlo.</p>
+    </div>
+  </div>
+</section>
+
+<section class="descargas" id="descargas">
+  <div class="contenedor">
+    <h2>Descargas</h2>
+    <p class="sub">Version 1.0.0. No necesitas instalar Python ni nada mas.</p>
+
+    <a class="fila" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-Setup.exe">
+      <div class="que">
+        <b>EasyPDF para Windows (instalador)</b>
+        <span>Lo normal. Windows 10 y 11, sin permisos de administrador.</span>
+      </div>
+      <div class="peso">42 MB</div>
+      <div class="flecha">Descargar &#8594;</div>
+    </a>
+
+    <a class="fila" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-windows-x64-portable.zip">
+      <div class="que">
+        <b>EasyPDF para Windows (portable)</b>
+        <span>No instala nada. Descomprime y abre <code>EasyPDF.exe</code>. Va desde un pendrive.</span>
+      </div>
+      <div class="peso">60 MB</div>
+      <div class="flecha">Descargar &#8594;</div>
+    </a>
+
+    <a class="fila" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-linux-x64.tar.xz">
+      <div class="que">
+        <b>EasyPDF para Linux</b>
+        <span>Descomprime y ejecuta <code>./EasyPDF</code>. Para x86-64.</span>
+      </div>
+      <div class="peso">62 MB</div>
+      <div class="flecha">Descargar &#8594;</div>
+    </a>
+
+    <p class="sub" style="margin-top:22px;font-size:15px">
+      En macOS se ejecuta desde el codigo fuente:
+      <code>pip install -r requirements.txt</code> y <code>python -m easypdf</code>.
+    </p>
+  </div>
+</section>
+
+<section class="contenedor" id="instalar">
+  <h2>Como instalarlo en Windows</h2>
+  <p class="sub">Tres pasos y ya esta.</p>
+  <ol class="pasos">
+    <li>Pulsa <b>Descargar para Windows</b>. Se guarda <code>EasyPDF-1.0.0-Setup.exe</code>,
+        normalmente en la carpeta <i>Descargas</i>.</li>
+    <li>Haz doble clic en el archivo descargado.</li>
+    <li>Siguiente, siguiente y listo. EasyPDF aparece en el menu Inicio.</li>
+  </ol>
+  <div class="aviso">
+    <b>Si Windows muestra una pantalla azul que dice "Windows protegio tu PC":</b>
+    pulsa <b>Mas informacion</b> y luego <b>Ejecutar de todas formas</b>.
+    Ese aviso sale porque el programa no esta firmado con un certificado digital
+    (cuestan dinero cada ano), no porque el archivo tenga nada malo. Puedes comprobar
+    que la descarga es exactamente la que se compilo mirando su
+    <a href="https://github.com/mefardales/easypdf/blob/main/build/EasyPDF-1.0.0-Setup.exe.sha256">huella sha256</a>.
+  </div>
+</section>
+
+<footer>
+  <div class="contenedor">
+    <p><b>EasyPDF 1.0.0</b> &middot; software libre con licencia
+      <a href="https://github.com/mefardales/easypdf/blob/main/LICENSE">GNU AGPL v3</a>.</p>
+    <p>Codigo fuente, fallos y sugerencias en
+      <a href="https://github.com/mefardales/easypdf">github.com/mefardales/easypdf</a>.</p>
+    <p>Hecho con Python, PySide6 y PyMuPDF. Este programa se distribuye sin ninguna garantia.</p>
+  </div>
+</footer>
+
+<script>
+  // Destaca la descarga que le sirve a quien visita la pagina.
+  (function () {
+    var p = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+    var ua = navigator.userAgent || "";
+    var boton = document.getElementById("principal");
+    var detalle = document.getElementById("principal-detalle");
+    var alternativa = document.getElementById("alternativa");
+    var base = "https://github.com/mefardales/easypdf/raw/main/build/";
+
+    if (/Linux/i.test(p + ua) && !/Android/i.test(ua)) {
+      boton.href = base + "EasyPDF-1.0.0-linux-x64.tar.xz";
+      boton.querySelector("span:last-child").firstChild.textContent = "Descargar para Linux";
+      detalle.textContent = "Portable · 62 MB · x86-64";
+      alternativa.innerHTML = 'Tambien hay <a href="#descargas">version para Windows</a>. Version 1.0.0.';
+    } else if (/Mac/i.test(p + ua)) {
+      detalle.textContent = "Instalador · 42 MB · Windows 10 y 11";
+      alternativa.innerHTML = 'En macOS hay que <a href="https://github.com/mefardales/easypdf#ejecutar-desde-el-codigo-fuente">ejecutarlo desde el codigo fuente</a>. Version 1.0.0.';
+    } else if (/Android|iPhone|iPad/i.test(ua)) {
+      alternativa.innerHTML = 'EasyPDF es un programa de ordenador: descargalo desde un PC. Version 1.0.0.';
+    }
+  })();
+</script>
+
+</body>
+</html>
