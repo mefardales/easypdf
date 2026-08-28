@@ -107,3 +107,92 @@ __all__ = [
     "DeleteAnnotationsCommand",
     "ChangeAnnotationsCommand",
 ]
+
+
+class AddPageCommand(QUndoCommand):
+    """Anade (o duplica) una pagina del documento."""
+
+    def __init__(self, view, index: int, size=None, duplicate: bool = False) -> None:
+        super().__init__("Duplicar pagina" if duplicate else "Anadir pagina")
+        self._view = view
+        self._index = index
+        self._size = size
+        self._duplicate = duplicate
+
+    def redo(self) -> None:
+        documento = self._view.document
+        if self._duplicate:
+            self._index = documento.duplicate_page(self._index - 1)
+        else:
+            self._index = documento.add_blank_page(self._index, self._size)
+        self._view.shift_annotation_pages(self._index, 1)
+        self._view.refresh_pages()
+
+    def undo(self) -> None:
+        self._view.document.delete_page(self._index)
+        self._view.shift_annotation_pages(self._index + 1, -1)
+        self._view.refresh_pages()
+
+
+class DeletePageCommand(QUndoCommand):
+    """Borra una pagina y todo lo que hubiera anotado en ella."""
+
+    def __init__(self, view, index: int) -> None:
+        super().__init__(f"Eliminar la pagina {index + 1}")
+        self._view = view
+        self._index = index
+        self._page_data: bytes = b""
+        self._items: list = []
+
+    def redo(self) -> None:
+        documento = self._view.document
+        self._page_data = documento.extract_page(self._index)
+        self._items = self._view.items_on_page(self._index)
+        for item in self._items:
+            self._view.detach_item(item)
+            try:
+                self._view.store.remove(item.ann)
+            except ValueError:  # pragma: no cover - defensivo
+                pass
+        documento.delete_page(self._index)
+        self._view.shift_annotation_pages(self._index + 1, -1)
+        self._view.refresh_pages()
+
+    def undo(self) -> None:
+        self._view.document.insert_page_bytes(self._page_data, self._index)
+        self._view.shift_annotation_pages(self._index, 1)
+        for item in self._items:
+            item.ann.page = self._index
+            self._view.store.add(item.ann)
+            self._view.attach_item(item, item.ann)
+        self._view.refresh_pages()
+
+
+class MovePageCommand(QUndoCommand):
+    """Cambia una pagina de sitio."""
+
+    def __init__(self, view, index: int, destino: int) -> None:
+        super().__init__(f"Mover la pagina {index + 1}")
+        self._view = view
+        self._index = index
+        self._destino = destino
+
+    def _mover(self, desde: int, hasta: int) -> None:
+        self._view.document.move_page(desde, hasta)
+        for ann in self._view.store:
+            if ann.page == desde:
+                ann.page = hasta
+            elif desde < ann.page <= hasta:
+                ann.page -= 1
+            elif hasta <= ann.page < desde:
+                ann.page += 1
+        self._view.refresh_pages()
+
+    def redo(self) -> None:
+        self._mover(self._index, self._destino)
+
+    def undo(self) -> None:
+        self._mover(self._destino, self._index)
+
+
+__all__ += ["AddPageCommand", "DeletePageCommand", "MovePageCommand"]

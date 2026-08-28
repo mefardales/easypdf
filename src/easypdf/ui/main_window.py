@@ -40,9 +40,15 @@ from PySide6.QtWidgets import (
 
 from .. import __app_name__, __repo_url__, __url__, __version__
 from ..config import PALETTE, Settings
-from ..document import PasswordRequired, PdfDocument, PdfError
+from ..document import DEFAULT_PAGE_SIZE, PAGE_SIZES, PasswordRequired, PdfDocument, PdfError
 from ..model import Align, Font
 from ..printing import print_document, print_preview
+from ..templates import (
+    TemplateError,
+    list_templates,
+    load_template,
+    save_template,
+)
 from . import icons
 from .items import to_rgb
 from .page_view import PdfView, Tool
@@ -118,9 +124,11 @@ class HelpDialog(QDialog):
         text.setHtml(
             """
             <h2>Guia rapida</h2>
-            <h3>Abrir e imprimir</h3>
+            <h3>Abrir, crear e imprimir</h3>
             <ul>
               <li><b>Ctrl+O</b> abre un PDF. Tambien puedes arrastrarlo sobre la ventana.</li>
+              <li><b>Ctrl+N</b> crea un documento en blanco. Desde el menu <b>Documento</b>
+                  puedes anadir, duplicar, mover y eliminar paginas, y elegir su tamano.</li>
               <li><b>Ctrl+P</b> imprime. La vista previa muestra el documento con las
                   anotaciones tal y como saldran en papel.</li>
               <li><b>Ctrl+S</b> guarda las anotaciones dentro del PDF.</li>
@@ -134,6 +142,8 @@ class HelpDialog(QDialog):
               <li>Con la herramienta <b>Seleccionar</b> puedes mover, redimensionar
                   (tiradores azules) y borrar con <b>Supr</b>.</li>
               <li>Doble clic sobre un cuadro de texto para escribir dentro.</li>
+              <li>Con la herramienta <b>Imagen</b> (o soltando un archivo de imagen sobre
+                  la ventana) puedes colocar fotos, firmas o logotipos encima del PDF.</li>
               <li>En las tablas, doble clic en una celda para escribir y <b>Tab</b> para
                   pasar a la siguiente. El numero de filas y columnas se elige en la
                   barra antes de dibujarla.</li>
@@ -149,10 +159,18 @@ class HelpDialog(QDialog):
               <li>La barra lateral de miniaturas permite saltar de pagina.</li>
               <li><b>Esc</b> vuelve siempre a la herramienta Seleccionar.</li>
             </ul>
+            <h3>Plantillas</h3>
+            <p>En <b>Documento -&gt; Plantillas</b> puedes guardar lo que hayas montado
+            (membretes, tablas, sellos, logotipos) y reutilizarlo: crear un documento
+            nuevo a partir de una plantilla o aplicarla encima del PDF que tengas
+            abierto, desde la pagina en la que estes. Se deshace de una vez con
+            <b>Ctrl+Z</b>.</p>
+
             <h3>Como se guardan las anotaciones</h3>
             <p>El programa escribe anotaciones PDF estandar (cuadro, linea, texto libre,
             resaltado, tinta y poligono), asi que se ven igual en Adobe Reader, Edge o
-            Firefox. Las tablas se guardan como su rejilla mas el texto de cada celda.
+            Firefox. Las tablas se guardan como su rejilla mas el texto de cada celda, y las
+            imagenes se incrustan en la propia pagina para que se impriman siempre.
             El contenido original del documento no se modifica.</p>
             """
         )
@@ -210,6 +228,8 @@ class MainWindow(QMainWindow):
             act.triggered.connect(slot)
             return act
 
+        self.act_new = action("&Nuevo documento en blanco", self.new_document, "new",
+                              QKeySequence.New, "Crear un PDF vacio para empezar de cero")
         self.act_open = action("&Abrir...", self.open_file_dialog, "open", QKeySequence.Open,
                                "Abrir un documento PDF")
         self.act_save = action("&Guardar", self.save, "save", QKeySequence.Save,
@@ -260,6 +280,17 @@ class MainWindow(QMainWindow):
         self.act_thumbnails = action("Panel de &miniaturas", self.toggle_thumbnails,
                                      shortcut="F9", checkable=True)
 
+        self.act_page_add = action("&Anadir una pagina al final", self.add_page_end,
+                                   shortcut="Ctrl+Shift+N")
+        self.act_page_insert = action("&Insertar una pagina despues de esta",
+                                      self.insert_page_here)
+        self.act_page_duplicate = action("&Duplicar esta pagina", self.duplicate_current_page)
+        self.act_page_delete = action("&Eliminar esta pagina", self.delete_current_page)
+        self.act_page_up = action("Mover la pagina &arriba", lambda: self.move_current_page(-1),
+                                  shortcut="Ctrl+Shift+Up")
+        self.act_page_down = action("Mover la pagina aba&jo", lambda: self.move_current_page(1),
+                                    shortcut="Ctrl+Shift+Down")
+
         self.act_help = action("&Guia rapida", self.show_help, shortcut=QKeySequence.HelpContents)
         self.act_about = action(f"&Acerca de {__app_name__}", self.show_about)
         self.act_website = action("Pagina &web de easypdf.surf",
@@ -295,6 +326,7 @@ class MainWindow(QMainWindow):
 
     def _create_menus(self) -> None:
         file_menu = self.menuBar().addMenu("&Archivo")
+        file_menu.addAction(self.act_new)
         file_menu.addAction(self.act_open)
         self.recent_menu = QMenu("Abrir &reciente", self)
         file_menu.addMenu(self.recent_menu)
@@ -334,6 +366,34 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.act_thumbnails)
         view_menu.addAction(self.act_fullscreen)
 
+        doc_menu = self.menuBar().addMenu("&Documento")
+        doc_menu.addAction(self.act_page_add)
+        doc_menu.addAction(self.act_page_insert)
+        doc_menu.addAction(self.act_page_duplicate)
+        doc_menu.addAction(self.act_page_delete)
+        doc_menu.addSeparator()
+        doc_menu.addAction(self.act_page_up)
+        doc_menu.addAction(self.act_page_down)
+        doc_menu.addSeparator()
+        tamano_menu = doc_menu.addMenu("&Tamano de las paginas nuevas")
+        self.page_size_group = QActionGroup(self)
+        self.page_size_group.setExclusive(True)
+        elegido = self.settings.value("document/page_size", DEFAULT_PAGE_SIZE)
+        for nombre in PAGE_SIZES:
+            act = QAction(nombre, self)
+            act.setCheckable(True)
+            act.setChecked(nombre == elegido)
+            act.triggered.connect(lambda checked=False, n=nombre: self._set_page_size(n))
+            self.page_size_group.addAction(act)
+            tamano_menu.addAction(act)
+        self.new_page_size = str(elegido)
+
+        doc_menu.addSeparator()
+        self.templates_menu = QMenu("&Plantillas", self)
+        doc_menu.addMenu(self.templates_menu)
+        self.templates_menu.aboutToShow.connect(self._refresh_templates_menu)
+        self._refresh_templates_menu()
+
         tools_menu = self.menuBar().addMenu("&Herramientas")
         for act in self.tool_group.actions():
             tools_menu.addAction(act)
@@ -350,6 +410,7 @@ class MainWindow(QMainWindow):
         bar.setObjectName("toolbar_main")
         bar.setIconSize(QSize(22, 22))
         bar.setToolButtonStyle(Qt.ToolButtonIconOnly)
+        bar.addAction(self.act_new)
         bar.addAction(self.act_open)
         bar.addAction(self.act_save)
         bar.addAction(self.act_print)
@@ -758,6 +819,240 @@ class MainWindow(QMainWindow):
             )
 
     # ------------------------------------------------------------------ archivos
+    def _set_page_size(self, nombre: str) -> None:
+        self.new_page_size = nombre
+        self.settings.set_value("document/page_size", nombre)
+
+    def new_document(self) -> None:
+        """Crea un PDF vacio y lo abre."""
+        if not self._confirm_discard():
+            return
+        anterior = self.view.document
+        self.view.set_document(PdfDocument.blank(1, self.new_page_size))
+        if anterior is not None:
+            anterior.close()
+        self._modified = False
+        self.view.undo_stack.setClean()
+        self._build_thumbnails()
+        self._update_title()
+        self._update_actions()
+        self.statusBar().showMessage(
+            "Documento nuevo. Anade paginas desde el menu Documento y guardalo con Ctrl+S",
+            6000,
+        )
+        self.documentChanged.emit()
+
+    def add_page_end(self) -> None:
+        if self.view.has_document():
+            self.view.add_page(None, self.new_page_size)
+            self._after_page_change(self.view.page_count - 1)
+
+    def insert_page_here(self) -> None:
+        if self.view.has_document():
+            destino = self.view.current_page + 1
+            self.view.add_page(destino, self.new_page_size)
+            self._after_page_change(destino)
+
+    def duplicate_current_page(self) -> None:
+        if self.view.has_document():
+            actual = self.view.current_page
+            self.view.duplicate_page(actual)
+            self._after_page_change(actual + 1)
+
+    def delete_current_page(self) -> None:
+        if not self.view.has_document():
+            return
+        if self.view.page_count <= 1:
+            QMessageBox.information(
+                self, __app_name__, "El documento no puede quedarse sin paginas."
+            )
+            return
+        actual = self.view.current_page
+        anotaciones = len(self.view.items_on_page(actual))
+        aviso = f"Eliminar la pagina {actual + 1} de {self.view.page_count}?"
+        if anotaciones:
+            aviso += f"\n\nSe borraran tambien sus {anotaciones} anotaciones."
+        aviso += "\n\nSe puede deshacer con Ctrl+Z."
+        if QMessageBox.question(self, __app_name__, aviso) != QMessageBox.Yes:
+            return
+        self.view.delete_page(actual)
+        self._after_page_change(min(actual, self.view.page_count - 1))
+
+    def move_current_page(self, delta: int) -> None:
+        if not self.view.has_document():
+            return
+        actual = self.view.current_page
+        destino = actual + delta
+        if 0 <= destino < self.view.page_count:
+            self.view.move_page(actual, destino)
+            self._after_page_change(destino)
+
+    def _after_page_change(self, pagina: int) -> None:
+        """Rehace las miniaturas y coloca la vista en la pagina indicada."""
+        self._build_thumbnails()
+        self.view.go_to_page(max(0, min(pagina, self.view.page_count - 1)))
+        self._update_actions()
+        self._update_title()
+
+    # ------------------------------------------------------------------ plantillas
+    def templates_dir(self) -> str:
+        """Carpeta donde se guardan las plantillas del usuario."""
+        from PySide6.QtCore import QStandardPaths
+
+        base = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+        if not base:  # pragma: no cover - sistemas raros
+            base = os.path.join(os.path.expanduser("~"), ".easypdf")
+        return os.path.join(base, "plantillas")
+
+    def _refresh_templates_menu(self) -> None:
+        menu = self.templates_menu
+        menu.clear()
+        guardar = QAction("&Guardar esto como plantilla...", self)
+        guardar.setStatusTip("Guardar las anotaciones actuales para reutilizarlas")
+        guardar.triggered.connect(self.save_as_template)
+        guardar.setEnabled(self.view.has_document())
+        menu.addAction(guardar)
+        menu.addSeparator()
+
+        plantillas = list_templates(self.templates_dir())
+        if not plantillas:
+            vacio = QAction("(todavia no hay plantillas guardadas)", self)
+            vacio.setEnabled(False)
+            menu.addAction(vacio)
+        else:
+            nuevo = menu.addMenu("&Nuevo documento desde plantilla")
+            aplicar = menu.addMenu("&Aplicar al documento de ahora")
+            aplicar.setEnabled(self.view.has_document())
+            for plantilla in plantillas:
+                detalle = f"{plantilla.annotations} anotaciones"
+                if plantilla.pages:
+                    detalle = f"{plantilla.pages} paginas, " + detalle
+                act = QAction(f"{plantilla.name}  ({detalle})", self)
+                act.triggered.connect(
+                    lambda checked=False, p=plantilla.path: self.new_from_template(p)
+                )
+                nuevo.addAction(act)
+
+                act2 = QAction(f"{plantilla.name}  ({detalle})", self)
+                act2.triggered.connect(
+                    lambda checked=False, p=plantilla.path: self.apply_template(p)
+                )
+                aplicar.addAction(act2)
+
+            borrar = menu.addMenu("&Eliminar una plantilla")
+            for plantilla in plantillas:
+                act = QAction(plantilla.name, self)
+                act.triggered.connect(
+                    lambda checked=False, p=plantilla: self.delete_template(p)
+                )
+                borrar.addAction(act)
+
+        menu.addSeparator()
+        carpeta = QAction("Abrir la &carpeta de plantillas", self)
+        carpeta.triggered.connect(
+            lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(self._ensure_templates_dir()))
+        )
+        menu.addAction(carpeta)
+
+    def _ensure_templates_dir(self) -> str:
+        ruta = self.templates_dir()
+        os.makedirs(ruta, exist_ok=True)
+        return ruta
+
+    def save_as_template(self) -> bool:
+        """Guarda las anotaciones actuales como plantilla reutilizable."""
+        if not self.view.has_document():
+            return False
+        anotaciones = list(self.view.annotations())
+        if not anotaciones:
+            QMessageBox.information(
+                self,
+                __app_name__,
+                "Todavia no hay nada que guardar: anade cuadros, textos, tablas o "
+                "imagenes y vuelve a intentarlo.",
+            )
+            return False
+        propuesto = os.path.splitext(self.view.document.name)[0]
+        nombre, ok = QInputDialog.getText(
+            self, "Guardar como plantilla", "Nombre de la plantilla:", text=propuesto
+        )
+        if not ok or not nombre.strip():
+            return False
+        try:
+            ruta = save_template(
+                self._ensure_templates_dir(),
+                nombre,
+                anotaciones,
+                self.view.document.page_sizes(),
+            )
+        except TemplateError as exc:
+            QMessageBox.critical(self, __app_name__, str(exc))
+            return False
+        self.statusBar().showMessage(
+            f"Plantilla guardada: {os.path.basename(ruta)}", 5000
+        )
+        return True
+
+    def apply_template(self, path: str) -> bool:
+        """Coloca las anotaciones de una plantilla sobre el documento abierto."""
+        if not self.view.has_document():
+            return False
+        try:
+            nombre, _paginas, anotaciones = load_template(path)
+        except TemplateError as exc:
+            QMessageBox.critical(self, __app_name__, str(exc))
+            return False
+        colocadas = self.view.apply_template(anotaciones)
+        self.statusBar().showMessage(
+            f"Plantilla '{nombre}': {colocadas} anotaciones colocadas desde la pagina "
+            f"{self.view.current_page + 1}",
+            6000,
+        )
+        return colocadas > 0
+
+    def new_from_template(self, path: str) -> bool:
+        """Crea un documento nuevo con las paginas y anotaciones de la plantilla."""
+        try:
+            nombre, paginas, anotaciones = load_template(path)
+        except TemplateError as exc:
+            QMessageBox.critical(self, __app_name__, str(exc))
+            return False
+        if not self._confirm_discard():
+            return False
+        anterior = self.view.document
+        tamano = paginas[0] if paginas else self.new_page_size
+        documento = PdfDocument.blank(1, tamano, title=f"{nombre}.pdf")
+        for ancho, alto in paginas[1:]:
+            documento.add_blank_page(size=(ancho, alto))
+        self.view.set_document(documento)
+        if anterior is not None:
+            anterior.close()
+        self.view.apply_template(anotaciones, first_page=0)
+        self._modified = False
+        self.view.undo_stack.setClean()
+        self._build_thumbnails()
+        self._update_title()
+        self._update_actions()
+        self.statusBar().showMessage(f"Documento nuevo desde la plantilla '{nombre}'", 6000)
+        self.documentChanged.emit()
+        return True
+
+    def delete_template(self, plantilla) -> bool:
+        from ..templates import delete_template as borrar
+
+        respuesta = QMessageBox.question(
+            self, __app_name__, f"Eliminar la plantilla '{plantilla.name}'?"
+        )
+        if respuesta != QMessageBox.Yes:
+            return False
+        try:
+            borrar(plantilla.path)
+        except TemplateError as exc:
+            QMessageBox.critical(self, __app_name__, str(exc))
+            return False
+        self.statusBar().showMessage(f"Plantilla eliminada: {plantilla.name}", 4000)
+        return True
+
     def open_file_dialog(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
             self,
@@ -1064,13 +1359,16 @@ class MainWindow(QMainWindow):
             self.act_close, self.act_find, self.act_find_next, self.act_find_prev,
             self.act_zoom_in, self.act_zoom_out, self.act_zoom_reset,
             self.act_fit_width, self.act_fit_page, self.act_prev_page,
-            self.act_next_page, self.act_goto,
+            self.act_next_page, self.act_goto, self.act_page_add,
+            self.act_page_insert, self.act_page_duplicate, self.act_page_up,
+            self.act_page_down,
         ):
             act.setEnabled(has_doc)
         for act in self.tool_group.actions():
             act.setEnabled(has_doc)
         editando = self.view.is_editing_text
         self.act_delete.setEnabled(bool(self.view.selected_items()) and not editando)
+        self.act_page_delete.setEnabled(has_doc and self.view.page_count > 1)
         self.act_select_all.setEnabled(has_doc and not editando)
         count = self.view.annotation_count()
         self.page_spin.setEnabled(has_doc)

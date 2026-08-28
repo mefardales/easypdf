@@ -66,7 +66,9 @@ Tambien estan todos en la carpeta [`build/`](build/) y en la
 | | |
 |---|---|
 | **Leer** | Desplazamiento continuo, miniaturas de paginas, zoom, ajustar al ancho o a la pagina, busqueda de texto (`Ctrl+F`), documentos protegidos con contrasena. |
-| **Anotar** | Cuadros, resaltado, lineas, flechas, cuadros de texto, dibujo a mano alzada y **tablas** con celdas editables. Tipo de letra sans, serif o monoespaciada, negrita, cursiva y alineacion. Se mueven, se redimensionan, se cambian de color y se borran. Deshacer y rehacer ilimitados. |
+| **Crear** | Documentos en blanco (`Ctrl+N`), anadir, duplicar, mover y eliminar paginas, en A4, Carta, A5, A3 u Oficio, en vertical u horizontal. |
+| **Anotar** | Cuadros, resaltado, lineas, flechas, cuadros de texto, dibujo a mano alzada, **tablas** con celdas editables e **imagenes** (arrastralas sobre la ventana). Tipo de letra sans, serif o monoespaciada, negrita, cursiva y alineacion. Se mueven, se redimensionan, se cambian de color y se borran. Deshacer y rehacer ilimitados. |
+| **Reutilizar** | Guarda membretes, tablas o sellos como **plantillas** y crealos de nuevo en otro documento con un clic. |
 | **Imprimir** | Dialogo de impresion del sistema, vista previa, rango de paginas. Lo que se imprime incluye las anotaciones. |
 | **Guardar** | Las anotaciones se escriben como **anotaciones PDF estandar**: se ven igual en Adobe Reader, Edge o Firefox, y el contenido original del documento no se toca. |
 
@@ -89,7 +91,8 @@ Todo con una interfaz en espanol, sin cuentas, sin publicidad y sin conexion a i
 | Zoom | `Ctrl+rueda`, `Ctrl++`, `Ctrl+-`, `Ctrl+0` |
 | Ajustar al ancho / a la pagina | `Ctrl+1` / `Ctrl+2` |
 | Ir a la pagina | `Ctrl+G` |
-| Herramientas | `S` seleccionar, `H` mover, `R` cuadro, `M` resaltar, `L` linea, `F` flecha, `T` texto, `D` dibujo, `A` tabla |
+| Nuevo documento / Anadir pagina | `Ctrl+N` / `Ctrl+Shift+N` |
+| Herramientas | `S` seleccionar, `H` mover, `R` cuadro, `M` resaltar, `L` linea, `F` flecha, `T` texto, `D` dibujo, `A` tabla, `I` imagen |
 | Negrita / Cursiva | `Ctrl+B` / `Ctrl+I` |
 | Cancelar / volver a seleccionar | `Esc` |
 | Borrar lo seleccionado | `Supr` |
@@ -205,6 +208,7 @@ del archivo tal y como se abrio y, al guardar, les anade las anotaciones actuale
 | Linea y flecha | `Line` (la flecha con punta cerrada) |
 | Texto | `FreeText` (Helvetica, Times o Courier; negrita y cursiva en texto enriquecido) |
 | Tabla | `Ink` con la rejilla + un `FreeText` por celda con texto |
+| Imagen | se incrusta en el contenido de la pagina (no es una anotacion, asi se imprime siempre) |
 | Dibujo libre | `Ink` |
 
 Como se parte siempre del archivo original, guardar dos veces no duplica nada y las
@@ -221,6 +225,7 @@ impreso, incluso en paginas giradas.
 ```
 src/easypdf/
   model.py          Modelo de anotaciones (Python puro, sin Qt ni PDF)
+  templates.py      Plantillas reutilizables (JSON)
   document.py       Apertura, render, busqueda y guardado (PyMuPDF)
   annotations.py    Modelo -> anotaciones PDF reales
   printing.py       Impresion y vista previa
@@ -236,7 +241,7 @@ packaging/          PyInstaller + Inno Setup + guiones de compilacion
 build/              Ejecutables publicados (Windows y Linux)
 site/               Pagina web de descargas (GitHub Pages)
 tools/make_icon.py  Genera assets/easypdf.ico
-tests/              48 pruebas (modelo, PDF, interfaz e impresion)
+tests/              93 pruebas (modelo, PDF, plantillas, interfaz e impresion)
 ```
 
 ## Desarrollo
@@ -254,8 +259,8 @@ Las contribuciones son bienvenidas: lee [CONTRIBUTING.md](CONTRIBUTING.md).
 - [ ] Girar paginas y guardar el giro
 - [ ] Seleccionar y copiar texto del documento
 - [ ] Resaltado ajustado a las lineas de texto seleccionadas
-- [ ] Sellos y firma con imagen
-- [ ] Unir, separar y reordenar paginas
+- [x] Sellos y firma con imagen
+- [ ] Unir varios PDF en uno
 - [ ] Interfaz en ingles
 
 ## Licencia

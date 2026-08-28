@@ -102,3 +102,65 @@ def test_archivo_invalido(tmp_path):
         PdfDocument.open(str(roto))
     with pytest.raises(PdfError):
         PdfDocument.open(str(tmp_path / "no-existe.pdf"))
+
+
+def test_documento_en_blanco():
+    doc = PdfDocument.blank(3, "Carta")
+    assert doc.page_count == 3
+    assert [round(v) for v in doc.page_size(0)] == [612, 792]
+    assert doc.name == "Documento nuevo.pdf"
+    assert doc.path is None
+    doc.close()
+
+
+def test_anadir_duplicar_y_borrar_paginas(sample_pdf_bytes):
+    doc = PdfDocument(sample_pdf_bytes)
+    assert doc.page_count == 3
+    assert doc.add_blank_page(1) == 1
+    assert doc.page_count == 4
+    assert "Pagina" not in doc.page_text(1)          # la nueva esta en blanco
+    assert doc.duplicate_page(0) == 1
+    assert doc.page_count == 5
+    assert doc.page_text(0) == doc.page_text(1)
+    doc.delete_page(1)
+    assert doc.page_count == 4
+    doc.close()
+
+
+def test_no_se_puede_borrar_la_ultima_pagina():
+    doc = PdfDocument.blank(1)
+    with pytest.raises(PdfError):
+        doc.delete_page(0)
+    doc.close()
+
+
+def test_extraer_y_devolver_una_pagina(sample_pdf_bytes):
+    doc = PdfDocument(sample_pdf_bytes)
+    datos = doc.extract_page(1)
+    doc.delete_page(1)
+    assert doc.page_count == 2
+    assert "Pagina 2" not in doc.page_text(1)
+    doc.insert_page_bytes(datos, 1)
+    assert doc.page_count == 3
+    assert "Pagina 2" in doc.page_text(1)
+    doc.close()
+
+
+def test_mover_una_pagina(sample_pdf_bytes):
+    doc = PdfDocument(sample_pdf_bytes)
+    doc.move_page(0, 2)
+    assert "Pagina 1" in doc.page_text(2)
+    doc.move_page(2, 0)
+    assert "Pagina 1" in doc.page_text(0)
+    doc.close()
+
+
+def test_las_paginas_nuevas_se_guardan(tmp_path):
+    doc = PdfDocument.blank(1)
+    doc.add_blank_page()
+    destino = tmp_path / "nuevo.pdf"
+    doc.save_as(str(destino), [Annotation(kind=Kind.RECT, page=1, rect=(50, 50, 200, 150))])
+    guardado = pymupdf.open(str(destino))
+    assert guardado.page_count == 2
+    assert len(list(guardado[1].annots())) == 1
+    doc.close()
