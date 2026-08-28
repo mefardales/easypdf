@@ -142,61 +142,6 @@ def test_rotate_annotation_no_toca_nada_si_el_giro_es_cero():
 
 
 # --------------------------------------------------------------------------
-# Goma
-# --------------------------------------------------------------------------
-
-def test_la_goma_parte_el_trazo_en_dos():
-    from easypdf.model import erase_strokes
-
-    trazo = [[(0.0, 0.0), (10.0, 0.0), (20.0, 0.0), (30.0, 0.0), (40.0, 0.0)]]
-    assert erase_strokes(trazo, (20.0, 0.0), 6.0) == [
-        [(0.0, 0.0), (10.0, 0.0)],
-        [(30.0, 0.0), (40.0, 0.0)],
-    ]
-
-
-def test_la_goma_en_un_extremo_solo_acorta():
-    from easypdf.model import erase_strokes
-
-    trazo = [[(0.0, 0.0), (10.0, 0.0), (20.0, 0.0), (30.0, 0.0)]]
-    assert erase_strokes(trazo, (0.0, 0.0), 6.0) == [[(10.0, 0.0), (20.0, 0.0), (30.0, 0.0)]]
-
-
-def test_una_goma_que_lo_cubre_todo_no_deja_nada():
-    from easypdf.model import erase_strokes
-
-    trazo = [[(0.0, 0.0), (10.0, 0.0), (20.0, 0.0)]]
-    assert erase_strokes(trazo, (10.0, 0.0), 100.0) == []
-
-
-def test_la_goma_lejos_no_toca_el_trazo():
-    from easypdf.model import erase_strokes
-
-    trazo = [[(0.0, 0.0), (10.0, 0.0), (20.0, 0.0)]]
-    assert erase_strokes(trazo, (500.0, 500.0), 6.0) == trazo
-
-
-def test_los_restos_de_un_solo_punto_se_descartan():
-    """Un tramo de un punto no se dibuja, asi que no se conserva."""
-    from easypdf.model import erase_strokes
-
-    trazo = [[(0.0, 0.0), (10.0, 0.0), (20.0, 0.0)]]
-    # se borra el punto del medio: a cada lado queda uno solo
-    assert erase_strokes(trazo, (10.0, 0.0), 6.0) == []
-
-
-def test_el_circulo_de_la_goma_detecta_lo_que_toca():
-    from easypdf.model import circle_touches_rect
-
-    caja = (0.0, 0.0, 10.0, 10.0)
-    assert circle_touches_rect((5.0, 5.0), 2.0, caja)      # dentro
-    assert circle_touches_rect((12.0, 5.0), 3.0, caja)     # roza el borde
-    assert not circle_touches_rect((50.0, 50.0), 3.0, caja)
-    # da igual como venga dado el rectangulo
-    assert circle_touches_rect((5.0, 5.0), 1.0, (10.0, 10.0, 0.0, 0.0))
-
-
-# --------------------------------------------------------------------------
 # Alineacion con guias
 # --------------------------------------------------------------------------
 

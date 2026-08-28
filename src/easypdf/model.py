@@ -192,43 +192,6 @@ def snap_offset(
     return (mejor_delta, mejor_guia)
 
 
-def erase_strokes(
-    strokes: list[list[Point]], centre: Point, radius: float
-) -> list[list[Point]]:
-    """Quita de unos trazos los puntos que caen bajo la goma.
-
-    Devuelve los trazos que quedan. Un trazo borrado por el medio se parte en
-    dos, igual que con una goma de verdad. Los restos de un solo punto se
-    descartan porque no se dibujan.
-    """
-    resultado: list[list[Point]] = []
-    radio2 = radius * radius
-    for stroke in strokes:
-        tramo: list[Point] = []
-        for x, y in stroke:
-            dx, dy = x - centre[0], y - centre[1]
-            if dx * dx + dy * dy <= radio2:      # este punto se borra
-                if len(tramo) >= 2:
-                    resultado.append(tramo)
-                tramo = []
-            else:
-                tramo.append((x, y))
-        if len(tramo) >= 2:
-            resultado.append(tramo)
-    return resultado
-
-
-def circle_touches_rect(centre: Point, radius: float, rect: Rect) -> bool:
-    """True si el circulo de la goma toca el rectangulo."""
-    x0, y0, x1, y1 = rect
-    x0, x1 = min(x0, x1), max(x0, x1)
-    y0, y1 = min(y0, y1), max(y0, y1)
-    cercano_x = max(x0, min(centre[0], x1))     # punto del rectangulo mas
-    cercano_y = max(y0, min(centre[1], y1))     # cercano al centro
-    dx, dy = centre[0] - cercano_x, centre[1] - cercano_y
-    return (dx * dx + dy * dy) <= radius * radius
-
-
 @dataclass
 class Annotation:
     """Una anotacion colocada encima de una pagina.

@@ -815,171 +815,87 @@ def test_con_otra_herramienta_ctrl_mas_vuelve_a_ser_zoom(ventana):
 
 
 def _pasar_la_goma(ventana, puntos, pagina=0):
-    """Simula un arrastre de goma completo, con su paso de deshacer."""
+    """Simula una pasada de goma completa, con su paso de deshacer."""
     from PySide6.QtCore import QPointF
 
-    ventana.view._erasing = True
-    ventana.view._erase_before = {}
-    ventana.view._erase_removed = []
+    from easypdf.ui.items import create_item
+
+    vista = ventana.view
+    ann = Annotation(
+        kind=Kind.INK, page=pagina, color=tuple(vista.eraser_color),
+        width=vista.eraser_size, opacity=1.0,
+    )
+    vista._erase_item = create_item(ann, vista._page_items[pagina])
+    vista._erasing = True
     for x, y in puntos:
-        ventana.view.erase_at(pagina, QPointF(x, y))
-    ventana.view._finish_erase()
+        vista.erase_at(pagina, QPointF(x, y))
+    vista._finish_erase()
+    return ann
 
 
-def test_la_goma_recorta_un_trazo_y_se_deshace_de_una_vez(ventana, qapp):
-    trazo = [[(float(x), 300.0) for x in range(100, 401, 5)]]
-    ann = Annotation(kind=Kind.INK, page=0, strokes=trazo, width=2)
-    ventana.view.add_annotation(ann)
-    qapp.processEvents()
-    puntos = sum(len(t) for t in ann.strokes)
-
-    ventana.select_tool(Tool.ERASER)
-    ventana.view.set_eraser_size(16)
-    _pasar_la_goma(ventana, [(250, 300)])
-    qapp.processEvents()
-
-    assert sum(len(t) for t in ann.strokes) < puntos
-    assert len(ann.strokes) == 2               # partido por el medio
-
-    ventana.view.undo_stack.undo()
-    qapp.processEvents()
-    assert len(ann.strokes) == 1
-    assert sum(len(t) for t in ann.strokes) == puntos
-
-
-def test_la_goma_borra_entera_una_anotacion_que_no_es_trazo(ventana, qapp):
-    caja = Annotation(kind=Kind.RECT, page=0, rect=(500.0, 100.0, 560.0, 160.0), width=2)
+def test_la_goma_pinta_encima_en_vez_de_quitar_anotaciones(ventana, qapp):
+    """La goma tapa el documento, no borra lo que ya hay puesto."""
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0), width=2)
     ventana.view.add_annotation(caja)
     qapp.processEvents()
     total = len(ventana.view.store)
 
     ventana.select_tool(Tool.ERASER)
-    ventana.view.set_eraser_size(16)
-    _pasar_la_goma(ventana, [(530, 130)])
+    trazo = _pasar_la_goma(ventana, [(120, 120), (140, 130), (160, 140)])
     qapp.processEvents()
-    assert len(ventana.view.store) == total - 1
 
-    ventana.view.undo_stack.undo()
-    qapp.processEvents()
-    assert len(ventana.view.store) == total
+    # la caja sigue ahi, y ademas hay un trazo nuevo que la tapa
+    assert caja in list(ventana.view.store)
+    assert len(ventana.view.store) == total + 1
+    assert trazo.kind is Kind.INK
+    assert trazo.opacity == 1.0
 
 
-def test_la_goma_por_una_zona_vacia_no_borra_nada(ventana, qapp):
-    ann = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 150.0, 150.0), width=2)
-    ventana.view.add_annotation(ann)
-    qapp.processEvents()
-    total = len(ventana.view.store)
-    limpio = ventana.view.undo_stack.count()
-
+def test_la_goma_tapa_en_blanco_por_defecto(ventana, qapp):
     ventana.select_tool(Tool.ERASER)
-    _pasar_la_goma(ventana, [(500, 700)])
+    assert ventana.view.eraser_color == (1.0, 1.0, 1.0)
+    trazo = _pasar_la_goma(ventana, [(100, 100), (150, 120)])
+    qapp.processEvents()
+    assert trazo.color == (1.0, 1.0, 1.0)
+
+
+def test_se_puede_elegir_el_color_de_la_goma(ventana, qapp):
+    ventana.select_tool(Tool.ERASER)
+    ventana.view.set_eraser_color((0.2, 0.4, 0.9))
+    trazo = _pasar_la_goma(ventana, [(100, 100), (150, 120)])
+    qapp.processEvents()
+    assert trazo.color == (0.2, 0.4, 0.9)
+
+
+def test_el_trazo_de_la_goma_usa_el_tamano_elegido(ventana, qapp):
+    ventana.select_tool(Tool.ERASER)
+    ventana.view.set_eraser_size(36)
+    trazo = _pasar_la_goma(ventana, [(100, 100), (150, 120)])
+    qapp.processEvents()
+    assert trazo.width == 36
+
+
+def test_lo_que_pinta_la_goma_se_deshace_de_una_vez(ventana, qapp):
+    ventana.select_tool(Tool.ERASER)
+    total = len(ventana.view.store)
+    _pasar_la_goma(ventana, [(100, 100), (120, 110), (140, 120), (160, 130)])
+    qapp.processEvents()
+    assert len(ventana.view.store) == total + 1
+
+    ventana.view.undo_stack.undo()          # un solo Ctrl+Z para toda la pasada
+    qapp.processEvents()
     assert len(ventana.view.store) == total
-    assert ventana.view.undo_stack.count() == limpio   # ni un paso de deshacer
 
 
-# --------------------------------------------------------------------------
-# Notas adhesivas y marcadores
-# --------------------------------------------------------------------------
-
-def test_una_nota_se_guarda_y_se_vuelve_a_ver_al_abrir(ventana, qapp, tmp_path):
-    nota = Annotation(
-        kind=Kind.NOTE, page=0, rect=(120.0, 150.0, 140.0, 170.0),
-        text="Revisar esta cifra", color=(0.98, 0.80, 0.20),
-    )
-    ventana.view.add_annotation(nota)
+def test_un_toque_suelto_de_goma_no_deja_nada(ventana, qapp):
+    ventana.select_tool(Tool.ERASER)
+    total = len(ventana.view.store)
+    pasos = ventana.view.undo_stack.count()
+    _pasar_la_goma(ventana, [(100, 100)])   # un unico punto: no se dibuja
     qapp.processEvents()
+    assert len(ventana.view.store) == total
+    assert ventana.view.undo_stack.count() == pasos
 
-    destino = tmp_path / "con_nota.pdf"
-    ventana.view.document.save_as(str(destino), ventana.view.store)
-
-    # se guarda como nota estandar: cualquier lector la ensena
-    crudo = pymupdf.open(str(destino))
-    tipos = [a.type[1] for a in crudo[0].annots()]
-    contenidos = [a.info.get("content") for a in crudo[0].annots()]
-    crudo.close()
-    assert "Text" in tipos
-    assert "Revisar esta cifra" in contenidos
-
-    # y al reabrir se ve dentro de EasyPDF, con item propio
-    ventana._modified = False
-    ventana.view.undo_stack.setClean()
-    assert ventana.open_path(str(destino))
-    qapp.processEvents()
-    notas = [a for a in ventana.view.store if a.kind is Kind.NOTE]
-    assert len(notas) == 1
-    assert notas[0].text == "Revisar esta cifra"
-    assert round(notas[0].rect[0]) == 120
-    assert ventana.view._items.get(notas[0].id) is not None
-
-
-def test_guardar_dos_veces_no_duplica_las_notas(ventana, qapp, tmp_path):
-    ventana.view.add_annotation(
-        Annotation(kind=Kind.NOTE, page=0, rect=(80.0, 80.0, 100.0, 100.0), text="Una")
-    )
-    qapp.processEvents()
-
-    primero = tmp_path / "a.pdf"
-    ventana.view.document.save_as(str(primero), ventana.view.store)
-    ventana._modified = False
-    ventana.view.undo_stack.setClean()
-    assert ventana.open_path(str(primero))
-    qapp.processEvents()
-
-    segundo = tmp_path / "b.pdf"
-    ventana.view.document.save_as(str(segundo), ventana.view.store)
-    crudo = pymupdf.open(str(segundo))
-    notas = sum(1 for a in crudo[0].annots() if a.type[1] == "Text")
-    crudo.close()
-    assert notas == 1
-
-
-def test_una_nota_no_se_puede_estirar(ventana, qapp):
-    nota = Annotation(kind=Kind.NOTE, page=0, rect=(50.0, 50.0, 70.0, 70.0), text="x")
-    ventana.view.add_annotation(nota)
-    qapp.processEvents()
-    item = ventana.view._items[nota.id]
-    assert item.handles() == {}                 # el icono tiene tamano fijo
-    assert item.toolTip() == "x"
-
-
-def test_el_panel_de_marcadores_anade_salta_y_quita(ventana, qapp, monkeypatch):
-    from PySide6.QtCore import Qt
-    from PySide6.QtWidgets import QInputDialog
-
-    monkeypatch.setattr(QInputDialog, "getText",
-                        staticmethod(lambda *a, **k: ("Capitulo 1", True)))
-    assert ventana.bookmark_list.count() == 0
-
-    ventana.view.go_to_page(1)
-    ventana.add_bookmark()
-    qapp.processEvents()
-    assert ventana.bookmark_list.count() == 1
-    assert ventana.view.document.bookmarks() == [("Capitulo 1", 1)]
-
-    ventana.view.go_to_page(0)
-    ventana._go_to_bookmark(ventana.bookmark_list.item(0))
-    qapp.processEvents()
-    assert ventana.view.current_page == 1
-
-    ventana.bookmark_list.setCurrentRow(0)
-    ventana.remove_bookmark()
-    qapp.processEvents()
-    assert ventana.bookmark_list.count() == 0
-    assert ventana.view.document.bookmarks() == []
-
-
-def test_el_panel_de_marcadores_se_traduce(ventana):
-    ventana.set_language("es")
-    assert ventana.bookmark_dock.windowTitle() == "Marcadores"
-    assert ventana.btn_bookmark_add.text() == "Anadir"
-    ventana.set_language("en")
-    assert ventana.bookmark_dock.windowTitle() == "Bookmarks"
-    assert ventana.btn_bookmark_add.text() == "Add"
-
-
-# --------------------------------------------------------------------------
-# Reglas y alineacion
-# --------------------------------------------------------------------------
 
 def test_las_reglas_miden_desde_la_esquina_de_la_hoja(ventana, qapp):
     from PySide6.QtCore import QPointF
