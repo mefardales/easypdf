@@ -1,0 +1,48 @@
+name: Publicar la web
+
+# Publica site/ en https://mefardales.github.io/easypdf/
+# configure-pages con enablement: true activa GitHub Pages la primera vez,
+# asi que no hay que tocar nada en los ajustes del repositorio.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    name: Desplegar la pagina
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: despliegue
+        uses: actions/deploy-pages@v4
+
+      - name: Direccion publicada
+        run: echo "Web publicada en ${{ steps.despliegue.outputs.page_url }}"
