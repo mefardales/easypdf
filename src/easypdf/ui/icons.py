@@ -298,65 +298,55 @@ def _draw_app(p: QPainter) -> None:
 
     La ola es el guino al nombre; el lapiz, a que se puede escribir encima.
     """
-    # --- Hoja con la esquina superior derecha doblada ---------------------
-    fold = 12.0
-    hoja = QPainterPath()
-    hoja.moveTo(23, 3)
-    hoja.lineTo(52 - fold, 3)
-    hoja.lineTo(52, 3 + fold)
-    hoja.lineTo(52, 49)
-    hoja.quadTo(52, 54, 47, 54)
-    hoja.lineTo(28, 54)
-    hoja.quadTo(23, 54, 23, 49)
-    hoja.closeSubpath()
     p.setPen(Qt.NoPen)
-    p.setBrush(QColor("#f4f5f7"))
+
+    # --- Hoja con la esquina superior derecha doblada ---------------------
+    doblez = 15.0
+    hoja = QPainterPath()
+    hoja.moveTo(19, 2)
+    hoja.lineTo(54 - doblez, 2)
+    hoja.lineTo(54, 2 + doblez)
+    hoja.lineTo(54, 47)
+    hoja.quadTo(54, 53, 48, 53)
+    hoja.lineTo(25, 53)
+    hoja.quadTo(19, 53, 19, 47)
+    hoja.closeSubpath()
+    p.setBrush(QColor("#f2f3f5"))
     p.drawPath(hoja)
-    p.setBrush(QColor("#f03e2f"))
+    p.setBrush(QColor("#ef3b26"))
     p.drawPolygon(
-        QPolygonF([QPointF(52 - fold, 3), QPointF(52, 3 + fold), QPointF(52, 3)])
+        QPolygonF([QPointF(54 - doblez, 2), QPointF(54, 2 + doblez), QPointF(54, 2)])
     )
 
-    # Etiqueta roja "PDF" (marca propia, no la de ningun otro programa)
-    p.setBrush(QColor("#f03e2f"))
-    p.drawRoundedRect(QRectF(27, 9, 17, 12), 3, 3)
-    fuente = QFont()
-    fuente.setPixelSize(8)
-    fuente.setBold(True)
-    p.setFont(fuente)
-    p.setPen(QColor("#ffffff"))
-    p.drawText(QRectF(27, 9, 17, 12), Qt.AlignCenter, "PDF")
-
     # Renglones del documento
-    p.setPen(Qt.NoPen)
-    p.setBrush(QColor("#c7ccd4"))
-    for y, ancho in ((28, 16), (36, 12)):
-        p.drawRoundedRect(QRectF(34, y, ancho, 4), 2, 2)
+    p.setBrush(QColor("#ccd1d9"))
+    for y, ancho in ((26, 15), (33, 12)):
+        p.drawRoundedRect(QRectF(37, y, ancho, 4.2), 2.1, 2.1)
 
-    # --- Ola --------------------------------------------------------------
-    cuerpo = QPainterPath()
-    cuerpo.moveTo(2, 46)
-    cuerpo.cubicTo(12, 40, 20, 56, 32, 52)
-    cuerpo.cubicTo(44, 48, 50, 40, 58, 44)
-    cuerpo.cubicTo(62, 52, 54, 61, 42, 61)
-    cuerpo.lineTo(14, 61)
-    cuerpo.cubicTo(4, 61, 0, 54, 2, 46)
-    cuerpo.closeSubpath()
-    p.setBrush(QColor("#1565c0"))
-    p.drawPath(cuerpo)
+    # --- Ola: masa de agua que barre la parte de abajo --------------------
+    fondo = QPainterPath()
+    fondo.moveTo(3, 42)
+    fondo.cubicTo(12, 36, 22, 54, 34, 50)
+    fondo.cubicTo(46, 46, 52, 38, 59, 43)
+    fondo.cubicTo(63, 52, 55, 62, 42, 62)
+    fondo.lineTo(15, 62)
+    fondo.cubicTo(4, 62, -1, 52, 3, 42)
+    fondo.closeSubpath()
+    p.setBrush(QColor("#0d47a1"))
+    p.drawPath(fondo)
 
-    claro = QPainterPath()
-    claro.moveTo(2, 52)
-    claro.cubicTo(14, 46, 22, 60, 34, 56)
-    claro.cubicTo(46, 52, 52, 48, 58, 50)
-    claro.cubicTo(60, 56, 53, 61, 42, 61)
-    claro.lineTo(14, 61)
-    claro.cubicTo(5, 61, 1, 57, 2, 52)
-    claro.closeSubpath()
-    p.setBrush(QColor("#29b6f6"))
-    p.drawPath(claro)
+    medio = QPainterPath()
+    medio.moveTo(3, 48)
+    medio.cubicTo(14, 42, 24, 58, 36, 54)
+    medio.cubicTo(48, 50, 53, 45, 59, 49)
+    medio.cubicTo(61, 56, 53, 62, 42, 62)
+    medio.lineTo(15, 62)
+    medio.cubicTo(5, 62, 1, 55, 3, 48)
+    medio.closeSubpath()
+    p.setBrush(QColor("#1e88e5"))
+    p.drawPath(medio)
 
-    # Cresta que se enrosca a la izquierda
+    # --- Cresta que se enrosca sobre si misma ----------------------------
     cresta = QPainterPath()
     cresta.moveTo(3, 50)
     cresta.cubicTo(-1, 28, 16, 18, 28, 26)
@@ -370,7 +360,7 @@ def _draw_app(p: QPainter) -> None:
     cresta.cubicTo(30, 28, 18, 23, 10, 30)
     cresta.cubicTo(5, 34, 4, 42, 6, 50)
     cresta.closeSubpath()
-    p.setBrush(QColor("#2196f3"))
+    p.setBrush(QColor("#29b6f6"))
     p.drawPath(cresta)
 
     # Espuma blanca en lo alto de la cresta
@@ -382,13 +372,13 @@ def _draw_app(p: QPainter) -> None:
     p.setBrush(QColor("#ffffff"))
     p.drawPath(espuma)
 
-    # Gotas
-    p.setBrush(QColor("#4fc3f7"))
-    for cx, cy, r in ((32, 25, 2.0), (38, 24, 1.3), (14, 22, 1.6)):
+    # Gotas que saltan
+    p.setBrush(QColor("#29b6f6"))
+    for cx, cy, r in ((17, 16, 2.2), (34, 21, 1.7), (35, 41, 1.5)):
         p.drawEllipse(QPointF(cx, cy), r, r)
 
     # --- Lapiz ------------------------------------------------------------
-    _pencil(p, QPointF(41, 55), -48.0, 26.0, 4.2)
+    _pencil(p, QPointF(41, 47), -45.0, 27.0, 4.4)
 
 
 _DRAWINGS: dict[str, Callable[[QPainter], None]] = {
