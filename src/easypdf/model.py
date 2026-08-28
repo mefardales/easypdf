@@ -35,6 +35,7 @@ class Kind(str, Enum):
     INK = "ink"
     TABLE = "table"
     IMAGE = "image"
+    NOTE = "note"
 
     @property
     def label(self) -> str:
@@ -47,6 +48,7 @@ class Kind(str, Enum):
             Kind.INK: "Dibujo",
             Kind.TABLE: "Tabla",
             Kind.IMAGE: "Imagen",
+            Kind.NOTE: "Nota",
         }[self]
 
 
@@ -319,6 +321,8 @@ class Annotation:
             dy = self.p2[1] - self.p1[1]
             return (dx * dx + dy * dy) < 4.0
         x0, y0, x1, y1 = self.normalized_rect()
+        if self.kind is Kind.NOTE:
+            return False      # el icono tiene tamano fijo, nunca sobra
         if self.kind is Kind.IMAGE and not self.image_data:
             return True
         if self.kind in (Kind.TEXT, Kind.TABLE, Kind.IMAGE):

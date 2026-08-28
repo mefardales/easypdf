@@ -909,6 +909,79 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
             self.paint_handles(painter)
 
 
+#: Lado del icono de una nota, en puntos PDF. Fijo: no se redimensiona.
+NOTE_SIZE = 20.0
+
+
+class NoteItem(AnnotationItemMixin, QGraphicsRectItem):
+    """Nota adhesiva: un icono fijo que guarda un texto detras."""
+
+    def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
+        super().__init__(parent)
+        self._init_common(ann)
+        self.apply_model()
+
+    def _apply_model(self) -> None:
+        x0, y0, _x1, _y1 = self.ann.normalized_rect()
+        self.setPos(x0, y0)
+        self.setRect(0, 0, NOTE_SIZE, NOTE_SIZE)
+        self.setToolTip(self.ann.text or "")
+        self.setOpacity(self.ann.opacity)
+
+    def _sync_model(self) -> None:
+        origen = self.pos()
+        self.ann.rect = (
+            origen.x(), origen.y(),
+            origen.x() + NOTE_SIZE, origen.y() + NOTE_SIZE,
+        )
+
+    def handles(self) -> dict:
+        return {}          # tamano fijo: no se estira
+
+    def boundingRect(self) -> QRectF:
+        margen = self.handle_size() + 2.0
+        return self.rect().adjusted(-margen, -margen, margen, margen)
+
+    def shape(self) -> QPainterPath:
+        path = QPainterPath()
+        path.addRect(self.rect())
+        return path
+
+    def paint(self, painter: QPainter, option, widget=None) -> None:
+        option.state &= ~QStyle.State_Selected
+        rect = self.rect()
+        color = qcolor(self.ann.color)
+        # cuerpo de la nota con la esquina doblada
+        cuerpo = QPainterPath()
+        pliegue = rect.width() * 0.34
+        cuerpo.moveTo(rect.left(), rect.top())
+        cuerpo.lineTo(rect.right(), rect.top())
+        cuerpo.lineTo(rect.right(), rect.bottom() - pliegue)
+        cuerpo.lineTo(rect.right() - pliegue, rect.bottom())
+        cuerpo.lineTo(rect.left(), rect.bottom())
+        cuerpo.closeSubpath()
+        painter.setPen(QPen(color.darker(140), rect.width() * 0.06))
+        painter.setBrush(QBrush(color))
+        painter.drawPath(cuerpo)
+        # la esquina doblada
+        doblez = QPainterPath()
+        doblez.moveTo(rect.right() - pliegue, rect.bottom())
+        doblez.lineTo(rect.right() - pliegue, rect.bottom() - pliegue)
+        doblez.lineTo(rect.right(), rect.bottom() - pliegue)
+        painter.setBrush(QBrush(color.darker(125)))
+        painter.drawPath(doblez)
+        # renglones, para que se lea como una nota escrita
+        painter.setPen(QPen(color.darker(190), rect.width() * 0.05))
+        for i in (0.34, 0.52, 0.70):
+            y = rect.top() + rect.height() * i
+            painter.drawLine(
+                QPointF(rect.left() + rect.width() * 0.18, y),
+                QPointF(rect.right() - rect.width() * 0.22, y),
+            )
+        if self.isSelected():
+            self.paint_selection(painter, rect)
+
+
 def create_item(ann: Annotation, parent: QGraphicsItem | None = None):
     """Crea el item grafico adecuado para una anotacion."""
     if ann.kind in (Kind.RECT, Kind.HIGHLIGHT):
@@ -923,10 +996,13 @@ def create_item(ann: Annotation, parent: QGraphicsItem | None = None):
         return TableItem(ann, parent)
     if ann.kind is Kind.IMAGE:
         return ImageItem(ann, parent)
+    if ann.kind is Kind.NOTE:
+        return NoteItem(ann, parent)
     raise ValueError(f"tipo de anotacion sin item grafico: {ann.kind!r}")
 
 
 __all__ = [
+    "NoteItem",
     "RectItem",
     "ImageItem",
     "TableItem",

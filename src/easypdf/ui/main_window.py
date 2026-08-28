@@ -166,6 +166,7 @@ class MainWindow(QMainWindow):
         self._create_menus()
         self._create_toolbars()
         self._create_thumbnails()
+        self._create_bookmarks()
         self._create_status_bar()
         self._connect_view()
         self._restore_settings()
@@ -276,6 +277,7 @@ class MainWindow(QMainWindow):
             Tool.INK: ("tool_ink", "ink", "D"),
             Tool.TABLE: ("tool_table", "table", "A"),
             Tool.IMAGE: ("tool_image", "image", "I"),
+            Tool.NOTE: ("tool_note", "note", "N"),
             Tool.ERASER: ("tool_eraser", "eraser", "E"),
         }
         for tool, (clave, icon_name, key) in self.tool_keys.items():
@@ -614,6 +616,86 @@ class MainWindow(QMainWindow):
         self.thumb_dock = dock
         dock.visibilityChanged.connect(self.act_thumbnails.setChecked)
 
+    def _create_bookmarks(self) -> None:
+        from PySide6.QtWidgets import (
+            QDockWidget, QHBoxLayout, QListWidget, QPushButton, QVBoxLayout, QWidget,
+        )
+
+        caja = QWidget(self)
+        columna = QVBoxLayout(caja)
+        columna.setContentsMargins(4, 4, 4, 4)
+        self.bookmark_list = QListWidget(caja)
+        self.bookmark_list.itemActivated.connect(self._go_to_bookmark)
+        self.bookmark_list.itemClicked.connect(self._go_to_bookmark)
+        columna.addWidget(self.bookmark_list)
+
+        botones = QHBoxLayout()
+        self.btn_bookmark_add = QPushButton(tr("bookmark_add"), caja)
+        self.btn_bookmark_add.clicked.connect(self.add_bookmark)
+        self.btn_bookmark_del = QPushButton(tr("bookmark_remove"), caja)
+        self.btn_bookmark_del.clicked.connect(self.remove_bookmark)
+        botones.addWidget(self.btn_bookmark_add)
+        botones.addWidget(self.btn_bookmark_del)
+        columna.addLayout(botones)
+
+        dock = QDockWidget(tr("bookmarks_dock"), self)
+        dock.setObjectName("dock_bookmarks")
+        dock.setWidget(caja)
+        dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+        self.bookmark_dock = dock
+
+    def refresh_bookmarks(self) -> None:
+        """Rehace la lista con los marcadores del documento abierto."""
+        if not hasattr(self, "bookmark_list"):
+            return
+        self.bookmark_list.clear()
+        documento = self.view.document
+        if documento is None:
+            return
+        for titulo, pagina in documento.bookmarks():
+            from PySide6.QtWidgets import QListWidgetItem
+
+            item = QListWidgetItem(tr("bookmark_entry", title=titulo, page=pagina + 1))
+            item.setData(Qt.UserRole, pagina)
+            item.setToolTip(titulo)
+            self.bookmark_list.addItem(item)
+
+    def _go_to_bookmark(self, item) -> None:
+        pagina = item.data(Qt.UserRole)
+        if pagina is not None:
+            self.view.go_to_page(int(pagina))
+
+    def add_bookmark(self) -> None:
+        """Marca la pagina actual con el nombre que elija el usuario."""
+        if not self.view.has_document():
+            return
+        pagina = self.view.current_page
+        propuesto = tr("bookmark_default", page=pagina + 1)
+        titulo, aceptado = QInputDialog.getText(
+            self, tr("bookmarks_dock"), tr("bookmark_prompt"), text=propuesto
+        )
+        if not aceptado or not titulo.strip():
+            return
+        marcadores = self.view.document.bookmarks()
+        marcadores.append((titulo.strip(), pagina))
+        marcadores.sort(key=lambda m: m[1])          # en orden de pagina
+        self.view.document.set_bookmarks(marcadores)
+        self.refresh_bookmarks()
+        self.view.notify_modified()
+
+    def remove_bookmark(self) -> None:
+        fila = self.bookmark_list.currentRow() if hasattr(self, "bookmark_list") else -1
+        if not self.view.has_document() or fila < 0:
+            return
+        marcadores = self.view.document.bookmarks()
+        if fila >= len(marcadores):
+            return
+        del marcadores[fila]
+        self.view.document.set_bookmarks(marcadores)
+        self.refresh_bookmarks()
+        self.view.notify_modified()
+
     def _create_status_bar(self) -> None:
         status = self.statusBar()
         self.page_spin = QSpinBox(self)
@@ -638,6 +720,7 @@ class MainWindow(QMainWindow):
         self.view.pageChanged.connect(self._on_page_changed)
         self.view.zoomChanged.connect(self._on_zoom_changed)
         self.view.eraserSizeChanged.connect(self._on_eraser_size)
+        self.view.noteCreated.connect(self.edit_note)
         self.view.modified.connect(self._on_modified)
         self.view.toolFinished.connect(
             lambda: self.tool_actions[Tool.SELECT].setChecked(True)
@@ -825,6 +908,7 @@ class MainWindow(QMainWindow):
         self._modified = False
         self.view.undo_stack.setClean()
         self._build_thumbnails()
+        self.refresh_bookmarks()
         self._update_title()
         self._update_actions()
         self.statusBar().showMessage(tr("status_new"), 6000)
@@ -863,6 +947,18 @@ class MainWindow(QMainWindow):
             return
         self.view.delete_page(actual)
         self._after_page_change(min(actual, self.view.page_count - 1))
+
+    def edit_note(self, item) -> None:
+        """Pide (o cambia) el texto de una nota adhesiva."""
+        texto, aceptado = QInputDialog.getMultiLineText(
+            self, tr("note_title"), tr("note_prompt"), item.ann.text or ""
+        )
+        if not aceptado:
+            return
+        item.ann.text = texto.strip()
+        item.setToolTip(item.ann.text)
+        item.update()
+        self.view.notify_modified()
 
     def zoom_or_eraser(self, delta: int) -> None:
         """Ctrl+ y Ctrl-: cambian la goma si esta activa, si no el zoom.
@@ -1040,6 +1136,7 @@ class MainWindow(QMainWindow):
         self._modified = False
         self.view.undo_stack.setClean()
         self._build_thumbnails()
+        self.refresh_bookmarks()
         self._update_title()
         self._update_actions()
         self.statusBar().showMessage(tr("template_new_done", name=nombre), 6000)
@@ -1079,6 +1176,13 @@ class MainWindow(QMainWindow):
             act.setStatusTip(tr(tip) if tip else tr(clave, app=__app_name__))
         for menu, clave in self._menu_keys.items():
             menu.setTitle(tr(clave))
+        if hasattr(self, "bookmark_dock"):
+            self.bookmark_dock.setWindowTitle(tr("bookmarks_dock"))
+            self.btn_bookmark_add.setText(tr("bookmark_add"))
+            self.btn_bookmark_del.setText(tr("bookmark_remove"))
+            self.refresh_bookmarks()
+        if hasattr(self, "thumb_dock"):
+            self.thumb_dock.setWindowTitle(tr("pages_dock"))
         for nombre, act in getattr(self, "page_size_actions", {}).items():
             act.setText(page_size_label(nombre))
         for tool, (clave, _icono, key) in self.tool_keys.items():
@@ -1175,6 +1279,7 @@ class MainWindow(QMainWindow):
         self.settings.set_last_dir(os.path.dirname(path))
         self._refresh_recent_menu(self.settings.push_recent(path))
         self._build_thumbnails()
+        self.refresh_bookmarks()
         self._update_title()
         self._update_actions()
         self.statusBar().showMessage(tr("status_opened", path=path), 5000)

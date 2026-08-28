@@ -162,6 +162,15 @@ def add_annotation(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
         _apply_common(annot, ann)
         return annot
 
+    if ann.kind is Kind.NOTE:
+        # Nota adhesiva estandar del PDF: cualquier lector ensena el icono y
+        # deja leer el texto al pulsarlo, no hace falta EasyPDF para verla.
+        x0, y0, _x1, _y1 = ann.normalized_rect()
+        annot = page.add_text_annot(_point((x0, y0), page), ann.text, icon="Note")
+        annot.set_colors(stroke=_color(ann.color))
+        _apply_common(annot, ann)
+        return annot
+
     if ann.kind is Kind.HIGHLIGHT:
         annot = page.add_highlight_annot(_rect(ann, page))
         annot.set_colors(stroke=_color(ann.color))

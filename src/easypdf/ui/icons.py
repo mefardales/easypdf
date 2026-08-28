@@ -202,6 +202,32 @@ def _draw_ink(p: QPainter) -> None:
     p.drawPath(path)
 
 
+def _draw_note(p: QPainter) -> None:
+    """Nota adhesiva amarilla con la esquina doblada."""
+    amarillo = QColor("#fbc02d")
+    cuerpo = QPainterPath()
+    cuerpo.moveTo(12, 10)
+    cuerpo.lineTo(52, 10)
+    cuerpo.lineTo(52, 40)
+    cuerpo.lineTo(38, 54)
+    cuerpo.lineTo(12, 54)
+    cuerpo.closeSubpath()
+    _pen(p, 3.5)
+    p.setBrush(QBrush(amarillo))
+    p.drawPath(cuerpo)
+    doblez = QPainterPath()
+    doblez.moveTo(38, 54)
+    doblez.lineTo(38, 40)
+    doblez.lineTo(52, 40)
+    p.setBrush(QBrush(amarillo.darker(125)))
+    p.drawPath(doblez)
+    p.setBrush(Qt.NoBrush)
+    _pen(p, 3, QColor("#6d4c41"))
+    p.drawLine(20, 22, 44, 22)
+    p.drawLine(20, 32, 44, 32)
+    p.drawLine(20, 42, 32, 42)
+
+
 def _draw_eraser(p: QPainter) -> None:
     """Goma inclinada, con la parte de borrar en rosa y el cuerpo en gris."""
     # cuerpo (la mitad que se agarra)
@@ -482,6 +508,7 @@ _DRAWINGS: dict[str, Callable[[QPainter], None]] = {
     "text": _draw_text,
     "ink": _draw_ink,
     "eraser": _draw_eraser,
+    "note": _draw_note,
     "delete": _draw_delete,
     "undo": _draw_undo,
     "redo": _draw_redo,
