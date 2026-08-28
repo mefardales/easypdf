@@ -1,8 +1,11 @@
 name: Publicar la web
 
-# Publica site/ en https://mefardales.github.io/easypdf/
-# configure-pages con enablement: true activa GitHub Pages la primera vez,
-# asi que no hay que tocar nada en los ajustes del repositorio.
+# Copia site/ a la rama gh-pages, que es lo que sirve GitHub Pages en
+# https://mefardales.github.io/easypdf/
+#
+# Se usa una rama en vez de las acciones oficiales de Pages porque activar
+# Pages por API necesita permisos de administrador que el token de Actions
+# no tiene.
 
 on:
   push:
@@ -13,9 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -23,26 +24,36 @@ concurrency:
 
 jobs:
   publicar:
-    name: Desplegar la pagina
+    name: Actualizar la rama gh-pages
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment:
-      name: github-pages
-      url: ${{ steps.despliegue.outputs.page_url }}
 
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/configure-pages@v5
         with:
-          enablement: true
+          fetch-depth: 0
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
+      - name: Copiar site/ a gh-pages
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - id: despliegue
-        uses: actions/deploy-pages@v4
+          rm -rf /tmp/web
+          cp -r site /tmp/web
+          touch /tmp/web/.nojekyll   # sin procesado Jekyll: es HTML plano
 
-      - name: Direccion publicada
-        run: echo "Web publicada en ${{ steps.despliegue.outputs.page_url }}"
+          git fetch origin gh-pages || true
+          git checkout -B gh-pages "origin/gh-pages" 2>/dev/null || git checkout --orphan gh-pages
+          git rm -rq --cached . >/dev/null 2>&1 || true
+          find . -maxdepth 1 -not -name .git -not -name . -exec rm -rf {} +
+          cp -r /tmp/web/. .
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "La web no ha cambiado"
+            exit 0
+          fi
+          git commit -m "Actualizar la web desde ${GITHUB_SHA::7}"
+          git push origin gh-pages
+          echo "Publicado en https://mefardales.github.io/easypdf/"
