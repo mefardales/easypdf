@@ -15,6 +15,7 @@ from PySide6.QtGui import (
     QPainter,
     QPainterPath,
     QPen,
+    QPixmap,
     QPolygonF,
 )
 from PySide6.QtWidgets import (
@@ -578,6 +579,105 @@ class TextItem(AnnotationItemMixin, QGraphicsTextItem):
             painter.drawRect(rect)
 
 
+class ImageItem(AnnotationItemMixin, QGraphicsRectItem):
+    """Imagen colocada encima de la pagina."""
+
+    def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
+        super().__init__(parent)
+        self._pixmap = QPixmap()
+        self._init_common(ann)
+        self.apply_model()
+
+    # -- modelo ----------------------------------------------------------
+    def _apply_model(self) -> None:
+        ann = self.ann
+        x0, y0, x1, y1 = ann.normalized_rect()
+        self.setPos(x0, y0)
+        self.setRect(0, 0, max(MIN_SIZE, x1 - x0), max(MIN_SIZE, y1 - y0))
+        if self._pixmap.isNull() and ann.image_data:
+            pixmap = QPixmap()
+            pixmap.loadFromData(ann.image_data)
+            self._pixmap = pixmap
+        self.setOpacity(ann.opacity)
+
+    def _sync_model(self) -> None:
+        rect = self.rect()
+        origin = self.pos()
+        self.ann.rect = (
+            origin.x() + rect.x(),
+            origin.y() + rect.y(),
+            origin.x() + rect.x() + rect.width(),
+            origin.y() + rect.y() + rect.height(),
+        )
+
+    @property
+    def aspect(self) -> float:
+        """Proporcion ancho/alto de la imagen original."""
+        if self._pixmap.isNull() or self._pixmap.height() == 0:
+            return 1.0
+        return self._pixmap.width() / self._pixmap.height()
+
+    # -- geometria -------------------------------------------------------
+    def handles(self) -> dict[str, QPointF]:
+        r = self.rect()
+        return {
+            "tl": r.topLeft(), "tr": r.topRight(),
+            "bl": r.bottomLeft(), "br": r.bottomRight(),
+            "t": QPointF(r.center().x(), r.top()),
+            "b": QPointF(r.center().x(), r.bottom()),
+            "l": QPointF(r.left(), r.center().y()),
+            "r": QPointF(r.right(), r.center().y()),
+        }
+
+    def resize_to(self, handle: str, pos: QPointF) -> None:
+        r = QRectF(self.rect())
+        if "l" in handle:
+            r.setLeft(pos.x())
+        if "r" in handle:
+            r.setRight(pos.x())
+        if "t" in handle:
+            r.setTop(pos.y())
+        if "b" in handle:
+            r.setBottom(pos.y())
+        r = r.normalized()
+        if r.width() < MIN_SIZE:
+            r.setWidth(MIN_SIZE)
+        if r.height() < MIN_SIZE:
+            r.setHeight(MIN_SIZE)
+        # Las esquinas conservan la proporcion; los lados estiran libremente.
+        if handle in ("tl", "tr", "bl", "br") and self.aspect > 0:
+            alto = r.width() / self.aspect
+            if "t" in handle:
+                r.setTop(r.bottom() - alto)
+            else:
+                r.setHeight(alto)
+        self.setPos(self.pos() + r.topLeft())
+        self.setRect(0, 0, r.width(), r.height())
+
+    def boundingRect(self) -> QRectF:
+        margen = self.handle_size() + 2.0
+        return self.rect().adjusted(-margen, -margen, margen, margen)
+
+    def shape(self) -> QPainterPath:
+        path = QPainterPath()
+        path.addRect(self.rect())
+        return path
+
+    def paint(self, painter: QPainter, option, widget=None) -> None:
+        option.state &= ~QStyle.State_Selected
+        rect = self.rect()
+        if self._pixmap.isNull():
+            painter.setPen(QPen(QColor(0, 0, 0, 90)))
+            painter.setBrush(QBrush(QColor(0, 0, 0, 20)))
+            painter.drawRect(rect)
+        else:
+            painter.setRenderHint(QPainter.SmoothPixmapTransform, True)
+            painter.drawPixmap(rect, self._pixmap, QRectF(self._pixmap.rect()))
+        if self.isSelected():
+            self.paint_selection(painter, rect)
+            self.paint_handles(painter)
+
+
 class TableItem(AnnotationItemMixin, QGraphicsRectItem):
     """Tabla: rejilla de filas y columnas con texto en las celdas."""
 
@@ -794,11 +894,14 @@ def create_item(ann: Annotation, parent: QGraphicsItem | None = None):
         return TextItem(ann, parent)
     if ann.kind is Kind.TABLE:
         return TableItem(ann, parent)
+    if ann.kind is Kind.IMAGE:
+        return ImageItem(ann, parent)
     raise ValueError(f"tipo de anotacion sin item grafico: {ann.kind!r}")
 
 
 __all__ = [
     "RectItem",
+    "ImageItem",
     "TableItem",
     "annotation_font",
     "LineItem",

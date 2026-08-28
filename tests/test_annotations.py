@@ -179,3 +179,23 @@ def test_la_alineacion_se_guarda(documento):
     )])
     annot = list(page.annots())[0]
     assert annot.info.get("content") == "hola"
+
+
+def test_la_imagen_se_inserta_en_la_pagina(documento, sample_image_bytes):
+    doc, page = documento
+    assert not page.get_images()
+    apply_annotations(doc, [Annotation(
+        kind=Kind.IMAGE, page=0, rect=(50, 50, 250, 170),
+        image_data=sample_image_bytes, image_name="logo.png",
+    )])
+    imagenes = page.get_images()
+    assert len(imagenes) == 1
+    # la imagen no es una anotacion: se dibuja en la pagina y se imprime siempre
+    assert list(page.annots()) == []
+
+
+def test_una_imagen_sin_datos_se_ignora(documento):
+    doc, _page = documento
+    ann = Annotation(kind=Kind.IMAGE, page=0, rect=(50, 50, 250, 170))
+    assert ann.is_empty()
+    assert apply_annotations(doc, [ann]) == 0

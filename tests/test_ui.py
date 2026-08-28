@@ -382,3 +382,39 @@ def test_cerrar_la_busqueda_quita_el_resaltado(ventana):
     assert ventana.view.hit_count == 3
     ventana.search_edit.setText("")
     assert ventana.view.hit_count == 0
+
+
+def test_colocar_una_imagen_arrastrandola_al_documento(ventana, sample_image, tmp_path):
+    assert ventana.insert_image_from_file(sample_image)
+    imagen = ventana.view._annotation_items()[0]
+    assert imagen.ann.kind is Kind.IMAGE
+    assert imagen.ann.image_name == "logo.png"
+    x0, y0, x1, y1 = imagen.ann.normalized_rect()
+    assert (x1 - x0) / (y1 - y0) == pytest.approx(200 / 120, rel=0.02)
+
+    destino = tmp_path / "con-imagen.pdf"
+    ventana.view.document.save_as(str(destino), ventana.view.annotations())
+    assert len(pymupdf.open(str(destino))[0].get_images()) == 1
+
+
+def test_la_imagen_conserva_la_proporcion_al_colocarla(ventana, sample_image_bytes):
+    ventana.view.style_defaults["image"] = ("logo.png", sample_image_bytes)
+    ventana.view.set_tool(Tool.IMAGE)
+    _arrastrar(ventana, (200, 300), (500, 600))
+    ann = ventana.view.annotations()[0]
+    x0, y0, x1, y1 = ann.normalized_rect()
+    assert (x1 - x0) / (y1 - y0) == pytest.approx(200 / 120, rel=0.02)
+
+
+def test_redimensionar_una_imagen_por_la_esquina_mantiene_la_proporcion(
+    ventana, sample_image
+):
+    ventana.insert_image_from_file(sample_image)
+    imagen = ventana.view._annotation_items()[0]
+    imagen.setSelected(True)
+    from PySide6.QtCore import QPointF
+
+    imagen.resize_to("br", QPointF(300, 500))
+    assert imagen.rect().width() / imagen.rect().height() == pytest.approx(
+        200 / 120, rel=0.02
+    )

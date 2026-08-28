@@ -34,6 +34,7 @@ class Kind(str, Enum):
     TEXT = "text"
     INK = "ink"
     TABLE = "table"
+    IMAGE = "image"
 
     @property
     def label(self) -> str:
@@ -45,6 +46,7 @@ class Kind(str, Enum):
             Kind.TEXT: "Texto",
             Kind.INK: "Dibujo",
             Kind.TABLE: "Tabla",
+            Kind.IMAGE: "Imagen",
         }[self]
 
 
@@ -147,6 +149,8 @@ class Annotation:
     rows: int = 3
     cols: int = 3
     cells: list[str] = field(default_factory=list)
+    image_data: bytes = b""
+    image_name: str = ""
     color: RGB = (0.85, 0.10, 0.10)
     fill: RGB | None = None
     width: float = 1.5
@@ -233,7 +237,9 @@ class Annotation:
             dy = self.p2[1] - self.p1[1]
             return (dx * dx + dy * dy) < 4.0
         x0, y0, x1, y1 = self.normalized_rect()
-        if self.kind in (Kind.TEXT, Kind.TABLE):
+        if self.kind is Kind.IMAGE and not self.image_data:
+            return True
+        if self.kind in (Kind.TEXT, Kind.TABLE, Kind.IMAGE):
             return (x1 - x0) < 2.0 or (y1 - y0) < 2.0
         return (x1 - x0) < 2.0 and (y1 - y0) < 2.0
 

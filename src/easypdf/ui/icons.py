@@ -293,6 +293,21 @@ def _pencil(p: QPainter, tip: QPointF, angle_deg: float, length: float, half: fl
     band(length * 0.86, length, QColor("#ff5a4d"))         # goma
 
 
+def _draw_image(p: QPainter) -> None:
+    _pen(p, 4)
+    p.drawRect(QRectF(8, 14, 48, 36))
+    p.setBrush(_ink_color())
+    p.drawEllipse(QPointF(21, 25), 4, 4)
+    p.setBrush(Qt.NoBrush)
+    path = QPainterPath()
+    path.moveTo(10, 48)
+    path.lineTo(24, 34)
+    path.lineTo(33, 43)
+    path.lineTo(42, 30)
+    path.lineTo(54, 48)
+    p.drawPath(path)
+
+
 def _draw_table(p: QPainter) -> None:
     _pen(p, 4)
     p.drawRect(QRectF(8, 12, 48, 40))
@@ -445,6 +460,7 @@ _DRAWINGS: dict[str, Callable[[QPainter], None]] = {
     "search": _draw_search,
     "prev": _draw_prev,
     "next": _draw_next,
+    "image": _draw_image,
     "table": _draw_table,
     "bold": _draw_bold,
     "italic": _draw_italic,

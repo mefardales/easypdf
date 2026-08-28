@@ -281,6 +281,7 @@ class MainWindow(QMainWindow):
             (Tool.TEXT, "&Texto", "text", "T"),
             (Tool.INK, "&Dibujo libre", "ink", "D"),
             (Tool.TABLE, "Ta&bla", "table", "A"),
+            (Tool.IMAGE, "&Imagen", "image", "I"),
         ]
         for tool, label, icon_name, key in tools:
             act = QAction(icons.icon(icon_name), label, self)
@@ -696,7 +697,41 @@ class MainWindow(QMainWindow):
         self.settings.set_table_cols(value)
         self.view.apply_style_to_selection(cols=int(value))
 
+    IMAGE_FILTER = (
+        "Imagenes (*.png *.jpg *.jpeg *.bmp *.gif *.tif *.tiff *.webp);;"
+        "Todos los archivos (*)"
+    )
+
+    def choose_image(self) -> bool:
+        """Pide una imagen y la deja lista para colocarla. False si se cancela."""
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Elegir imagen",
+            self.settings.last_dir() or os.path.expanduser("~"),
+            self.IMAGE_FILTER,
+        )
+        if not path:
+            return False
+        try:
+            with open(path, "rb") as fh:
+                datos = fh.read()
+        except OSError as exc:
+            QMessageBox.warning(self, __app_name__, f"No se pudo leer la imagen:\n{exc}")
+            return False
+        if QPixmap.fromImage(QImage.fromData(datos)).isNull():
+            QMessageBox.warning(
+                self, __app_name__, "Ese archivo no parece una imagen que se pueda abrir."
+            )
+            return False
+        self.view.style_defaults["image"] = (os.path.basename(path), datos)
+        self.settings.set_last_dir(os.path.dirname(path))
+        return True
+
     def select_tool(self, tool: Tool) -> None:
+        if tool is Tool.IMAGE and not self.choose_image():
+            self.tool_actions[Tool.SELECT].setChecked(True)
+            self.view.set_tool(Tool.SELECT)
+            return
         self.view.set_tool(tool)
         self.tool_actions[tool].setChecked(True)
         if tool is Tool.HIGHLIGHT:
@@ -706,6 +741,13 @@ class MainWindow(QMainWindow):
         elif tool is Tool.TEXT:
             self.statusBar().showMessage(
                 "Arrastra para crear el cuadro y escribe; Esc para terminar", 5000
+            )
+        elif tool is Tool.IMAGE:
+            nombre = (self.view.style_defaults.get("image") or ("", b""))[0]
+            self.statusBar().showMessage(
+                f"Arrastra sobre la pagina para colocar {nombre}, o haz un clic "
+                "para ponerla a un tamano comodo",
+                6000,
             )
         elif tool is Tool.TABLE:
             self.statusBar().showMessage(
@@ -1067,20 +1109,55 @@ class MainWindow(QMainWindow):
         event.accept()
 
     # ------------------------------------------------------------------ arrastrar
-    def dragEnterEvent(self, event) -> None:
-        if event.mimeData().hasUrls():
-            for url in event.mimeData().urls():
-                if url.isLocalFile() and url.toLocalFile().lower().endswith(".pdf"):
-                    event.acceptProposedAction()
-                    return
-        event.ignore()
+    IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff", ".webp")
 
-    def dropEvent(self, event) -> None:
-        for url in event.mimeData().urls():
-            if url.isLocalFile() and url.toLocalFile().lower().endswith(".pdf"):
-                self.open_path(url.toLocalFile())
+    def _dropped_files(self, event) -> list[str]:
+        if not event.mimeData().hasUrls():
+            return []
+        return [u.toLocalFile() for u in event.mimeData().urls() if u.isLocalFile()]
+
+    def dragEnterEvent(self, event) -> None:
+        for path in self._dropped_files(event):
+            bajo = path.lower()
+            if bajo.endswith(".pdf") or bajo.endswith(self.IMAGE_SUFFIXES):
                 event.acceptProposedAction()
                 return
+        event.ignore()
+
+    dragMoveEvent = dragEnterEvent
+
+    def dropEvent(self, event) -> None:
+        for path in self._dropped_files(event):
+            bajo = path.lower()
+            if bajo.endswith(".pdf"):
+                self.open_path(path)
+                event.acceptProposedAction()
+                return
+            if bajo.endswith(self.IMAGE_SUFFIXES) and self.view.has_document():
+                self.insert_image_from_file(path, event.position().toPoint())
+                event.acceptProposedAction()
+                return
+
+    def insert_image_from_file(self, path: str, window_pos=None) -> bool:
+        """Coloca una imagen del disco donde se haya soltado."""
+        try:
+            with open(path, "rb") as fh:
+                datos = fh.read()
+        except OSError as exc:
+            QMessageBox.warning(self, __app_name__, f"No se pudo leer la imagen:\n{exc}")
+            return False
+        vista = self.view
+        if window_pos is not None:
+            punto = vista.viewport().mapFrom(self, window_pos)
+            escena = vista.mapToScene(punto)
+        else:
+            escena = vista.mapToScene(vista.viewport().rect().center())
+        pagina = vista.nearest_page(escena)
+        if pagina is None:
+            return False
+        vista.place_image(os.path.basename(path), datos, pagina.index, pagina.mapFromScene(escena))
+        self.statusBar().showMessage(f"Imagen colocada: {os.path.basename(path)}", 4000)
+        return True
 
     # ------------------------------------------------------------------ ayuda
     def show_about(self) -> None:
