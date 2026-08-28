@@ -294,37 +294,101 @@ def _pencil(p: QPainter, tip: QPointF, angle_deg: float, length: float, half: fl
 
 
 def _draw_app(p: QPainter) -> None:
-    """Icono de EasyPDF: hoja con esquina doblada, renglones y lapiz."""
-    p.setPen(Qt.NoPen)
-    # Placa roja de fondo, desplazada hacia abajo a la izquierda
-    p.setBrush(QColor("#e5121a"))
-    p.drawRoundedRect(QRectF(3, 12, 40, 48), 7, 7)
+    """Icono de easypdf.surf: hoja de PDF, ola y lapiz.
 
-    # Hoja blanca con la esquina superior derecha doblada
-    fold = 13.0
-    sheet = QPainterPath()
-    sheet.moveTo(19, 2)
-    sheet.lineTo(56 - fold, 2)
-    sheet.lineTo(56, 2 + fold)
-    sheet.lineTo(56, 48)
-    sheet.quadTo(56, 53, 51, 53)
-    sheet.lineTo(24, 53)
-    sheet.quadTo(19, 53, 19, 48)
-    sheet.closeSubpath()
-    p.setBrush(QColor("#f7f7f8"))
-    p.drawPath(sheet)
-    # La esquina recortada deja ver el reverso rojo de la hoja.
-    p.setBrush(QColor("#e5121a"))
+    La ola es el guino al nombre; el lapiz, a que se puede escribir encima.
+    """
+    # --- Hoja con la esquina superior derecha doblada ---------------------
+    fold = 12.0
+    hoja = QPainterPath()
+    hoja.moveTo(23, 3)
+    hoja.lineTo(52 - fold, 3)
+    hoja.lineTo(52, 3 + fold)
+    hoja.lineTo(52, 49)
+    hoja.quadTo(52, 54, 47, 54)
+    hoja.lineTo(28, 54)
+    hoja.quadTo(23, 54, 23, 49)
+    hoja.closeSubpath()
+    p.setPen(Qt.NoPen)
+    p.setBrush(QColor("#f4f5f7"))
+    p.drawPath(hoja)
+    p.setBrush(QColor("#f03e2f"))
     p.drawPolygon(
-        QPolygonF([QPointF(56 - fold, 2), QPointF(56, 2 + fold), QPointF(56, 2)])
+        QPolygonF([QPointF(52 - fold, 3), QPointF(52, 3 + fold), QPointF(52, 3)])
     )
 
-    # Renglones del documento
-    p.setBrush(QColor("#e5121a"))
-    for y, width in ((15, 28), (26, 24), (37, 26)):
-        p.drawRoundedRect(QRectF(25, y, width, 6), 3, 3)
+    # Etiqueta roja "PDF" (marca propia, no la de ningun otro programa)
+    p.setBrush(QColor("#f03e2f"))
+    p.drawRoundedRect(QRectF(27, 9, 17, 12), 3, 3)
+    fuente = QFont()
+    fuente.setPixelSize(8)
+    fuente.setBold(True)
+    p.setFont(fuente)
+    p.setPen(QColor("#ffffff"))
+    p.drawText(QRectF(27, 9, 17, 12), Qt.AlignCenter, "PDF")
 
-    _pencil(p, QPointF(30, 62), -45.0, 40.0, 5.5)
+    # Renglones del documento
+    p.setPen(Qt.NoPen)
+    p.setBrush(QColor("#c7ccd4"))
+    for y, ancho in ((28, 16), (36, 12)):
+        p.drawRoundedRect(QRectF(34, y, ancho, 4), 2, 2)
+
+    # --- Ola --------------------------------------------------------------
+    cuerpo = QPainterPath()
+    cuerpo.moveTo(2, 46)
+    cuerpo.cubicTo(12, 40, 20, 56, 32, 52)
+    cuerpo.cubicTo(44, 48, 50, 40, 58, 44)
+    cuerpo.cubicTo(62, 52, 54, 61, 42, 61)
+    cuerpo.lineTo(14, 61)
+    cuerpo.cubicTo(4, 61, 0, 54, 2, 46)
+    cuerpo.closeSubpath()
+    p.setBrush(QColor("#1565c0"))
+    p.drawPath(cuerpo)
+
+    claro = QPainterPath()
+    claro.moveTo(2, 52)
+    claro.cubicTo(14, 46, 22, 60, 34, 56)
+    claro.cubicTo(46, 52, 52, 48, 58, 50)
+    claro.cubicTo(60, 56, 53, 61, 42, 61)
+    claro.lineTo(14, 61)
+    claro.cubicTo(5, 61, 1, 57, 2, 52)
+    claro.closeSubpath()
+    p.setBrush(QColor("#29b6f6"))
+    p.drawPath(claro)
+
+    # Cresta que se enrosca a la izquierda
+    cresta = QPainterPath()
+    cresta.moveTo(3, 50)
+    cresta.cubicTo(-1, 28, 16, 18, 28, 26)
+    cresta.cubicTo(38, 33, 34, 50, 22, 50)
+    cresta.cubicTo(13, 50, 10, 42, 16, 38)
+    cresta.cubicTo(21, 35, 26, 39, 24, 44)
+    cresta.cubicTo(22, 47, 19, 46, 18, 44)
+    cresta.cubicTo(21, 45, 23, 42, 21, 40)
+    cresta.cubicTo(17, 37, 12, 42, 15, 46)
+    cresta.cubicTo(19, 51, 30, 48, 30, 38)
+    cresta.cubicTo(30, 28, 18, 23, 10, 30)
+    cresta.cubicTo(5, 34, 4, 42, 6, 50)
+    cresta.closeSubpath()
+    p.setBrush(QColor("#2196f3"))
+    p.drawPath(cresta)
+
+    # Espuma blanca en lo alto de la cresta
+    espuma = QPainterPath()
+    espuma.moveTo(9, 27)
+    espuma.cubicTo(16, 19, 28, 21, 32, 29)
+    espuma.cubicTo(27, 25, 18, 24, 13, 30)
+    espuma.closeSubpath()
+    p.setBrush(QColor("#ffffff"))
+    p.drawPath(espuma)
+
+    # Gotas
+    p.setBrush(QColor("#4fc3f7"))
+    for cx, cy, r in ((32, 25, 2.0), (38, 24, 1.3), (14, 22, 1.6)):
+        p.drawEllipse(QPointF(cx, cy), r, r)
+
+    # --- Lapiz ------------------------------------------------------------
+    _pencil(p, QPointF(41, 55), -48.0, 26.0, 4.2)
 
 
 _DRAWINGS: dict[str, Callable[[QPainter], None]] = {
