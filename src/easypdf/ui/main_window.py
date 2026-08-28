@@ -477,7 +477,18 @@ class MainWindow(QMainWindow):
         self.font_spin.valueChanged.connect(self._set_font_size)
         tools.addWidget(self.font_spin)
 
-        tools.addSeparator()
+        self.addToolBar(tools)
+        self.toolbar_tools = tools
+
+        # Los ajustes de estilo van en su propia fila: si no, la barra se
+        # desborda en pantallas normales y aparece el boton de "mas".
+        estilo = QToolBar("Estilo", self)
+        estilo.setObjectName("toolbar_style")
+        estilo.setIconSize(QSize(22, 22))
+        self.addToolBarBreak(Qt.TopToolBarArea)
+        self.addToolBar(estilo)
+        self.toolbar_style = estilo
+        tools = estilo
 
         self.font_combo = QComboBox(self)
         for familia in (Font.SANS, Font.SERIF, Font.MONO):
@@ -534,8 +545,6 @@ class MainWindow(QMainWindow):
 
         tools.addSeparator()
         tools.addAction(self.act_delete)
-        self.addToolBar(tools)
-        self.toolbar_tools = tools
 
         self._create_search_bar()
 

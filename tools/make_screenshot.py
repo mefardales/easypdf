@@ -77,6 +77,7 @@ def main() -> int:
         app = QApplication.instance() or QApplication([])
         window = MainWindow()
         window.resize(1280, 860)
+        window.thumb_dock.setVisible(True)   # la captura siempre lo muestra
         window.show()
         QTest.qWaitForWindowExposed(window)
         window.open_path(muestra)
@@ -97,14 +98,20 @@ def main() -> int:
             Annotation(kind=Kind.INK, page=0,
                        strokes=[[(80, 430), (120, 455), (160, 425), (200, 460), (240, 430)]],
                        color=(0.18, 0.49, 0.20), width=2.5),
+            Annotation(kind=Kind.TABLE, page=0, rect=(72, 540, 520, 620), rows=3, cols=3,
+                       cells=["Trimestre", "Incidencias", "Coste",
+                              "Anterior", "18", "4.200 EUR",
+                              "Actual", "5", "3.950 EUR"],
+                       color=(0.15, 0.15, 0.18), width=0.8, font_size=9),
         ]
         for ann in anotaciones:
             window.view.add_annotation(ann, undoable=False)
 
-        window.select_tool(Tool.RECT)
+        window.select_tool(Tool.TABLE)
         window._update_actions()
         window.statusBar().showMessage(
-            "Herramienta: Cuadro  -  arrastra sobre la pagina para dibujar"
+            "Herramienta: Tabla  -  arrastra sobre la pagina; doble clic en una celda "
+            "para escribir"
         )
         QTest.qWait(800)
         app.processEvents()
