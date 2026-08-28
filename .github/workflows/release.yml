@@ -10,7 +10,7 @@ on:
       version:
         description: "Version a publicar (sin la v)"
         type: string
-        default: "1.0.0"
+        default: "1.1.0"
 
 permissions:
   contents: write
@@ -23,6 +23,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main          # se publica siempre desde main
+          fetch-depth: 0     # hace falta historia para el rebase del push
+
+      - name: Comprobar que la version coincide con la del paquete
+        run: |
+          set -e
+          declarada=$(grep -oP '__version__\s*=\s*"\K[^"]+' src/easypdf/__init__.py)
+          if [ "$declarada" != "${{ inputs.version }}" ]; then
+            echo "La version pedida (${{ inputs.version }}) no coincide con la"
+            echo "del paquete ($declarada). Actualiza src/easypdf/__init__.py"
+            echo "antes de publicar, o la web enlazaria archivos que no existen."
+            exit 1
+          fi
 
       - name: Comprobar que estan los binarios
         run: |
@@ -40,8 +54,28 @@ jobs:
           name: easypdf.surf ${{ inputs.version }}
           draft: false
           prerelease: false
-          generate_release_notes: true
+          generate_release_notes: false
           body: |
+            ## Novedades de la 1.1.0
+
+            **Organizar las paginas**
+            - Reordenar arrastrando las miniaturas del panel lateral.
+            - Menu con el boton derecho sobre una miniatura: insertar, duplicar,
+              girar, subir, bajar y eliminar.
+            - Girar paginas 90 grados a cada lado y 180. Las anotaciones giran
+              con la hoja.
+            - Al insertar una pagina se elige su tamano (o se copia el de la
+              pagina de al lado).
+
+            **Correcciones**
+            - Al arrastrar un cuadro de texto ya no queda una franja azul detras.
+            - Las miniaturas llevan borde: una pagina en blanco ya no parecia
+              estar sin cargar.
+            - Los tamanos de pagina se leian en castellano ("Carta", "Oficio")
+              con el programa en ingles.
+            - Cerrar el documento o la ventana mientras se generaban las
+              miniaturas ya no suelta un error.
+
             ## Descargas
 
             | Archivo | Para |
@@ -58,3 +92,21 @@ jobs:
             build/EasyPDF-${{ inputs.version }}-windows-x64-portable.zip
             build/EasyPDF-${{ inputs.version }}-linux-x64.tar.xz
             build/*.sha256
+
+      # La web enlaza los archivos de la release por su nombre, asi que se
+      # regenera aqui: si no, easypdf.surf seguiria ofreciendo la version
+      # anterior aunque esta ya este publicada.
+      - name: Actualizar los enlaces de descarga de la web
+        run: |
+          set -e
+          python tools/build_site.py
+          if [ -n "$(git status --porcelain site/)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add site/
+            git commit -m "Web: enlaces de descarga de la ${{ inputs.version }}"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          else
+            echo "La web ya enlazaba esta version, no hay nada que subir."
+          fi

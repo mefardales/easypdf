@@ -15,6 +15,7 @@ import datetime
 import html
 import json
 import os
+import pathlib
 from string import Template
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,11 +24,28 @@ TEMPLATE = os.path.join(ROOT, "tools", "site_template.html")
 
 DOMAIN = "https://easypdf.surf"
 REPO = "https://github.com/mefardales/easypdf"
+
+
+def _leer_version() -> str:
+    """Lee __version__ de src/easypdf/__init__.py sin importar el paquete.
+
+    Importarlo arrastraria PySide6, que no hace falta para generar la web.
+    """
+    import re
+
+    ruta = pathlib.Path(__file__).resolve().parent.parent / "src" / "easypdf" / "__init__.py"
+    encontrado = re.search(r'__version__\s*=\s*"([^"]+)"', ruta.read_text(encoding="utf-8"))
+    if not encontrado:
+        raise RuntimeError(f"no se encuentra __version__ en {ruta}")
+    return encontrado.group(1)
 #: Las descargas apuntan a los archivos de la release, no a los del repositorio:
 #: GitHub solo cuenta las descargas de las releases, y de ese numero sale el
 #: contador de la portada.
-DESCARGAS_URL = f"{REPO}/releases/download/v1.0.0"
-VERSION = "1.0.0"
+#: La version sale del propio paquete, que es la unica fuente. Asi los enlaces
+#: de descarga apuntan siempre a la release que se acaba de publicar y la web no
+#: se queda ofreciendo binarios viejos.
+VERSION = _leer_version()
+DESCARGAS_URL = f"{REPO}/releases/download/v{VERSION}"
 
 #: De donde salen los numeros que se ensenan en la portada.
 #:
