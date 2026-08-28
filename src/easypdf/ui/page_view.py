@@ -76,6 +76,7 @@ class Tool(str, Enum):
     INK = "ink"
     TABLE = "table"
     IMAGE = "image"
+    NOTE = "note"
     ERASER = "eraser"
 
     @property
@@ -89,6 +90,7 @@ class Tool(str, Enum):
             Tool.INK: Kind.INK,
             Tool.TABLE: Kind.TABLE,
             Tool.IMAGE: Kind.IMAGE,
+            Tool.NOTE: Kind.NOTE,
         }
         return mapping.get(self)
 
@@ -180,6 +182,7 @@ class PdfView(QGraphicsView):
     modified = Signal()
     toolFinished = Signal()
     eraserSizeChanged = Signal(float)
+    noteCreated = Signal(object)
     selectionChanged = Signal()
     textEditing = Signal(bool)
 
@@ -272,10 +275,32 @@ class PdfView(QGraphicsView):
             self._scene.setSceneRect(QRectF())
             return
         self._build_page_items()
+        self._load_existing_notes(doc)
         self.verticalScrollBar().setValue(0)
         self.apply_fit()
         self._render_visible_pages()
         self.pageChanged.emit(0)
+
+    def _load_existing_notes(self, doc: PdfDocument) -> None:
+        """Recoge las notas que ya trae el PDF para poder verlas y editarlas.
+
+        Se sacan del documento y pasan a la lista de anotaciones, que es desde
+        donde se vuelven a escribir al guardar. Asi no se duplican.
+        """
+        from .items import NOTE_SIZE
+
+        for pagina, x, y, texto in doc.take_notes():
+            if not (0 <= pagina < len(self._page_items)):
+                continue
+            ann = Annotation(
+                kind=Kind.NOTE,
+                page=pagina,
+                rect=(x, y, x + NOTE_SIZE, y + NOTE_SIZE),
+                text=texto,
+                color=(0.98, 0.80, 0.20),
+            )
+            self.store.add(ann)
+            self.attach_item(create_item(ann, self._page_items[pagina]), ann)
 
     def _build_page_items(self) -> None:
         """Crea un item por pagina y ajusta el tamano de la escena."""
@@ -617,6 +642,10 @@ class PdfView(QGraphicsView):
         if kind is Kind.IMAGE:
             imagen = style.get("image") or ("", b"")
             ann.image_name, ann.image_data = imagen[0], imagen[1]
+        if kind is Kind.NOTE:
+            from .items import NOTE_SIZE
+            ann.rect = (point.x(), point.y(),
+                        point.x() + NOTE_SIZE, point.y() + NOTE_SIZE)
         if kind in (Kind.LINE, Kind.ARROW):
             ann.p1 = (point.x(), point.y())
             ann.p2 = (point.x(), point.y())
@@ -732,6 +761,8 @@ class PdfView(QGraphicsView):
             item.start_editing()
         elif isinstance(item, TableItem):
             item.edit_cell(0)
+        elif ann.kind is Kind.NOTE:
+            self.noteCreated.emit(item)   # la ventana pide el texto
         self.toolFinished.emit()
 
     # ------------------------------------------------------------------ goma

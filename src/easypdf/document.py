@@ -139,6 +139,53 @@ class PdfDocument:
     def page_sizes(self) -> list[tuple[float, float]]:
         return [self.page_size(i) for i in range(self.page_count)]
 
+    # -- marcadores ------------------------------------------------------
+    def bookmarks(self) -> list[tuple[str, int]]:
+        """Marcadores del documento como (titulo, pagina empezando en 0).
+
+        Se usa el indice del PDF, que es lo que ensena cualquier lector en su
+        panel de marcadores, asi que se ven tambien fuera de EasyPDF.
+        """
+        marcadores = []
+        for entrada in self._doc.get_toc(simple=True):
+            _nivel, titulo, pagina = entrada[0], entrada[1], entrada[2]
+            if pagina >= 1:                       # 0 o -1 = sin destino
+                marcadores.append((str(titulo), int(pagina) - 1))
+        return marcadores
+
+    def set_bookmarks(self, marcadores) -> None:
+        """Reemplaza los marcadores. Lista plana de (titulo, pagina base 0)."""
+        toc = [
+            [1, str(titulo), int(pagina) + 1]
+            for titulo, pagina in marcadores
+            if 0 <= int(pagina) < self.page_count
+        ]
+        self._doc.set_toc(toc)
+        self._refresh_data()
+
+    # -- notas -----------------------------------------------------------
+    def take_notes(self) -> list[tuple[int, float, float, str]]:
+        """Saca las notas adhesivas del PDF y las devuelve.
+
+        Se quitan del documento a proposito: a partir de aqui las lleva
+        EasyPDF en su lista de anotaciones y las vuelve a escribir al guardar.
+        Si se quedaran tambien aqui, cada guardado las duplicaria.
+        """
+        encontradas: list[tuple[int, float, float, str]] = []
+        toco = False
+        for numero in range(self._doc.page_count):
+            pagina = self._doc[numero]
+            for annot in list(pagina.annots(types=(pymupdf.PDF_ANNOT_TEXT,))):
+                rect = annot.rect
+                encontradas.append(
+                    (numero, rect.x0, rect.y0, annot.info.get("content", ""))
+                )
+                pagina.delete_annot(annot)
+                toco = True
+        if toco:
+            self._refresh_data()
+        return encontradas
+
     def page_rotation(self, index: int) -> int:
         """Giro de la pagina, en grados horarios (0, 90, 180 o 270)."""
         return int(self._doc[index].rotation) % 360

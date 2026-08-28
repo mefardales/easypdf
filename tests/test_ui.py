@@ -875,3 +875,103 @@ def test_la_goma_por_una_zona_vacia_no_borra_nada(ventana, qapp):
     _pasar_la_goma(ventana, [(500, 700)])
     assert len(ventana.view.store) == total
     assert ventana.view.undo_stack.count() == limpio   # ni un paso de deshacer
+
+
+# --------------------------------------------------------------------------
+# Notas adhesivas y marcadores
+# --------------------------------------------------------------------------
+
+def test_una_nota_se_guarda_y_se_vuelve_a_ver_al_abrir(ventana, qapp, tmp_path):
+    nota = Annotation(
+        kind=Kind.NOTE, page=0, rect=(120.0, 150.0, 140.0, 170.0),
+        text="Revisar esta cifra", color=(0.98, 0.80, 0.20),
+    )
+    ventana.view.add_annotation(nota)
+    qapp.processEvents()
+
+    destino = tmp_path / "con_nota.pdf"
+    ventana.view.document.save_as(str(destino), ventana.view.store)
+
+    # se guarda como nota estandar: cualquier lector la ensena
+    crudo = pymupdf.open(str(destino))
+    tipos = [a.type[1] for a in crudo[0].annots()]
+    contenidos = [a.info.get("content") for a in crudo[0].annots()]
+    crudo.close()
+    assert "Text" in tipos
+    assert "Revisar esta cifra" in contenidos
+
+    # y al reabrir se ve dentro de EasyPDF, con item propio
+    ventana._modified = False
+    ventana.view.undo_stack.setClean()
+    assert ventana.open_path(str(destino))
+    qapp.processEvents()
+    notas = [a for a in ventana.view.store if a.kind is Kind.NOTE]
+    assert len(notas) == 1
+    assert notas[0].text == "Revisar esta cifra"
+    assert round(notas[0].rect[0]) == 120
+    assert ventana.view._items.get(notas[0].id) is not None
+
+
+def test_guardar_dos_veces_no_duplica_las_notas(ventana, qapp, tmp_path):
+    ventana.view.add_annotation(
+        Annotation(kind=Kind.NOTE, page=0, rect=(80.0, 80.0, 100.0, 100.0), text="Una")
+    )
+    qapp.processEvents()
+
+    primero = tmp_path / "a.pdf"
+    ventana.view.document.save_as(str(primero), ventana.view.store)
+    ventana._modified = False
+    ventana.view.undo_stack.setClean()
+    assert ventana.open_path(str(primero))
+    qapp.processEvents()
+
+    segundo = tmp_path / "b.pdf"
+    ventana.view.document.save_as(str(segundo), ventana.view.store)
+    crudo = pymupdf.open(str(segundo))
+    notas = sum(1 for a in crudo[0].annots() if a.type[1] == "Text")
+    crudo.close()
+    assert notas == 1
+
+
+def test_una_nota_no_se_puede_estirar(ventana, qapp):
+    nota = Annotation(kind=Kind.NOTE, page=0, rect=(50.0, 50.0, 70.0, 70.0), text="x")
+    ventana.view.add_annotation(nota)
+    qapp.processEvents()
+    item = ventana.view._items[nota.id]
+    assert item.handles() == {}                 # el icono tiene tamano fijo
+    assert item.toolTip() == "x"
+
+
+def test_el_panel_de_marcadores_anade_salta_y_quita(ventana, qapp, monkeypatch):
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QInputDialog
+
+    monkeypatch.setattr(QInputDialog, "getText",
+                        staticmethod(lambda *a, **k: ("Capitulo 1", True)))
+    assert ventana.bookmark_list.count() == 0
+
+    ventana.view.go_to_page(1)
+    ventana.add_bookmark()
+    qapp.processEvents()
+    assert ventana.bookmark_list.count() == 1
+    assert ventana.view.document.bookmarks() == [("Capitulo 1", 1)]
+
+    ventana.view.go_to_page(0)
+    ventana._go_to_bookmark(ventana.bookmark_list.item(0))
+    qapp.processEvents()
+    assert ventana.view.current_page == 1
+
+    ventana.bookmark_list.setCurrentRow(0)
+    ventana.remove_bookmark()
+    qapp.processEvents()
+    assert ventana.bookmark_list.count() == 0
+    assert ventana.view.document.bookmarks() == []
+
+
+def test_el_panel_de_marcadores_se_traduce(ventana):
+    ventana.set_language("es")
+    assert ventana.bookmark_dock.windowTitle() == "Marcadores"
+    assert ventana.btn_bookmark_add.text() == "Anadir"
+    ventana.set_language("en")
+    assert ventana.bookmark_dock.windowTitle() == "Bookmarks"
+    assert ventana.btn_bookmark_add.text() == "Add"

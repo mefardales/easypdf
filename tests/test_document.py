@@ -196,3 +196,56 @@ def test_el_giro_se_normaliza_y_se_guarda_en_el_pdf(tmp_path):
     guardado = PdfDocument.open(str(destino))
     assert guardado.page_rotation(0) == 90
     guardado.close()
+
+
+def test_los_marcadores_sobreviven_al_guardar(tmp_path):
+    documento = PdfDocument.blank(pages=3, size="A4")
+    assert documento.bookmarks() == []
+
+    documento.set_bookmarks([("Resumen", 0), ("Anexo", 2)])
+    assert documento.bookmarks() == [("Resumen", 0), ("Anexo", 2)]
+
+    destino = tmp_path / "marcadores.pdf"
+    documento.save_as(str(destino))
+    documento.close()
+
+    guardado = PdfDocument.open(str(destino))
+    assert guardado.bookmarks() == [("Resumen", 0), ("Anexo", 2)]
+    guardado.close()
+
+    # y cualquier lector los ve, porque son el indice estandar del PDF
+    crudo = pymupdf.open(str(destino))
+    assert len(crudo.get_toc()) == 2
+    crudo.close()
+
+
+def test_no_se_guarda_un_marcador_a_una_pagina_que_no_existe():
+    documento = PdfDocument.blank(pages=2, size="A4")
+    documento.set_bookmarks([("Bueno", 0), ("Imposible", 99)])
+    assert documento.bookmarks() == [("Bueno", 0)]
+    documento.close()
+
+
+def test_take_notes_saca_las_notas_una_sola_vez(tmp_path):
+    from easypdf.annotations import apply_annotations
+    from easypdf.model import Annotation, Kind
+
+    crudo = pymupdf.open()
+    crudo.new_page()
+    apply_annotations(crudo, [
+        Annotation(kind=Kind.NOTE, page=0, rect=(100, 100, 120, 120), text="Ojo aqui"),
+    ])
+    origen = tmp_path / "con_nota.pdf"
+    crudo.save(str(origen))
+    crudo.close()
+
+    documento = PdfDocument.open(str(origen))
+    notas = documento.take_notes()
+    assert len(notas) == 1
+    pagina, x, y, texto = notas[0]
+    assert (pagina, texto) == (0, "Ojo aqui")
+    assert (round(x), round(y)) == (100, 100)
+
+    # ya no quedan en el documento: las lleva EasyPDF, y si no se duplicarian
+    assert documento.take_notes() == []
+    documento.close()
