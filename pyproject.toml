@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "easypdf"
+version = "1.0.0"
+description = "Lector de PDF sencillo con anotaciones (cuadros, lineas, texto) e impresion"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "AGPL-3.0-or-later" }
+authors = [{ name = "EasyPDF contributors" }]
+keywords = ["pdf", "lector", "anotaciones", "viewer", "annotations", "qt"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: X11 Applications :: Qt",
+    "Environment :: Win32 (MS Windows)",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Natural Language :: Spanish",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3",
+    "Topic :: Office/Business",
+    "Topic :: Multimedia :: Graphics :: Viewers",
+]
+dependencies = [
+    "PySide6-Essentials>=6.6",
+    "PyMuPDF>=1.24",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.4",
+    "pyinstaller>=6.6",
+    "pillow>=10.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/mefardales/easypdf"
+Source = "https://github.com/mefardales/easypdf"
+Issues = "https://github.com/mefardales/easypdf/issues"
+
+[project.gui-scripts]
+easypdf = "easypdf.app:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]
