@@ -10,24 +10,24 @@ Aqui tambien: pulsa el nombre del archivo y la descarga empieza sola:
 
 | Descarga | Para quien | Que es |
 |---|---|---|
-| [**EasyPDF-1.0.0-Setup.exe**](https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-Setup.exe) | Windows 10/11 (64 bits) | Instalador. Crea el acceso directo, registra la aplicacion en *Abrir con* y se desinstala desde *Configuracion -> Aplicaciones*. No necesita permisos de administrador: puede instalarse solo para tu usuario. |
-| [**EasyPDF-1.0.0-windows-x64-portable.zip**](https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-windows-x64-portable.zip) | Windows 10/11 (64 bits) | Version portable. Descomprime la carpeta y ejecuta `EasyPDF.exe`. No instala nada ni toca el registro: funciona desde un pendrive. |
-| [**EasyPDF-1.0.0-linux-x64.tar.xz**](https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-linux-x64.tar.xz) | Linux (x86-64) | Version portable. Descomprime y ejecuta `./EasyPDF`. |
+| [**EasyPDF-1.1.0-Setup.exe**](https://github.com/mefardales/easypdf/releases/download/v1.1.0/EasyPDF-1.1.0-Setup.exe) | Windows 10/11 (64 bits) | Instalador. Crea el acceso directo, registra la aplicacion en *Abrir con* y se desinstala desde *Configuracion -> Aplicaciones*. No necesita permisos de administrador: puede instalarse solo para tu usuario. |
+| [**EasyPDF-1.1.0-windows-x64-portable.zip**](https://github.com/mefardales/easypdf/releases/download/v1.1.0/EasyPDF-1.1.0-windows-x64-portable.zip) | Windows 10/11 (64 bits) | Version portable. Descomprime la carpeta y ejecuta `EasyPDF.exe`. No instala nada ni toca el registro: funciona desde un pendrive. |
+| [**EasyPDF-1.1.0-linux-x64.tar.xz**](https://github.com/mefardales/easypdf/releases/download/v1.1.0/EasyPDF-1.1.0-linux-x64.tar.xz) | Linux (x86-64) | Version portable. Descomprime y ejecuta `./EasyPDF`. |
 
 Comprobar el `sha256` es **opcional**: solo si quieres verificar que la descarga
 llego intacta. Junto a cada archivo hay uno:
 
 ```bash
-sha256sum -c EasyPDF-1.0.0-linux-x64.tar.xz.sha256      # Linux
+sha256sum -c EasyPDF-1.1.0-linux-x64.tar.xz.sha256      # Linux
 ```
 
 ```powershell
-Get-FileHash EasyPDF-1.0.0-Setup.exe -Algorithm SHA256  # Windows
+Get-FileHash EasyPDF-1.1.0-Setup.exe -Algorithm SHA256  # Windows
 ```
 
 ## Como usarlos
 
-**Windows (instalador)** — doble clic en `EasyPDF-1.0.0-Setup.exe` y siguiente.
+**Windows (instalador)** — doble clic en `EasyPDF-1.1.0-Setup.exe` y siguiente.
 Windows SmartScreen puede avisar de que el editor es desconocido, porque el
 ejecutable no esta firmado digitalmente (una firma de codigo es de pago): pulsa
 *Mas informacion -> Ejecutar de todas formas*.
@@ -38,7 +38,7 @@ de la carpeta. Hay que mantener la carpeta entera, no solo el `.exe`.
 **Linux** —
 
 ```bash
-tar xf EasyPDF-1.0.0-linux-x64.tar.xz
+tar xf EasyPDF-1.1.0-linux-x64.tar.xz
 cd EasyPDF
 ./EasyPDF                 # o:  ./EasyPDF documento.pdf
 ```
@@ -68,6 +68,6 @@ Para publicar una version nueva basta con etiquetarla; los dos flujos compilan y
 adjuntan los archivos a la release de GitHub:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.1.0
+git push origin v1.1.0
 ```
