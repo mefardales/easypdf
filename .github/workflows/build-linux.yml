@@ -72,6 +72,9 @@ jobs:
 
           Paquete portable generado por GitHub Actions en ubuntu-22.04
           (run ${{ github.run_id }})."
+          # El icono se regenera en cada compilacion: se descartan esos
+          # cambios sueltos o el rebase se niega a continuar.
+          git restore --worktree . || git checkout -- .
           for intento in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
             sleep $((intento * 5))
