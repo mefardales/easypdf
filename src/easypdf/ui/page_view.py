@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 
 from ..config import MAX_ZOOM, MIN_ZOOM
 from ..document import PdfDocument, SearchHit
+from ..i18n import tr
 from ..model import Align, Annotation, AnnotationStore, Font, Kind
 from .commands import (
     AddAnnotationCommand,
@@ -616,7 +617,7 @@ class PdfView(QGraphicsView):
         colocadas = shift_to_page(annotations, inicio, self.page_count)
         if not colocadas:
             return 0
-        self.undo_stack.beginMacro(f"Aplicar plantilla ({len(colocadas)} anotaciones)")
+        self.undo_stack.beginMacro(tr("cmd_template", count=len(colocadas)))
         for ann in colocadas:
             self.add_annotation(ann)
         self.undo_stack.endMacro()
@@ -797,7 +798,7 @@ class PdfView(QGraphicsView):
                 payload.append((item, before, after))
         if not payload:
             return False
-        command = ChangeAnnotationsCommand(self, payload, "Cambiar estilo")
+        command = ChangeAnnotationsCommand(self, payload, tr("cmd_style"))
         self.undo_stack.push(command)
         return True
 

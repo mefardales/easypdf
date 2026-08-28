@@ -36,7 +36,9 @@ plataforma Qt `offscreen`, asi que funcionan sin pantalla y en integracion conti
 
 ## Estilo
 
-- Textos de la interfaz en espanol; nombres de funciones y variables en ingles.
+- Los textos de la interfaz van en `src/easypdf/i18n.py`, nunca sueltos en el
+  codigo: `tr("mi_clave")`. Cada texto nuevo se anade a los dos idiomas (hay una
+  prueba que lo comprueba). Nombres de funciones y variables en ingles.
 - Comentarios solo donde el codigo no se explica solo.
 - Lineas de hasta 100 caracteres (lo comprueba `ruff`).
 

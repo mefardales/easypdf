@@ -12,6 +12,7 @@ from PySide6.QtPrintSupport import QPrintDialog, QPrinter, QPrintPreviewDialog
 from PySide6.QtWidgets import QApplication, QMessageBox, QProgressDialog
 
 from .document import PdfDocument
+from .i18n import tr
 from .model import Annotation
 
 #: Limite de resolucion del rasterizado. 300 ppp es calidad de impresion normal
@@ -70,13 +71,13 @@ def render_to_printer(
     if not painter.begin(printer):
         doc.close()
         if parent is not None:
-            QMessageBox.warning(parent, "Imprimir", "No se pudo iniciar la impresion.")
+            QMessageBox.warning(parent, tr("print"), tr("print_failed"))
         return False
 
     progress = None
     if parent is not None and len(indices) > 1:
-        progress = QProgressDialog("Preparando paginas...", "Cancelar", 0, len(indices), parent)
-        progress.setWindowTitle("Imprimir")
+        progress = QProgressDialog(tr("print_preparing"), None, 0, len(indices), parent)
+        progress.setWindowTitle(tr("print_title"))
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(400)
 
@@ -86,7 +87,7 @@ def render_to_printer(
         for position, index in enumerate(indices):
             if progress is not None:
                 progress.setValue(position)
-                progress.setLabelText(f"Pagina {index + 1} de {doc.page_count}")
+                progress.setLabelText(tr("print_page_of", page=index + 1, total=doc.page_count))
                 QApplication.processEvents()
                 if progress.wasCanceled():
                     cancelled = True
@@ -138,10 +139,8 @@ def print_document(
     if not doc.can_print:
         answer = QMessageBox.question(
             parent,
-            "Imprimir",
-            "Este PDF pide no ser impreso.\n\nEsa restriccion no esta protegida por "
-            "contrasena, asi que el programa puede imprimirlo igualmente.\n\n"
-            "Solo hazlo si tienes derecho a ello. Continuar?",
+            tr("print_title"),
+            tr("print_restricted"),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -151,7 +150,7 @@ def print_document(
     printer = _make_printer(doc)
     printer.setFromTo(1, doc.page_count)
     dialog = QPrintDialog(printer, parent)
-    dialog.setWindowTitle("Imprimir documento")
+    dialog.setWindowTitle(tr("print_title"))
     dialog.setOptions(
         QPrintDialog.PrintToFile
         | QPrintDialog.PrintPageRange
@@ -177,7 +176,7 @@ def print_preview(
     data = doc.export_bytes(annotations)
     printer = _make_printer(doc)
     dialog = QPrintPreviewDialog(printer, parent)
-    dialog.setWindowTitle("Vista previa de impresion")
+    dialog.setWindowTitle(tr("print_preview_title"))
     dialog.resize(900, 700)
 
     def _paint(target_printer: QPrinter) -> None:

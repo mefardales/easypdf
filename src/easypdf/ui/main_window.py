@@ -41,6 +41,7 @@ from PySide6.QtWidgets import (
 from .. import __app_name__, __repo_url__, __url__, __version__
 from ..config import PALETTE, Settings
 from ..document import DEFAULT_PAGE_SIZE, PAGE_SIZES, PasswordRequired, PdfDocument, PdfError
+from ..i18n import LANGUAGES, language, set_language, tr
 from ..model import Align, Font
 from ..printing import print_document, print_preview
 from ..templates import (
@@ -78,11 +79,11 @@ def _swatch(color: QColor | None, size: int = 22) -> QIcon:
 
 
 class AboutDialog(QDialog):
-    """Ventana 'Acerca de easypdf.surf'."""
+    """Ventana de informacion del programa."""
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle(f"Acerca de {__app_name__}")
+        self.setWindowTitle(tr("about_title", app=__app_name__))
         self.resize(520, 380)
         layout = QVBoxLayout(self)
         header = QLabel()
@@ -92,18 +93,9 @@ class AboutDialog(QDialog):
         text = QTextBrowser()
         text.setOpenExternalLinks(True)
         text.setHtml(
-            f"""
-            <h2 style="text-align:center;margin-bottom:0">{__app_name__} {__version__}</h2>
-            <p style="text-align:center;color:#666">Lector y anotador de PDF sencillo</p>
-            <p>Software libre publicado bajo la licencia
-            <b>GNU AGPL v3 o posterior</b>. Puedes usarlo, copiarlo, modificarlo y
-            redistribuirlo respetando esa licencia.</p>
-            <p>Pagina web: <a href="{__url__}">easypdf.surf</a><br>
-            Codigo fuente: <a href="{__repo_url__}">{__repo_url__}</a></p>
-            <p>Construido con <a href="https://pymupdf.readthedocs.io">PyMuPDF</a> (AGPL)
-            y <a href="https://doc.qt.io/qtforpython/">PySide6</a> (LGPL).</p>
-            <p style="color:#666">Este programa se distribuye sin ninguna garantia.</p>
-            """
+            f"<h2 style='text-align:center;margin-bottom:0'>{__app_name__} {__version__}</h2>"
+            f"<p style='text-align:center;color:#666'>{tr('about_tagline')}</p>"
+            + tr("about_html", url=__url__, repo=__repo_url__)
         )
         layout.addWidget(text)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
@@ -117,63 +109,11 @@ class HelpDialog(QDialog):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Guia rapida")
-        self.resize(640, 520)
+        self.setWindowTitle(tr("help_title"))
+        self.resize(660, 540)
         layout = QVBoxLayout(self)
         text = QTextBrowser()
-        text.setHtml(
-            """
-            <h2>Guia rapida</h2>
-            <h3>Abrir, crear e imprimir</h3>
-            <ul>
-              <li><b>Ctrl+O</b> abre un PDF. Tambien puedes arrastrarlo sobre la ventana.</li>
-              <li><b>Ctrl+N</b> crea un documento en blanco. Desde el menu <b>Documento</b>
-                  puedes anadir, duplicar, mover y eliminar paginas, y elegir su tamano.</li>
-              <li><b>Ctrl+P</b> imprime. La vista previa muestra el documento con las
-                  anotaciones tal y como saldran en papel.</li>
-              <li><b>Ctrl+S</b> guarda las anotaciones dentro del PDF.</li>
-            </ul>
-            <h3>Anotar</h3>
-            <ul>
-              <li>Elige una herramienta en la barra: cuadro, resaltado, linea, flecha,
-                  texto, dibujo a mano alzada o tabla.</li>
-              <li>Arrastra sobre la pagina para crear la anotacion.</li>
-              <li>Manten <b>Mayus</b> para cuadrados perfectos o lineas a 45 grados.</li>
-              <li>Con la herramienta <b>Seleccionar</b> puedes mover, redimensionar
-                  (tiradores azules) y borrar con <b>Supr</b>.</li>
-              <li>Doble clic sobre un cuadro de texto para escribir dentro.</li>
-              <li>Con la herramienta <b>Imagen</b> (o soltando un archivo de imagen sobre
-                  la ventana) puedes colocar fotos, firmas o logotipos encima del PDF.</li>
-              <li>En las tablas, doble clic en una celda para escribir y <b>Tab</b> para
-                  pasar a la siguiente. El numero de filas y columnas se elige en la
-                  barra antes de dibujarla.</li>
-              <li>El texto admite tipo de letra (sans, serif o monoespaciada),
-                  <b>negrita</b> (Ctrl+B), <i>cursiva</i> (Ctrl+I) y alineacion.</li>
-              <li><b>Ctrl+Z</b> y <b>Ctrl+Y</b> deshacen y rehacen.</li>
-            </ul>
-            <h3>Moverse por el documento</h3>
-            <ul>
-              <li><b>Ctrl+rueda</b> hace zoom; <b>Ctrl+0</b> vuelve al 100%.</li>
-              <li><b>Ctrl+F</b> busca texto; <b>F3</b> salta al siguiente resultado.
-                  <b>Esc</b> o el boton de cerrar quitan el resaltado amarillo.</li>
-              <li>La barra lateral de miniaturas permite saltar de pagina.</li>
-              <li><b>Esc</b> vuelve siempre a la herramienta Seleccionar.</li>
-            </ul>
-            <h3>Plantillas</h3>
-            <p>En <b>Documento -&gt; Plantillas</b> puedes guardar lo que hayas montado
-            (membretes, tablas, sellos, logotipos) y reutilizarlo: crear un documento
-            nuevo a partir de una plantilla o aplicarla encima del PDF que tengas
-            abierto, desde la pagina en la que estes. Se deshace de una vez con
-            <b>Ctrl+Z</b>.</p>
-
-            <h3>Como se guardan las anotaciones</h3>
-            <p>El programa escribe anotaciones PDF estandar (cuadro, linea, texto libre,
-            resaltado, tinta y poligono), asi que se ven igual en Adobe Reader, Edge o
-            Firefox. Las tablas se guardan como su rejilla mas el texto de cada celda, y las
-            imagenes se incrustan en la propia pagina para que se impriman siempre.
-            El contenido original del documento no se modifica.</p>
-            """
-        )
+        text.setHtml(tr("help_html"))
         layout.addWidget(text)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject)
@@ -189,6 +129,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.settings = Settings()
+        set_language(self.settings.language())
         self.setWindowTitle(__app_name__)
         self.setWindowIcon(icons.app_icon())
         self.setAcceptDrops(True)
@@ -217,118 +158,120 @@ class MainWindow(QMainWindow):
 
     # ------------------------------------------------------------------ acciones
     def _create_actions(self) -> None:
-        def action(text, slot, icon_name=None, shortcut=None, tip=None, checkable=False):
-            act = QAction(text, self)
+        # Cada accion guarda las claves de su texto para poder retraducirse.
+        self._action_keys: dict[QAction, tuple[str, str | None]] = {}
+
+        def action(key, slot, icon_name=None, shortcut=None, tip=None, checkable=False):
+            act = QAction(tr(key), self)
             if icon_name:
                 act.setIcon(icons.icon(icon_name))
             if shortcut:
                 act.setShortcut(shortcut)
             act.setCheckable(checkable)
-            act.setStatusTip(tip or text)
+            act.setStatusTip(tr(tip) if tip else tr(key))
             act.triggered.connect(slot)
+            self._action_keys[act] = (key, tip)
             return act
 
-        self.act_new = action("&Nuevo documento en blanco", self.new_document, "new",
-                              QKeySequence.New, "Crear un PDF vacio para empezar de cero")
-        self.act_open = action("&Abrir...", self.open_file_dialog, "open", QKeySequence.Open,
-                               "Abrir un documento PDF")
-        self.act_save = action("&Guardar", self.save, "save", QKeySequence.Save,
-                               "Guardar las anotaciones en el PDF")
-        self.act_save_as = action("Guardar &como...", self.save_as, "save_as",
-                                  QKeySequence.SaveAs, "Guardar una copia del PDF")
-        self.act_print = action("&Imprimir...", self.print_file, "print", QKeySequence.Print,
-                                "Imprimir el documento")
-        self.act_preview = action("Vista pre&via de impresion...", self.preview_print,
-                                  shortcut="Ctrl+Shift+P", tip="Ver como quedara impreso")
-        self.act_close = action("&Cerrar documento", self.close_document, shortcut="Ctrl+W")
-        self.act_quit = action("&Salir", self.close, shortcut=QKeySequence.Quit)
+        self.act_new = action("new", self.new_document, "new", QKeySequence.New, "new_tip")
+        self.act_open = action("open", self.open_file_dialog, "open", QKeySequence.Open,
+                               "open_tip")
+        self.act_save = action("save", self.save, "save", QKeySequence.Save, "save_tip")
+        self.act_save_as = action("save_as", self.save_as, "save_as",
+                                  QKeySequence.SaveAs, "save_as_tip")
+        self.act_print = action("print", self.print_file, "print", QKeySequence.Print,
+                                "print_tip")
+        self.act_preview = action("preview", self.preview_print,
+                                  shortcut="Ctrl+Shift+P", tip="preview_tip")
+        self.act_close = action("close_doc", self.close_document, shortcut="Ctrl+W")
+        self.act_quit = action("quit", self.close, shortcut=QKeySequence.Quit)
 
-        self.act_undo = self.view.undo_stack.createUndoAction(self, "Deshacer")
+        self.act_undo = self.view.undo_stack.createUndoAction(self, tr("undo"))
         self.act_undo.setShortcut(QKeySequence.Undo)
         self.act_undo.setIcon(icons.icon("undo"))
-        self.act_redo = self.view.undo_stack.createRedoAction(self, "Rehacer")
+        self.act_redo = self.view.undo_stack.createRedoAction(self, tr("redo"))
         self.act_redo.setShortcuts([QKeySequence.Redo, QKeySequence("Ctrl+Y")])
         self.act_redo.setIcon(icons.icon("redo"))
 
-        self.act_delete = action("&Eliminar seleccion", self.delete_selection, "delete",
-                                 QKeySequence.Delete, "Eliminar las anotaciones seleccionadas")
-        self.act_select_all = action("Seleccionar &todas las anotaciones",
-                                     self.view.select_all_annotations,
+        self.act_delete = action("delete_sel", self.delete_selection, "delete",
+                                 QKeySequence.Delete, "delete_sel_tip")
+        self.act_select_all = action("select_all", self.view.select_all_annotations,
                                      shortcut=QKeySequence.SelectAll)
-        self.act_find = action("&Buscar texto...", self.show_search, "search",
-                               QKeySequence.Find, "Buscar texto en el documento")
-        self.act_find_next = action("Buscar &siguiente", self.view.next_hit,
+        self.act_find = action("find", self.show_search, "search",
+                               QKeySequence.Find, "find_tip")
+        self.act_find_next = action("find_next", self.view.next_hit,
                                     shortcut=QKeySequence.FindNext)
-        self.act_find_prev = action("Buscar &anterior", self.view.previous_hit,
+        self.act_find_prev = action("find_prev", self.view.previous_hit,
                                     shortcut=QKeySequence.FindPrevious)
 
-        self.act_zoom_in = action("&Acercar", self.view.zoom_in, "zoom_in", QKeySequence.ZoomIn)
+        self.act_zoom_in = action("zoom_in", self.view.zoom_in, "zoom_in", QKeySequence.ZoomIn)
         self.act_zoom_in.setShortcuts([QKeySequence.ZoomIn, QKeySequence("Ctrl++")])
-        self.act_zoom_out = action("A&lejar", self.view.zoom_out, "zoom_out", QKeySequence.ZoomOut)
-        self.act_zoom_reset = action("Zoom &100%", self.view.reset_zoom, shortcut="Ctrl+0")
-        self.act_fit_width = action("Ajustar al &ancho", self.view.fit_width, "fit_width",
+        self.act_zoom_out = action("zoom_out", self.view.zoom_out, "zoom_out", QKeySequence.ZoomOut)
+        self.act_zoom_reset = action("zoom_reset", self.view.reset_zoom, shortcut="Ctrl+0")
+        self.act_fit_width = action("fit_width", self.view.fit_width, "fit_width",
                                     shortcut="Ctrl+1")
-        self.act_fit_page = action("Ajustar a la &pagina", self.view.fit_page, "fit_page",
+        self.act_fit_page = action("fit_page", self.view.fit_page, "fit_page",
                                    shortcut="Ctrl+2")
-        self.act_prev_page = action("Pagina &anterior", self.view.previous_page, "prev",
+        self.act_prev_page = action("prev_page", self.view.previous_page, "prev",
                                     shortcut="Ctrl+Up")
-        self.act_next_page = action("Pagina &siguiente", self.view.next_page, "next",
+        self.act_next_page = action("next_page", self.view.next_page, "next",
                                     shortcut="Ctrl+Down")
-        self.act_goto = action("&Ir a la pagina...", self.goto_page_dialog, shortcut="Ctrl+G")
-        self.act_fullscreen = action("Pantalla &completa", self.toggle_fullscreen,
+        self.act_goto = action("goto", self.goto_page_dialog, shortcut="Ctrl+G")
+        self.act_fullscreen = action("fullscreen", self.toggle_fullscreen,
                                      shortcut="F11", checkable=True)
-        self.act_thumbnails = action("Panel de &miniaturas", self.toggle_thumbnails,
+        self.act_thumbnails = action("thumbnails", self.toggle_thumbnails,
                                      shortcut="F9", checkable=True)
 
-        self.act_page_add = action("&Anadir una pagina al final", self.add_page_end,
-                                   shortcut="Ctrl+Shift+N")
-        self.act_page_insert = action("&Insertar una pagina despues de esta",
-                                      self.insert_page_here)
-        self.act_page_duplicate = action("&Duplicar esta pagina", self.duplicate_current_page)
-        self.act_page_delete = action("&Eliminar esta pagina", self.delete_current_page)
-        self.act_page_up = action("Mover la pagina &arriba", lambda: self.move_current_page(-1),
+        self.act_page_add = action("page_add", self.add_page_end, shortcut="Ctrl+Shift+N")
+        self.act_page_insert = action("page_insert", self.insert_page_here)
+        self.act_page_duplicate = action("page_duplicate", self.duplicate_current_page)
+        self.act_page_delete = action("page_delete", self.delete_current_page)
+        self.act_page_up = action("page_up", lambda: self.move_current_page(-1),
                                   shortcut="Ctrl+Shift+Up")
-        self.act_page_down = action("Mover la pagina aba&jo", lambda: self.move_current_page(1),
+        self.act_page_down = action("page_down", lambda: self.move_current_page(1),
                                     shortcut="Ctrl+Shift+Down")
 
-        self.act_help = action("&Guia rapida", self.show_help, shortcut=QKeySequence.HelpContents)
-        self.act_about = action(f"&Acerca de {__app_name__}", self.show_about)
-        self.act_website = action("Pagina &web de easypdf.surf",
-                                  lambda: QDesktopServices.openUrl(QUrl(__url__)))
-        self.act_source = action("Codigo &fuente en GitHub",
+        self.act_help = action("help", self.show_help, shortcut=QKeySequence.HelpContents)
+        self.act_about = action("about", self.show_about)
+        self.act_about.setText(tr("about", app=__app_name__))
+        self.act_website = action("website", lambda: QDesktopServices.openUrl(QUrl(__url__)))
+        self.act_source = action("source",
                                  lambda: QDesktopServices.openUrl(QUrl(__repo_url__)))
 
         # Herramientas (excluyentes entre si)
         self.tool_group = QActionGroup(self)
         self.tool_group.setExclusive(True)
         self.tool_actions = {}
-        tools = [
-            (Tool.SELECT, "&Seleccionar", "select", "S"),
-            (Tool.PAN, "&Mover la vista", "hand", "H"),
-            (Tool.RECT, "&Cuadro", "rect", "R"),
-            (Tool.HIGHLIGHT, "&Resaltar", "highlight", "M"),
-            (Tool.LINE, "&Linea", "line", "L"),
-            (Tool.ARROW, "&Flecha", "arrow", "F"),
-            (Tool.TEXT, "&Texto", "text", "T"),
-            (Tool.INK, "&Dibujo libre", "ink", "D"),
-            (Tool.TABLE, "Ta&bla", "table", "A"),
-            (Tool.IMAGE, "&Imagen", "image", "I"),
-        ]
-        for tool, label, icon_name, key in tools:
-            act = QAction(icons.icon(icon_name), label, self)
+        self.tool_keys = {
+            Tool.SELECT: ("tool_select", "select", "S"),
+            Tool.PAN: ("tool_pan", "hand", "H"),
+            Tool.RECT: ("tool_rect", "rect", "R"),
+            Tool.HIGHLIGHT: ("tool_highlight", "highlight", "M"),
+            Tool.LINE: ("tool_line", "line", "L"),
+            Tool.ARROW: ("tool_arrow", "arrow", "F"),
+            Tool.TEXT: ("tool_text", "text", "T"),
+            Tool.INK: ("tool_ink", "ink", "D"),
+            Tool.TABLE: ("tool_table", "table", "A"),
+            Tool.IMAGE: ("tool_image", "image", "I"),
+        }
+        for tool, (clave, icon_name, key) in self.tool_keys.items():
+            act = QAction(icons.icon(icon_name), tr(clave), self)
             act.setCheckable(True)
             act.setShortcut(QKeySequence(key))
-            act.setStatusTip(f"Herramienta: {label.replace('&', '')} ({key})")
+            act.setStatusTip(tr("tool_status", name=tr(clave).replace("&", ""), key=key))
             act.triggered.connect(lambda checked=False, t=tool: self.select_tool(t))
             self.tool_group.addAction(act)
             self.tool_actions[tool] = act
         self.tool_actions[Tool.SELECT].setChecked(True)
 
     def _create_menus(self) -> None:
-        file_menu = self.menuBar().addMenu("&Archivo")
+        self._menu_keys = {}
+        file_menu = self.menuBar().addMenu(tr("menu_file"))
+        self._menu_keys[file_menu] = "menu_file"
         file_menu.addAction(self.act_new)
         file_menu.addAction(self.act_open)
-        self.recent_menu = QMenu("Abrir &reciente", self)
+        self.recent_menu = QMenu(tr("recent"), self)
+        self._menu_keys[self.recent_menu] = "recent"
         file_menu.addMenu(self.recent_menu)
         file_menu.addSeparator()
         file_menu.addAction(self.act_save)
@@ -341,7 +284,8 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self.act_quit)
         self._refresh_recent_menu()
 
-        edit_menu = self.menuBar().addMenu("&Editar")
+        edit_menu = self.menuBar().addMenu(tr("menu_edit"))
+        self._menu_keys[edit_menu] = "menu_edit"
         edit_menu.addAction(self.act_undo)
         edit_menu.addAction(self.act_redo)
         edit_menu.addSeparator()
@@ -352,7 +296,8 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.act_find_next)
         edit_menu.addAction(self.act_find_prev)
 
-        view_menu = self.menuBar().addMenu("&Ver")
+        view_menu = self.menuBar().addMenu(tr("menu_view"))
+        self._menu_keys[view_menu] = "menu_view"
         view_menu.addAction(self.act_zoom_in)
         view_menu.addAction(self.act_zoom_out)
         view_menu.addAction(self.act_zoom_reset)
@@ -366,7 +311,8 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.act_thumbnails)
         view_menu.addAction(self.act_fullscreen)
 
-        doc_menu = self.menuBar().addMenu("&Documento")
+        doc_menu = self.menuBar().addMenu(tr("menu_document"))
+        self._menu_keys[doc_menu] = "menu_document"
         doc_menu.addAction(self.act_page_add)
         doc_menu.addAction(self.act_page_insert)
         doc_menu.addAction(self.act_page_duplicate)
@@ -375,7 +321,8 @@ class MainWindow(QMainWindow):
         doc_menu.addAction(self.act_page_up)
         doc_menu.addAction(self.act_page_down)
         doc_menu.addSeparator()
-        tamano_menu = doc_menu.addMenu("&Tamano de las paginas nuevas")
+        tamano_menu = doc_menu.addMenu(tr("page_size_menu"))
+        self._menu_keys[tamano_menu] = "page_size_menu"
         self.page_size_group = QActionGroup(self)
         self.page_size_group.setExclusive(True)
         elegido = self.settings.value("document/page_size", DEFAULT_PAGE_SIZE)
@@ -389,16 +336,33 @@ class MainWindow(QMainWindow):
         self.new_page_size = str(elegido)
 
         doc_menu.addSeparator()
-        self.templates_menu = QMenu("&Plantillas", self)
+        self.templates_menu = QMenu(tr("templates"), self)
+        self._menu_keys[self.templates_menu] = "templates"
         doc_menu.addMenu(self.templates_menu)
         self.templates_menu.aboutToShow.connect(self._refresh_templates_menu)
         self._refresh_templates_menu()
 
-        tools_menu = self.menuBar().addMenu("&Herramientas")
+        tools_menu = self.menuBar().addMenu(tr("menu_tools"))
+        self._menu_keys[tools_menu] = "menu_tools"
         for act in self.tool_group.actions():
             tools_menu.addAction(act)
 
-        help_menu = self.menuBar().addMenu("A&yuda")
+        help_menu = self.menuBar().addMenu(tr("menu_help"))
+        self._menu_keys[help_menu] = "menu_help"
+        idioma_menu = help_menu.addMenu(tr("language"))
+        self._menu_keys[idioma_menu] = "language"
+        self.language_group = QActionGroup(self)
+        self.language_group.setExclusive(True)
+        self.language_actions = {}
+        for codigo, nombre in LANGUAGES.items():
+            act = QAction(nombre, self)
+            act.setCheckable(True)
+            act.setChecked(codigo == language())
+            act.triggered.connect(lambda checked=False, c=codigo: self.set_language(c))
+            self.language_group.addAction(act)
+            idioma_menu.addAction(act)
+            self.language_actions[codigo] = act
+        help_menu.addSeparator()
         help_menu.addAction(self.act_help)
         help_menu.addAction(self.act_website)
         help_menu.addAction(self.act_source)
@@ -406,7 +370,7 @@ class MainWindow(QMainWindow):
         help_menu.addAction(self.act_about)
 
     def _create_toolbars(self) -> None:
-        bar = QToolBar("Principal", self)
+        bar = QToolBar(tr("toolbar_main"), self)
         bar.setObjectName("toolbar_main")
         bar.setIconSize(QSize(22, 22))
         bar.setToolButtonStyle(Qt.ToolButtonIconOnly)
@@ -427,7 +391,7 @@ class MainWindow(QMainWindow):
         self.addToolBar(bar)
         self.toolbar_main = bar
 
-        tools = QToolBar("Herramientas", self)
+        tools = QToolBar(tr("toolbar_tools"), self)
         tools.setObjectName("toolbar_tools")
         tools.setIconSize(QSize(22, 22))
         for act in self.tool_group.actions():
@@ -437,43 +401,46 @@ class MainWindow(QMainWindow):
         # Color del trazo
         self.color_button = QToolButton(self)
         self.color_button.setPopupMode(QToolButton.InstantPopup)
-        self.color_button.setToolTip("Color del trazo y del texto")
+        self.color_button.setToolTip(tr("color_tip"))
         self.color_button.setMenu(self._color_menu(self._set_color, allow_none=False))
         tools.addWidget(self.color_button)
 
         # Color de relleno
         self.fill_button = QToolButton(self)
         self.fill_button.setPopupMode(QToolButton.InstantPopup)
-        self.fill_button.setToolTip("Color de relleno")
+        self.fill_button.setToolTip(tr("fill_tip"))
         self.fill_button.setMenu(self._color_menu(self._set_fill, allow_none=True))
         tools.addWidget(self.fill_button)
 
-        tools.addWidget(QLabel(" Grosor "))
+        self.lbl_width = QLabel(tr("width"))
+        tools.addWidget(self.lbl_width)
         self.width_spin = QDoubleSpinBox(self)
         self.width_spin.setRange(0.0, 20.0)
         self.width_spin.setSingleStep(0.5)
         self.width_spin.setDecimals(1)
         self.width_spin.setSuffix(" pt")
-        self.width_spin.setToolTip("Grosor de la linea")
+        self.width_spin.setToolTip(tr("width_tip"))
         self.width_spin.valueChanged.connect(self._set_width)
         tools.addWidget(self.width_spin)
 
-        tools.addWidget(QLabel(" Opacidad "))
+        self.lbl_opacity = QLabel(tr("opacity"))
+        tools.addWidget(self.lbl_opacity)
         self.opacity_spin = QSpinBox(self)
         self.opacity_spin.setRange(10, 100)
         self.opacity_spin.setSingleStep(5)
         self.opacity_spin.setSuffix(" %")
-        self.opacity_spin.setToolTip("Opacidad de la anotacion")
+        self.opacity_spin.setToolTip(tr("opacity_tip"))
         self.opacity_spin.valueChanged.connect(self._set_opacity)
         tools.addWidget(self.opacity_spin)
 
-        tools.addWidget(QLabel(" Letra "))
+        self.lbl_font = QLabel(tr("font_size"))
+        tools.addWidget(self.lbl_font)
         self.font_spin = QDoubleSpinBox(self)
         self.font_spin.setRange(4.0, 96.0)
         self.font_spin.setSingleStep(1.0)
         self.font_spin.setDecimals(0)
         self.font_spin.setSuffix(" pt")
-        self.font_spin.setToolTip("Tamano del texto")
+        self.font_spin.setToolTip(tr("font_size_tip"))
         self.font_spin.valueChanged.connect(self._set_font_size)
         tools.addWidget(self.font_spin)
 
@@ -482,7 +449,7 @@ class MainWindow(QMainWindow):
 
         # Los ajustes de estilo van en su propia fila: si no, la barra se
         # desborda en pantallas normales y aparece el boton de "mas".
-        estilo = QToolBar("Estilo", self)
+        estilo = QToolBar(tr("toolbar_style"), self)
         estilo.setObjectName("toolbar_style")
         estilo.setIconSize(QSize(22, 22))
         self.addToolBarBreak(Qt.TopToolBarArea)
@@ -492,22 +459,22 @@ class MainWindow(QMainWindow):
 
         self.font_combo = QComboBox(self)
         for familia in (Font.SANS, Font.SERIF, Font.MONO):
-            self.font_combo.addItem(familia.label, familia.value)
-        self.font_combo.setToolTip("Tipo de letra")
+            self.font_combo.addItem(tr(f"font_{familia.name.lower()}"), familia.value)
+        self.font_combo.setToolTip(tr("font_tip"))
         self.font_combo.currentIndexChanged.connect(self._set_font_family)
         tools.addWidget(self.font_combo)
 
-        self.act_bold = QAction(icons.icon("bold"), "Negrita", self)
+        self.act_bold = QAction(icons.icon("bold"), tr("bold"), self)
         self.act_bold.setCheckable(True)
         self.act_bold.setShortcut(QKeySequence.Bold)
-        self.act_bold.setToolTip("Negrita (Ctrl+B)")
+        self.act_bold.setToolTip(tr("bold_tip"))
         self.act_bold.triggered.connect(self._set_bold)
         tools.addAction(self.act_bold)
 
-        self.act_italic = QAction(icons.icon("italic"), "Cursiva", self)
+        self.act_italic = QAction(icons.icon("italic"), tr("italic"), self)
         self.act_italic.setCheckable(True)
         self.act_italic.setShortcut(QKeySequence.Italic)
-        self.act_italic.setToolTip("Cursiva (Ctrl+I)")
+        self.act_italic.setToolTip(tr("italic_tip"))
         self.act_italic.triggered.connect(self._set_italic)
         tools.addAction(self.act_italic)
 
@@ -519,7 +486,7 @@ class MainWindow(QMainWindow):
             (Align.CENTER, "align_center"),
             (Align.RIGHT, "align_right"),
         ):
-            act = QAction(icons.icon(nombre), f"Alinear a la {alineacion.label.lower()}", self)
+            act = QAction(icons.icon(nombre), tr(f"act_align_{alineacion.name.lower()}"), self)
             act.setCheckable(True)
             act.triggered.connect(lambda checked=False, a=alineacion: self._set_align(a))
             self.align_group.addAction(act)
@@ -528,18 +495,19 @@ class MainWindow(QMainWindow):
         self.align_actions[Align.LEFT].setChecked(True)
 
         tools.addSeparator()
-        tools.addWidget(QLabel(" Tabla "))
+        self.lbl_table = QLabel(tr("table_label"))
+        tools.addWidget(self.lbl_table)
         self.rows_spin = QSpinBox(self)
         self.rows_spin.setRange(1, 50)
-        self.rows_spin.setPrefix("filas ")
-        self.rows_spin.setToolTip("Filas de la tabla")
+        self.rows_spin.setPrefix(tr("rows_prefix"))
+        self.rows_spin.setToolTip(tr("rows_tip"))
         self.rows_spin.valueChanged.connect(self._set_rows)
         tools.addWidget(self.rows_spin)
 
         self.cols_spin = QSpinBox(self)
         self.cols_spin.setRange(1, 30)
-        self.cols_spin.setPrefix("col. ")
-        self.cols_spin.setToolTip("Columnas de la tabla")
+        self.cols_spin.setPrefix(tr("cols_prefix"))
+        self.cols_spin.setToolTip(tr("cols_tip"))
         self.cols_spin.valueChanged.connect(self._set_cols)
         tools.addWidget(self.cols_spin)
 
@@ -549,11 +517,11 @@ class MainWindow(QMainWindow):
         self._create_search_bar()
 
     def _create_search_bar(self) -> None:
-        bar = QToolBar("Buscar", self)
+        bar = QToolBar(tr("toolbar_search"), self)
         bar.setObjectName("toolbar_search")
         bar.setIconSize(QSize(18, 18))
         self.search_edit = QLineEdit(self)
-        self.search_edit.setPlaceholderText("Buscar texto en el documento...")
+        self.search_edit.setPlaceholderText(tr("search_placeholder"))
         self.search_edit.setClearButtonEnabled(True)
         self.search_edit.setMaximumWidth(360)
         self.search_edit.returnPressed.connect(self.run_search)
@@ -562,7 +530,7 @@ class MainWindow(QMainWindow):
         bar.addAction(self.act_find_next)
         self.search_label = QLabel("  ")
         bar.addWidget(self.search_label)
-        close_action = QAction("Cerrar y quitar el resaltado", self)
+        close_action = QAction(tr("search_close"), self)
         close_action.setShortcut(QKeySequence("Esc"))
         close_action.triggered.connect(self.close_search)
         bar.addAction(close_action)
@@ -576,7 +544,7 @@ class MainWindow(QMainWindow):
     def _color_menu(self, slot, allow_none: bool) -> QMenu:
         menu = QMenu(self)
         if allow_none:
-            act = QAction(_swatch(None), "Sin relleno", self)
+            act = QAction(_swatch(None), tr("no_fill"), self)
             act.triggered.connect(lambda: slot(None))
             menu.addAction(act)
             menu.addSeparator()
@@ -585,13 +553,13 @@ class MainWindow(QMainWindow):
             act.triggered.connect(lambda checked=False, h=hexvalue: slot(QColor(h)))
             menu.addAction(act)
         menu.addSeparator()
-        more = QAction("Mas colores...", self)
+        more = QAction(tr("more_colours"), self)
         more.triggered.connect(lambda: self._pick_custom_color(slot))
         menu.addAction(more)
         return menu
 
     def _pick_custom_color(self, slot) -> None:
-        color = QColorDialog.getColor(QColor("#d81b1b"), self, "Elegir color")
+        color = QColorDialog.getColor(QColor("#d81b1b"), self, tr("pick_colour"))
         if color.isValid():
             slot(color)
 
@@ -608,7 +576,7 @@ class MainWindow(QMainWindow):
         self.thumb_list.setWordWrap(True)
         self.thumb_list.currentRowChanged.connect(self._on_thumbnail_selected)
 
-        dock = QDockWidget("Paginas", self)
+        dock = QDockWidget(tr("pages_dock"), self)
         dock.setObjectName("dock_thumbnails")
         dock.setWidget(self.thumb_list)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
@@ -622,19 +590,20 @@ class MainWindow(QMainWindow):
         self.page_spin = QSpinBox(self)
         self.page_spin.setMinimum(1)
         self.page_spin.setMaximum(1)
-        self.page_spin.setToolTip("Pagina actual")
+        self.page_spin.setToolTip(tr("status_page"))
         self.page_spin.setFixedWidth(70)
         self.page_spin.valueChanged.connect(self._on_page_spin)
-        self.page_label = QLabel("de 0")
+        self.page_label = QLabel(tr("status_of", total=0))
         self.zoom_label = QLabel("100 %")
         self.info_label = QLabel("")
-        status.addPermanentWidget(QLabel("Pagina"))
+        self.lbl_page = QLabel(tr("status_page"))
+        status.addPermanentWidget(self.lbl_page)
         status.addPermanentWidget(self.page_spin)
         status.addPermanentWidget(self.page_label)
         status.addPermanentWidget(QLabel("   "))
         status.addPermanentWidget(self.zoom_label)
         status.addWidget(self.info_label)
-        status.showMessage("Abre un PDF con Ctrl+O o arrastralo aqui", 6000)
+        status.showMessage(tr("status_start"), 6000)
 
     def _connect_view(self) -> None:
         self.view.pageChanged.connect(self._on_page_changed)
@@ -651,7 +620,7 @@ class MainWindow(QMainWindow):
         """Mientras se escribe en un cuadro de texto, Supr y Ctrl+A son del editor."""
         self._update_actions()
         if editing:
-            self.statusBar().showMessage("Escribe la nota; Esc para terminar", 4000)
+            self.statusBar().showMessage(tr("status_editing"), 4000)
 
     # ------------------------------------------------------------------ ajustes
     def _restore_settings(self) -> None:
@@ -767,18 +736,13 @@ class MainWindow(QMainWindow):
         self.settings.set_table_cols(value)
         self.view.apply_style_to_selection(cols=int(value))
 
-    IMAGE_FILTER = (
-        "Imagenes (*.png *.jpg *.jpeg *.bmp *.gif *.tif *.tiff *.webp);;"
-        "Todos los archivos (*)"
-    )
-
     def choose_image(self) -> bool:
         """Pide una imagen y la deja lista para colocarla. False si se cancela."""
         path, _ = QFileDialog.getOpenFileName(
             self,
-            "Elegir imagen",
+            tr("image_title"),
             self.settings.last_dir() or os.path.expanduser("~"),
-            self.IMAGE_FILTER,
+            tr("image_filter"),
         )
         if not path:
             return False
@@ -786,12 +750,10 @@ class MainWindow(QMainWindow):
             with open(path, "rb") as fh:
                 datos = fh.read()
         except OSError as exc:
-            QMessageBox.warning(self, __app_name__, f"No se pudo leer la imagen:\n{exc}")
+            QMessageBox.warning(self, __app_name__, tr("image_unreadable", error=exc))
             return False
         if QPixmap.fromImage(QImage.fromData(datos)).isNull():
-            QMessageBox.warning(
-                self, __app_name__, "Ese archivo no parece una imagen que se pueda abrir."
-            )
+            QMessageBox.warning(self, __app_name__, tr("image_invalid"))
             return False
         self.view.style_defaults["image"] = (os.path.basename(path), datos)
         self.settings.set_last_dir(os.path.dirname(path))
@@ -805,25 +767,15 @@ class MainWindow(QMainWindow):
         self.view.set_tool(tool)
         self.tool_actions[tool].setChecked(True)
         if tool is Tool.HIGHLIGHT:
-            self.statusBar().showMessage(
-                "Arrastra sobre el texto que quieras resaltar", 4000
-            )
+            self.statusBar().showMessage(tr("hint_highlight"), 4000)
         elif tool is Tool.TEXT:
-            self.statusBar().showMessage(
-                "Arrastra para crear el cuadro y escribe; Esc para terminar", 5000
-            )
+            self.statusBar().showMessage(tr("hint_text"), 5000)
         elif tool is Tool.IMAGE:
             nombre = (self.view.style_defaults.get("image") or ("", b""))[0]
-            self.statusBar().showMessage(
-                f"Arrastra sobre la pagina para colocar {nombre}, o haz un clic "
-                "para ponerla a un tamano comodo",
-                6000,
-            )
+            self.statusBar().showMessage(tr("hint_image", name=nombre), 6000)
         elif tool is Tool.TABLE:
             self.statusBar().showMessage(
-                f"Arrastra para crear una tabla de {self.rows_spin.value()} x "
-                f"{self.cols_spin.value()}; doble clic en una celda para escribir, "
-                "Tab pasa a la siguiente",
+                tr("hint_table", rows=self.rows_spin.value(), cols=self.cols_spin.value()),
                 6000,
             )
 
@@ -845,10 +797,7 @@ class MainWindow(QMainWindow):
         self._build_thumbnails()
         self._update_title()
         self._update_actions()
-        self.statusBar().showMessage(
-            "Documento nuevo. Anade paginas desde el menu Documento y guardalo con Ctrl+S",
-            6000,
-        )
+        self.statusBar().showMessage(tr("status_new"), 6000)
         self.documentChanged.emit()
 
     def add_page_end(self) -> None:
@@ -872,16 +821,14 @@ class MainWindow(QMainWindow):
         if not self.view.has_document():
             return
         if self.view.page_count <= 1:
-            QMessageBox.information(
-                self, __app_name__, "El documento no puede quedarse sin paginas."
-            )
+            QMessageBox.information(self, __app_name__, tr("last_page"))
             return
         actual = self.view.current_page
         anotaciones = len(self.view.items_on_page(actual))
-        aviso = f"Eliminar la pagina {actual + 1} de {self.view.page_count}?"
+        aviso = tr("delete_page_ask", page=actual + 1, total=self.view.page_count)
         if anotaciones:
-            aviso += f"\n\nSe borraran tambien sus {anotaciones} anotaciones."
-        aviso += "\n\nSe puede deshacer con Ctrl+Z."
+            aviso += tr("delete_page_annots", count=anotaciones)
+        aviso += tr("delete_page_undo")
         if QMessageBox.question(self, __app_name__, aviso) != QMessageBox.Yes:
             return
         self.view.delete_page(actual)
@@ -916,8 +863,8 @@ class MainWindow(QMainWindow):
     def _refresh_templates_menu(self) -> None:
         menu = self.templates_menu
         menu.clear()
-        guardar = QAction("&Guardar esto como plantilla...", self)
-        guardar.setStatusTip("Guardar las anotaciones actuales para reutilizarlas")
+        guardar = QAction(tr("template_save"), self)
+        guardar.setStatusTip(tr("template_save_tip"))
         guardar.triggered.connect(self.save_as_template)
         guardar.setEnabled(self.view.has_document())
         menu.addAction(guardar)
@@ -925,17 +872,21 @@ class MainWindow(QMainWindow):
 
         plantillas = list_templates(self.templates_dir())
         if not plantillas:
-            vacio = QAction("(todavia no hay plantillas guardadas)", self)
+            vacio = QAction(tr("template_none"), self)
             vacio.setEnabled(False)
             menu.addAction(vacio)
         else:
-            nuevo = menu.addMenu("&Nuevo documento desde plantilla")
-            aplicar = menu.addMenu("&Aplicar al documento de ahora")
+            nuevo = menu.addMenu(tr("template_new"))
+            aplicar = menu.addMenu(tr("template_apply"))
             aplicar.setEnabled(self.view.has_document())
             for plantilla in plantillas:
-                detalle = f"{plantilla.annotations} anotaciones"
+                detalle = tr("template_detail", count=plantilla.annotations)
                 if plantilla.pages:
-                    detalle = f"{plantilla.pages} paginas, " + detalle
+                    detalle = tr(
+                        "template_detail_pages",
+                        pages=plantilla.pages,
+                        count=plantilla.annotations,
+                    )
                 act = QAction(f"{plantilla.name}  ({detalle})", self)
                 act.triggered.connect(
                     lambda checked=False, p=plantilla.path: self.new_from_template(p)
@@ -948,7 +899,7 @@ class MainWindow(QMainWindow):
                 )
                 aplicar.addAction(act2)
 
-            borrar = menu.addMenu("&Eliminar una plantilla")
+            borrar = menu.addMenu(tr("template_delete"))
             for plantilla in plantillas:
                 act = QAction(plantilla.name, self)
                 act.triggered.connect(
@@ -957,7 +908,7 @@ class MainWindow(QMainWindow):
                 borrar.addAction(act)
 
         menu.addSeparator()
-        carpeta = QAction("Abrir la &carpeta de plantillas", self)
+        carpeta = QAction(tr("template_folder"), self)
         carpeta.triggered.connect(
             lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(self._ensure_templates_dir()))
         )
@@ -977,13 +928,12 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 __app_name__,
-                "Todavia no hay nada que guardar: anade cuadros, textos, tablas o "
-                "imagenes y vuelve a intentarlo.",
+                tr("template_empty"),
             )
             return False
         propuesto = os.path.splitext(self.view.document.name)[0]
         nombre, ok = QInputDialog.getText(
-            self, "Guardar como plantilla", "Nombre de la plantilla:", text=propuesto
+            self, tr("template_name_title"), tr("template_name_label"), text=propuesto
         )
         if not ok or not nombre.strip():
             return False
@@ -998,7 +948,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, __app_name__, str(exc))
             return False
         self.statusBar().showMessage(
-            f"Plantilla guardada: {os.path.basename(ruta)}", 5000
+            tr("template_saved", name=os.path.basename(ruta)), 5000
         )
         return True
 
@@ -1013,8 +963,8 @@ class MainWindow(QMainWindow):
             return False
         colocadas = self.view.apply_template(anotaciones)
         self.statusBar().showMessage(
-            f"Plantilla '{nombre}': {colocadas} anotaciones colocadas desde la pagina "
-            f"{self.view.current_page + 1}",
+            tr("template_applied", name=nombre, count=colocadas,
+               page=self.view.current_page + 1),
             6000,
         )
         return colocadas > 0
@@ -1042,7 +992,7 @@ class MainWindow(QMainWindow):
         self._build_thumbnails()
         self._update_title()
         self._update_actions()
-        self.statusBar().showMessage(f"Documento nuevo desde la plantilla '{nombre}'", 6000)
+        self.statusBar().showMessage(tr("template_new_done", name=nombre), 6000)
         self.documentChanged.emit()
         return True
 
@@ -1050,7 +1000,7 @@ class MainWindow(QMainWindow):
         from ..templates import delete_template as borrar
 
         respuesta = QMessageBox.question(
-            self, __app_name__, f"Eliminar la plantilla '{plantilla.name}'?"
+            self, __app_name__, tr("template_delete_ask", name=plantilla.name)
         )
         if respuesta != QMessageBox.Yes:
             return False
@@ -1059,15 +1009,81 @@ class MainWindow(QMainWindow):
         except TemplateError as exc:
             QMessageBox.critical(self, __app_name__, str(exc))
             return False
-        self.statusBar().showMessage(f"Plantilla eliminada: {plantilla.name}", 4000)
+        self.statusBar().showMessage(tr("template_deleted", name=plantilla.name), 4000)
         return True
+
+    # ------------------------------------------------------------------ idioma
+    def set_language(self, code: str) -> None:
+        """Cambia el idioma de la interfaz y la retraduce al vuelo."""
+        set_language(code)
+        self.settings.set_language(code)
+        if code in self.language_actions:
+            self.language_actions[code].setChecked(True)
+        self.retranslate()
+        self.statusBar().showMessage(tr("language_changed"), 4000)
+
+    def retranslate(self) -> None:
+        """Vuelve a poner todos los textos en el idioma activo."""
+        for act, (clave, tip) in self._action_keys.items():
+            act.setText(tr(clave, app=__app_name__))
+            act.setStatusTip(tr(tip) if tip else tr(clave, app=__app_name__))
+        for menu, clave in self._menu_keys.items():
+            menu.setTitle(tr(clave))
+        for tool, (clave, _icono, key) in self.tool_keys.items():
+            accion = self.tool_actions[tool]
+            accion.setText(tr(clave))
+            accion.setStatusTip(
+                tr("tool_status", name=tr(clave).replace("&", ""), key=key)
+            )
+        self.act_undo.setText(tr("undo"))
+        self.act_redo.setText(tr("redo"))
+        self.act_bold.setText(tr("bold"))
+        self.act_bold.setToolTip(tr("bold_tip"))
+        self.act_italic.setText(tr("italic"))
+        self.act_italic.setToolTip(tr("italic_tip"))
+        for alineacion, accion in self.align_actions.items():
+            accion.setText(tr(f"act_align_{alineacion.name.lower()}"))
+        self.act_close_search.setText(tr("search_close"))
+        self.search_edit.setPlaceholderText(tr("search_placeholder"))
+        self.color_button.setToolTip(tr("color_tip"))
+        self.fill_button.setToolTip(tr("fill_tip"))
+        self.color_button.setMenu(self._color_menu(self._set_color, allow_none=False))
+        self.fill_button.setMenu(self._color_menu(self._set_fill, allow_none=True))
+        self.lbl_width.setText(tr("width"))
+        self.width_spin.setToolTip(tr("width_tip"))
+        self.lbl_opacity.setText(tr("opacity"))
+        self.opacity_spin.setToolTip(tr("opacity_tip"))
+        self.lbl_font.setText(tr("font_size"))
+        self.font_spin.setToolTip(tr("font_size_tip"))
+        self.font_combo.setToolTip(tr("font_tip"))
+        indice = self.font_combo.currentIndex()
+        self.font_combo.blockSignals(True)
+        for posicion, familia in enumerate((Font.SANS, Font.SERIF, Font.MONO)):
+            self.font_combo.setItemText(posicion, tr(f"font_{familia.name.lower()}"))
+        self.font_combo.setCurrentIndex(indice)
+        self.font_combo.blockSignals(False)
+        self.lbl_table.setText(tr("table_label"))
+        self.rows_spin.setPrefix(tr("rows_prefix"))
+        self.rows_spin.setToolTip(tr("rows_tip"))
+        self.cols_spin.setPrefix(tr("cols_prefix"))
+        self.cols_spin.setToolTip(tr("cols_tip"))
+        self.lbl_page.setText(tr("status_page"))
+        self.page_spin.setToolTip(tr("status_page"))
+        self.thumb_dock.setWindowTitle(tr("pages_dock"))
+        self.toolbar_main.setWindowTitle(tr("toolbar_main"))
+        self.toolbar_tools.setWindowTitle(tr("toolbar_tools"))
+        self.toolbar_style.setWindowTitle(tr("toolbar_style"))
+        self.toolbar_search.setWindowTitle(tr("toolbar_search"))
+        self._refresh_recent_menu()
+        self._update_actions()
+        self._update_title()
 
     def open_file_dialog(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
             self,
-            "Abrir PDF",
+            tr("open_title"),
             self.settings.last_dir() or os.path.expanduser("~"),
-            "Documentos PDF (*.pdf);;Todos los archivos (*)",
+            tr("pdf_filter"),
         )
         if path:
             self.open_path(path)
@@ -1078,7 +1094,7 @@ class MainWindow(QMainWindow):
             return False
         path = os.path.abspath(path)
         if not os.path.isfile(path):
-            QMessageBox.warning(self, __app_name__, f"No existe el archivo:\n{path}")
+            QMessageBox.warning(self, __app_name__, tr("no_such_file", path=path))
             return False
         password = ""
         while True:
@@ -1088,8 +1104,8 @@ class MainWindow(QMainWindow):
             except PasswordRequired:
                 password, ok = QInputDialog.getText(
                     self,
-                    "Documento protegido",
-                    f"Contrasena para {os.path.basename(path)}:",
+                    tr("password_title"),
+                    tr("password_label", name=os.path.basename(path)),
                     QLineEdit.Password,
                 )
                 if not ok:
@@ -1109,7 +1125,7 @@ class MainWindow(QMainWindow):
         self._build_thumbnails()
         self._update_title()
         self._update_actions()
-        self.statusBar().showMessage(f"Abierto: {path}", 5000)
+        self.statusBar().showMessage(tr("status_opened", path=path), 5000)
         self.documentChanged.emit()
         return True
 
@@ -1146,7 +1162,7 @@ class MainWindow(QMainWindow):
             base, ext = os.path.splitext(document.path)
             suggestion = f"{base}-anotado{ext or '.pdf'}"
         path, _ = QFileDialog.getSaveFileName(
-            self, "Guardar PDF como", suggestion, "Documentos PDF (*.pdf)"
+            self, tr("save_title"), suggestion, tr("pdf_filter")
         )
         if not path:
             return False
@@ -1168,7 +1184,7 @@ class MainWindow(QMainWindow):
         self.settings.set_last_dir(os.path.dirname(path))
         self._refresh_recent_menu(self.settings.push_recent(path))
         self._update_title()
-        self.statusBar().showMessage(f"Guardado: {path}", 5000)
+        self.statusBar().showMessage(tr("status_saved", path=path), 5000)
         return True
 
     def print_file(self) -> None:
@@ -1183,7 +1199,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, __app_name__, str(exc))
             return
         if printed:
-            self.statusBar().showMessage("Documento enviado a la impresora", 5000)
+            self.statusBar().showMessage(tr("status_printed"), 5000)
 
     def preview_print(self) -> None:
         document = self.view.document
@@ -1207,7 +1223,7 @@ class MainWindow(QMainWindow):
         self.recent_menu.setEnabled(bool(existing))
         if existing:
             self.recent_menu.addSeparator()
-            clear = QAction("Vaciar la lista", self)
+            clear = QAction(tr("recent_clear"), self)
             clear.triggered.connect(self._clear_recent)
             self.recent_menu.addAction(clear)
 
@@ -1294,10 +1310,12 @@ class MainWindow(QMainWindow):
         hits = document.search(needle)
         self.view.set_search_hits(hits)
         if hits:
-            self.search_label.setText(f"  {self.view.hit_index + 1} de {len(hits)}  ")
+            self.search_label.setText(
+                tr("search_of", current=self.view.hit_index + 1, total=len(hits))
+            )
         else:
-            self.search_label.setText("  Sin resultados  ")
-            self.statusBar().showMessage(f"No se encontro '{needle}'", 4000)
+            self.search_label.setText(tr("search_none"))
+            self.statusBar().showMessage(tr("search_not_found", text=needle), 4000)
 
     # ------------------------------------------------------------------ vista
     def goto_page_dialog(self) -> None:
@@ -1305,8 +1323,8 @@ class MainWindow(QMainWindow):
             return
         page, ok = QInputDialog.getInt(
             self,
-            "Ir a la pagina",
-            f"Numero de pagina (1-{self.view.page_count}):",
+            tr("goto_title"),
+            tr("goto_label", total=self.view.page_count),
             self.view.current_page + 1,
             1,
             self.view.page_count,
@@ -1326,7 +1344,7 @@ class MainWindow(QMainWindow):
 
     def delete_selection(self) -> None:
         if not self.view.delete_selected():
-            self.statusBar().showMessage("No hay ninguna anotacion seleccionada", 3000)
+            self.statusBar().showMessage(tr("status_no_selection"), 3000)
 
     # ------------------------------------------------------------------ estado
     def _on_page_changed(self, index: int) -> None:
@@ -1382,10 +1400,13 @@ class MainWindow(QMainWindow):
         count = self.view.annotation_count()
         self.page_spin.setEnabled(has_doc)
         self.page_spin.setMaximum(max(1, self.view.page_count))
-        self.page_label.setText(f"de {self.view.page_count}")
-        self.info_label.setText(
-            f"{count} anotacion{'es' if count != 1 else ''}" if has_doc else ""
-        )
+        self.page_label.setText(tr("status_of", total=self.view.page_count))
+        if not has_doc:
+            self.info_label.setText("")
+        elif count == 1:
+            self.info_label.setText(tr("status_annotation"))
+        else:
+            self.info_label.setText(tr("status_annotations", count=count))
 
     # ------------------------------------------------------------------ cierre
     def _confirm_discard(self) -> bool:
@@ -1394,7 +1415,7 @@ class MainWindow(QMainWindow):
         answer = QMessageBox.question(
             self,
             __app_name__,
-            "El documento tiene anotaciones sin guardar.\n\nQuieres guardarlas?",
+            tr("unsaved"),
             QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
             QMessageBox.Save,
         )
@@ -1451,7 +1472,7 @@ class MainWindow(QMainWindow):
             with open(path, "rb") as fh:
                 datos = fh.read()
         except OSError as exc:
-            QMessageBox.warning(self, __app_name__, f"No se pudo leer la imagen:\n{exc}")
+            QMessageBox.warning(self, __app_name__, tr("image_unreadable", error=exc))
             return False
         vista = self.view
         if window_pos is not None:
@@ -1463,7 +1484,7 @@ class MainWindow(QMainWindow):
         if pagina is None:
             return False
         vista.place_image(os.path.basename(path), datos, pagina.index, pagina.mapFromScene(escena))
-        self.statusBar().showMessage(f"Imagen colocada: {os.path.basename(path)}", 4000)
+        self.statusBar().showMessage(tr("status_image_placed", name=os.path.basename(path)), 4000)
         return True
 
     # ------------------------------------------------------------------ ayuda

@@ -6,14 +6,15 @@ from collections.abc import Sequence
 
 from PySide6.QtGui import QUndoCommand
 
-from ..model import Annotation
+from ..i18n import tr
+from ..model import Annotation, Kind
 
 
 class AddAnnotationCommand(QUndoCommand):
     """Anade una anotacion (y su item) al documento."""
 
     def __init__(self, view, ann: Annotation, item, text: str | None = None) -> None:
-        super().__init__(text or f"Anadir {ann.kind.label.lower()}")
+        super().__init__(text or tr("cmd_add", kind=tr(f"kind_{Kind(ann.kind).value}")))
         self._view = view
         self._ann = ann
         self._item = item
@@ -41,7 +42,10 @@ class DeleteAnnotationsCommand(QUndoCommand):
     """Elimina una o varias anotaciones."""
 
     def __init__(self, view, items: Sequence) -> None:
-        label = "Eliminar anotacion" if len(items) == 1 else f"Eliminar {len(items)} anotaciones"
+        label = (
+            tr("cmd_delete_one") if len(items) == 1
+            else tr("cmd_delete_many", count=len(items))
+        )
         super().__init__(label)
         self._view = view
         self._items = list(items)
@@ -69,9 +73,9 @@ class ChangeAnnotationsCommand(QUndoCommand):
         self,
         view,
         changes: Sequence[tuple[object, Annotation, Annotation]],
-        text: str = "Modificar anotacion",
+        text: str = "",
     ) -> None:
-        super().__init__(text)
+        super().__init__(text or tr("cmd_change"))
         self._view = view
         self._changes: list[tuple[object, Annotation, Annotation]] = list(changes)
         self._skip_first_redo = True
@@ -113,7 +117,7 @@ class AddPageCommand(QUndoCommand):
     """Anade (o duplica) una pagina del documento."""
 
     def __init__(self, view, index: int, size=None, duplicate: bool = False) -> None:
-        super().__init__("Duplicar pagina" if duplicate else "Anadir pagina")
+        super().__init__(tr("cmd_page_duplicate") if duplicate else tr("cmd_page_add"))
         self._view = view
         self._index = index
         self._size = size
@@ -138,7 +142,7 @@ class DeletePageCommand(QUndoCommand):
     """Borra una pagina y todo lo que hubiera anotado en ella."""
 
     def __init__(self, view, index: int) -> None:
-        super().__init__(f"Eliminar la pagina {index + 1}")
+        super().__init__(tr("cmd_page_delete", page=index + 1))
         self._view = view
         self._index = index
         self._page_data: bytes = b""
@@ -172,7 +176,7 @@ class MovePageCommand(QUndoCommand):
     """Cambia una pagina de sitio."""
 
     def __init__(self, view, index: int, destino: int) -> None:
-        super().__init__(f"Mover la pagina {index + 1}")
+        super().__init__(tr("cmd_page_move", page=index + 1))
         self._view = view
         self._index = index
         self._destino = destino
