@@ -21,18 +21,24 @@ from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsRectItem,
     QGraphicsScene,
+    QGraphicsTextItem,
     QGraphicsView,
 )
 
 from ..config import MAX_ZOOM, MIN_ZOOM
 from ..document import PdfDocument, SearchHit
-from ..model import Annotation, AnnotationStore, Kind
+from ..model import Align, Annotation, AnnotationStore, Font, Kind
 from .commands import (
     AddAnnotationCommand,
     ChangeAnnotationsCommand,
     DeleteAnnotationsCommand,
 )
-from .items import AnnotationItemMixin, TextItem, create_item
+from .items import (
+    AnnotationItemMixin,
+    TableItem,
+    TextItem,
+    create_item,
+)
 
 PAGE_GAP = 16.0        # separacion entre paginas, en puntos
 PAGE_MARGIN = 16.0     # margen alrededor del documento
@@ -51,6 +57,7 @@ class Tool(str, Enum):
     ARROW = "arrow"
     TEXT = "text"
     INK = "ink"
+    TABLE = "table"
 
     @property
     def kind(self) -> Kind | None:
@@ -61,6 +68,7 @@ class Tool(str, Enum):
             Tool.ARROW: Kind.ARROW,
             Tool.TEXT: Kind.TEXT,
             Tool.INK: Kind.INK,
+            Tool.TABLE: Kind.TABLE,
         }
         return mapping.get(self)
 
@@ -195,6 +203,12 @@ class PdfView(QGraphicsView):
             "opacity": 1.0,
             "font_size": 12.0,
             "highlight_color": (1.0, 0.83, 0.0),
+            "font": Font.SANS,
+            "bold": False,
+            "italic": False,
+            "align": Align.LEFT,
+            "rows": 3,
+            "cols": 3,
         }
 
         self._render_timer = QTimer(self)
@@ -473,6 +487,12 @@ class PdfView(QGraphicsView):
             opacity=float(style["opacity"]),
             font_size=float(style["font_size"]),
             fill=tuple(style["fill"]) if style["fill"] else None,
+            font=Font(style["font"]),
+            bold=bool(style["bold"]),
+            italic=bool(style["italic"]),
+            align=Align(style["align"]),
+            rows=int(style["rows"]),
+            cols=int(style["cols"]),
         )
         if kind in (Kind.LINE, Kind.ARROW):
             ann.p1 = (point.x(), point.y())
@@ -483,6 +503,9 @@ class PdfView(QGraphicsView):
             ann.rect = (point.x(), point.y(), point.x(), point.y())
         if kind is Kind.TEXT and ann.fill is None:
             ann.width = 0.0
+        if kind is Kind.TABLE:
+            # La rejilla siempre se ve, aunque el trazo elegido sea 0.
+            ann.width = max(0.5, ann.width)
         return ann
 
     def attach_item(self, item, ann: Annotation) -> None:
@@ -525,12 +548,17 @@ class PdfView(QGraphicsView):
         if item is None:
             return
         ann = item.ann
+        if ann.kind is Kind.TABLE:
+            x0, y0, x1, y1 = ann.normalized_rect()
+            if (x1 - x0) < 40 or (y1 - y0) < 24:
+                ann.rect = (x0, y0, x0 + 90.0 * ann.cols, y0 + 26.0 * ann.rows)
+            item.apply_model()
         if ann.kind is Kind.TEXT:
             x0, y0, x1, y1 = ann.normalized_rect()
             if (x1 - x0) < 24 or (y1 - y0) < ann.font_size:
                 ann.rect = (x0, y0, x0 + 220.0, y0 + ann.font_size * 1.8)
             item.apply_model()
-        if ann.is_empty() and ann.kind is not Kind.TEXT:
+        if ann.is_empty() and ann.kind not in (Kind.TEXT, Kind.TABLE):
             self.detach_item(item)
             return
         item.sync_model()
@@ -540,6 +568,8 @@ class PdfView(QGraphicsView):
         item.setSelected(True)
         if isinstance(item, TextItem):
             item.start_editing()
+        elif isinstance(item, TableItem):
+            item.edit_cell(0)
         self.toolFinished.emit()
 
     # ------------------------------------------------------------------ raton
@@ -598,13 +628,15 @@ class PdfView(QGraphicsView):
                 self.detach_item(self._draft_item)
                 self._draft_item = None
             self._scene.clearSelection()
+            self.clear_search()
             self.set_tool(Tool.SELECT)
             self.toolFinished.emit()
             event.accept()
             return
         if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
             focus = self._scene.focusItem()
-            if not isinstance(focus, TextItem) or not focus.hasFocus():
+            editando = self._text_editing or isinstance(focus, QGraphicsTextItem)
+            if not editando and (not isinstance(focus, TextItem) or not focus.hasFocus()):
                 if self.delete_selected():
                     event.accept()
                     return

@@ -3,8 +3,8 @@
 import pymupdf
 import pytest
 
-from easypdf.annotations import AUTHOR, apply_annotations
-from easypdf.model import Annotation, Kind
+from easypdf.annotations import AUTHOR, apply_annotations, font_code
+from easypdf.model import Align, Annotation, Font, Kind
 
 
 @pytest.fixture()
@@ -106,3 +106,76 @@ def test_la_flecha_lleva_su_propia_punta(documento):
     assert abs(ancho) == pytest.approx(largo, rel=0.1)
     poligono = list(page.annots())[1]
     assert poligono.colors["fill"] == [pytest.approx(c) for c in ann.color]
+
+
+def test_la_tabla_se_guarda_como_rejilla_y_textos(documento):
+    doc, page = documento
+    tabla = Annotation(
+        kind=Kind.TABLE, page=0, rect=(40, 40, 340, 160), rows=2, cols=3,
+        cells=["Concepto", "Cantidad", "Importe", "Camisetas", "12", ""],
+        font_size=10,
+    )
+    apply_annotations(doc, [tabla])
+    anotaciones = list(page.annots())
+    tipos = [a.type[1] for a in anotaciones]
+    # una tinta con toda la rejilla y un texto por celda con contenido
+    assert tipos[0] == "Ink"
+    assert tipos.count("FreeText") == 5
+    contenidos = [a.info.get("content", "") for a in anotaciones if a.type[1] == "FreeText"]
+    assert "Concepto" in contenidos and "12" in contenidos
+
+
+def test_la_tabla_con_relleno_lleva_fondo(documento):
+    doc, page = documento
+    apply_annotations(doc, [Annotation(
+        kind=Kind.TABLE, page=0, rect=(40, 40, 200, 100), rows=1, cols=1,
+        fill=(0.9, 0.9, 1.0),
+    )])
+    assert [a.type[1] for a in page.annots()] == ["Square", "Ink"]
+
+
+@pytest.mark.parametrize(
+    "familia, negrita, cursiva, esperado",
+    [
+        (Font.SANS, False, False, "helv"),
+        (Font.SANS, True, False, "hebo"),
+        (Font.SERIF, False, True, "tiit"),
+        (Font.MONO, True, True, "cobi"),
+    ],
+)
+def test_codigo_de_fuente(familia, negrita, cursiva, esperado):
+    ann = Annotation(kind=Kind.TEXT, page=0, font=familia, bold=negrita, italic=cursiva)
+    assert font_code(ann) == esperado
+
+
+def test_negrita_y_cursiva_llegan_al_pdf():
+    """PyMuPDF ignora las variantes en texto normal: hay que usar el enriquecido."""
+
+    def tinta(**estilo):
+        doc = pymupdf.open()
+        page = doc.new_page(width=340, height=80)
+        apply_annotations(doc, [Annotation(
+            kind=Kind.TEXT, page=0, rect=(20, 20, 320, 70), text="Hamburguesa 123",
+            font_size=18, color=(0, 0, 0), width=0, **estilo,
+        )])
+        pix = page.get_pixmap(annots=True)
+        oscuros = sum(
+            1 for i in range(0, len(pix.samples) - 3, pix.n) if pix.samples[i] < 128
+        )
+        doc.close()
+        return oscuros
+
+    normal = tinta()
+    assert normal > 0
+    assert tinta(bold=True) > normal * 1.15
+    assert tinta(font=Font.MONO) != normal
+
+
+def test_la_alineacion_se_guarda(documento):
+    doc, page = documento
+    apply_annotations(doc, [Annotation(
+        kind=Kind.TEXT, page=0, rect=(20, 20, 300, 60), text="hola",
+        align=Align.RIGHT, font_size=12,
+    )])
+    annot = list(page.annots())[0]
+    assert annot.info.get("content") == "hola"

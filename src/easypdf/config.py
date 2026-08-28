@@ -110,6 +110,42 @@ class Settings:
     def set_tool_font_size(self, value: float) -> None:
         self._s.setValue("tools/font_size", float(value))
 
+    def tool_font(self) -> str:
+        return str(self._s.value("tools/font", "helv"))
+
+    def set_tool_font(self, value: str) -> None:
+        self._s.setValue("tools/font", value)
+
+    def tool_bold(self) -> bool:
+        return str(self._s.value("tools/bold", "false")).lower() in ("1", "true", "yes")
+
+    def set_tool_bold(self, value: bool) -> None:
+        self._s.setValue("tools/bold", bool(value))
+
+    def tool_italic(self) -> bool:
+        return str(self._s.value("tools/italic", "false")).lower() in ("1", "true", "yes")
+
+    def set_tool_italic(self, value: bool) -> None:
+        self._s.setValue("tools/italic", bool(value))
+
+    def tool_align(self) -> int:
+        return int(self._s.value("tools/align", 0))
+
+    def set_tool_align(self, value: int) -> None:
+        self._s.setValue("tools/align", int(value))
+
+    def table_rows(self) -> int:
+        return int(self._s.value("tools/table_rows", 3))
+
+    def set_table_rows(self, value: int) -> None:
+        self._s.setValue("tools/table_rows", int(value))
+
+    def table_cols(self) -> int:
+        return int(self._s.value("tools/table_cols", 3))
+
+    def set_table_cols(self, value: int) -> None:
+        self._s.setValue("tools/table_cols", int(value))
+
     # -- ventana ---------------------------------------------------------
     def window_geometry(self) -> bytes | None:
         return self._s.value("window/geometry")

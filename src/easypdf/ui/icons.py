@@ -293,6 +293,47 @@ def _pencil(p: QPainter, tip: QPointF, angle_deg: float, length: float, half: fl
     band(length * 0.86, length, QColor("#ff5a4d"))         # goma
 
 
+def _draw_table(p: QPainter) -> None:
+    _pen(p, 4)
+    p.drawRect(QRectF(8, 12, 48, 40))
+    p.drawLine(8, 26, 56, 26)
+    p.drawLine(8, 39, 56, 39)
+    p.drawLine(24, 12, 24, 52)
+    p.drawLine(40, 12, 40, 52)
+
+
+def _draw_bold(p: QPainter) -> None:
+    font = QFont("Times New Roman")
+    font.setPixelSize(46)
+    font.setBold(True)
+    p.setFont(font)
+    p.setPen(_ink_color())
+    p.drawText(QRectF(0, 0, SIZE, SIZE), Qt.AlignCenter, "B")
+
+
+def _draw_italic(p: QPainter) -> None:
+    font = QFont("Times New Roman")
+    font.setPixelSize(46)
+    font.setItalic(True)
+    p.setFont(font)
+    p.setPen(_ink_color())
+    p.drawText(QRectF(0, 0, SIZE, SIZE), Qt.AlignCenter, "I")
+
+
+def _draw_align(p: QPainter, modo: str) -> None:
+    _pen(p, 5)
+    anchos = (44, 30, 44, 26)
+    for fila, ancho in enumerate(anchos):
+        y = 16 + fila * 11
+        if modo == "left":
+            x = 10
+        elif modo == "center":
+            x = 10 + (44 - ancho) / 2
+        else:
+            x = 10 + (44 - ancho)
+        p.drawLine(QPointF(x, y), QPointF(x + ancho, y))
+
+
 def _draw_app(p: QPainter) -> None:
     """Icono de easypdf.surf: hoja de PDF, ola y lapiz.
 
@@ -404,6 +445,12 @@ _DRAWINGS: dict[str, Callable[[QPainter], None]] = {
     "search": _draw_search,
     "prev": _draw_prev,
     "next": _draw_next,
+    "table": _draw_table,
+    "bold": _draw_bold,
+    "italic": _draw_italic,
+    "align_left": lambda p: _draw_align(p, "left"),
+    "align_center": lambda p: _draw_align(p, "center"),
+    "align_right": lambda p: _draw_align(p, "right"),
     "app": _draw_app,
 }
 

@@ -309,3 +309,76 @@ def test_la_punta_de_flecha_es_la_misma_en_pantalla_y_en_el_pdf(qapp):
     assert (poligono[2].x(), poligono[2].y()) == pytest.approx(derecha)
     # el trazo termina dentro de la punta, no en el vertice
     assert fin.x() < punta[0] and fin.y() < punta[1]
+
+
+def test_crear_una_tabla_y_escribir_en_sus_celdas(ventana, tmp_path):
+    ventana.rows_spin.setValue(2)
+    ventana.cols_spin.setValue(3)
+    ventana.select_tool(Tool.TABLE)
+    _arrastrar(ventana, (150, 200), (600, 320))
+
+    tabla = ventana.view.selected_items()[0]
+    assert tabla.ann.kind is Kind.TABLE
+    assert tabla.ann.rows == 2 and tabla.ann.cols == 3
+    assert len(tabla.local_cell_rects()) == 6
+    assert tabla.is_editing  # entra directo a escribir en la primera celda
+
+    for indice, texto in enumerate(["Concepto", "Cantidad", "Importe", "Gorras", "8", "64"]):
+        tabla.edit_cell(indice)
+        tabla._editor.setPlainText(texto)
+    tabla.finish_editing()
+    assert tabla.ann.cells[0] == "Concepto" and tabla.ann.cells[5] == "64"
+
+    destino = tmp_path / "con-tabla.pdf"
+    ventana.view.document.save_as(str(destino), ventana.view.annotations())
+    pagina = pymupdf.open(str(destino))[0]
+    tipos = [a.type[1] for a in pagina.annots()]
+    assert tipos.count("Ink") == 1 and tipos.count("FreeText") == 6
+
+
+def test_una_tabla_pequena_recibe_un_tamano_util(ventana):
+    ventana.select_tool(Tool.TABLE)
+    _arrastrar(ventana, (200, 300), (204, 303))
+    tabla = ventana.view.selected_items()[0]
+    x0, y0, x1, y1 = tabla.ann.normalized_rect()
+    assert (x1 - x0) > 100 and (y1 - y0) > 40
+
+
+def test_los_estilos_de_texto_se_aplican_a_la_seleccion(ventana):
+    from easypdf.model import Align, Font
+
+    ventana.select_tool(Tool.TEXT)
+    _arrastrar(ventana, (150, 600), (420, 650))
+    item = ventana.view.selected_items()[0]
+    item.stop_editing()
+    item.setSelected(True)
+
+    ventana.font_combo.setCurrentIndex(ventana.font_combo.findData(Font.SERIF.value))
+    ventana._set_bold(True)
+    ventana._set_italic(True)
+    ventana._set_align(Align.CENTER)
+
+    assert item.ann.font is Font.SERIF
+    assert item.ann.bold and item.ann.italic
+    assert item.ann.align is Align.CENTER
+    # y quedan guardados como preferencia para la siguiente anotacion
+    assert ventana.view.style_defaults["bold"] is True
+
+
+def test_cerrar_la_busqueda_quita_el_resaltado(ventana):
+    ventana.search_edit.setText("EasyPDF")
+    ventana.run_search()
+    assert ventana.view.hit_count == 3
+    assert ventana.view._search_items
+
+    ventana.close_search()
+    assert ventana.view.hit_count == 0
+    assert ventana.view._search_items == []
+    assert not ventana.toolbar_search.isVisible()
+
+    # y tambien al vaciar el cuadro de busqueda
+    ventana.search_edit.setText("EasyPDF")
+    ventana.run_search()
+    assert ventana.view.hit_count == 3
+    ventana.search_edit.setText("")
+    assert ventana.view.hit_count == 0
