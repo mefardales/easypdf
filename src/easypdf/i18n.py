@@ -22,9 +22,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "about_tagline": "Simple PDF reader and annotator",
         "about_html": (
             "<p>Free software released under the <b>GNU AGPL v3 or later</b> licence. "
-            "You may use, copy, modify and redistribute it under that licence.</p>"
-            "<p>Website: <a href='{url}'>easypdf.surf</a><br>"
-            "Source code: <a href='{repo}'>{repo}</a></p>"
+            "You may use, copy, modify and redistribute it under that licence. "
+            "The source code is available from the website.</p>"
+            "<p><a href='{url}'>easypdf.surf</a></p>"
             "<p>Built with <a href='https://pymupdf.readthedocs.io'>PyMuPDF</a> (AGPL) and "
             "<a href='https://doc.qt.io/qtforpython/'>PySide6</a> (LGPL).</p>"
             "<p style='color:#666'>This program comes with no warranty.</p>"
@@ -225,7 +225,6 @@ TEXTS: dict[str, dict[str, str]] = {
         "help": "&Quick guide",
         "about": "&About {app}",
         "website": "easypdf.surf &website",
-        "source": "&Source code on GitHub",
         "language": "&Language",
         "language_changed": "Language changed to English",
         # --- estado ---
@@ -276,9 +275,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "about_tagline": "Lector y anotador de PDF sencillo",
         "about_html": (
             "<p>Software libre publicado bajo la licencia <b>GNU AGPL v3 o posterior</b>. "
-            "Puedes usarlo, copiarlo, modificarlo y redistribuirlo respetando esa licencia.</p>"
-            "<p>Pagina web: <a href='{url}'>easypdf.surf</a><br>"
-            "Codigo fuente: <a href='{repo}'>{repo}</a></p>"
+            "Puedes usarlo, copiarlo, modificarlo y redistribuirlo respetando esa licencia. "
+            "El codigo fuente esta disponible en la pagina web.</p>"
+            "<p><a href='{url}'>easypdf.surf</a></p>"
             "<p>Construido con <a href='https://pymupdf.readthedocs.io'>PyMuPDF</a> (AGPL) y "
             "<a href='https://doc.qt.io/qtforpython/'>PySide6</a> (LGPL).</p>"
             "<p style='color:#666'>Este programa se distribuye sin ninguna garantia.</p>"
@@ -475,7 +474,6 @@ TEXTS: dict[str, dict[str, str]] = {
         "help": "&Guia rapida",
         "about": "&Acerca de {app}",
         "website": "Pagina &web de easypdf.surf",
-        "source": "Codigo &fuente en GitHub",
         "language": "&Idioma",
         "language_changed": "Idioma cambiado a espanol",
         "status_start": "Abre un PDF con Ctrl+O o arrastralo aqui",
