@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from .. import __app_name__, __url__, __version__
+from .. import __app_name__, __repo_url__, __url__, __version__
 from ..config import PALETTE, Settings
 from ..document import PasswordRequired, PdfDocument, PdfError
 from ..printing import print_document, print_preview
@@ -90,7 +90,8 @@ class AboutDialog(QDialog):
             <p>Software libre publicado bajo la licencia
             <b>GNU AGPL v3 o posterior</b>. Puedes usarlo, copiarlo, modificarlo y
             redistribuirlo respetando esa licencia.</p>
-            <p>Codigo fuente: <a href="{__url__}">{__url__}</a></p>
+            <p>Pagina web: <a href="{__url__}">easypdf.surf</a><br>
+            Codigo fuente: <a href="{__repo_url__}">{__repo_url__}</a></p>
             <p>Construido con <a href="https://pymupdf.readthedocs.io">PyMuPDF</a> (AGPL)
             y <a href="https://doc.qt.io/qtforpython/">PySide6</a> (LGPL).</p>
             <p style="color:#666">Este programa se distribuye sin ninguna garantia.</p>
@@ -252,8 +253,10 @@ class MainWindow(QMainWindow):
 
         self.act_help = action("&Guia rapida", self.show_help, shortcut=QKeySequence.HelpContents)
         self.act_about = action(f"&Acerca de {__app_name__}", self.show_about)
-        self.act_website = action("Codigo &fuente en GitHub",
+        self.act_website = action("Pagina &web de easypdf.surf",
                                   lambda: QDesktopServices.openUrl(QUrl(__url__)))
+        self.act_source = action("Codigo &fuente en GitHub",
+                                 lambda: QDesktopServices.openUrl(QUrl(__repo_url__)))
 
         # Herramientas (excluyentes entre si)
         self.tool_group = QActionGroup(self)
@@ -327,6 +330,7 @@ class MainWindow(QMainWindow):
         help_menu = self.menuBar().addMenu("A&yuda")
         help_menu.addAction(self.act_help)
         help_menu.addAction(self.act_website)
+        help_menu.addAction(self.act_source)
         help_menu.addSeparator()
         help_menu.addAction(self.act_about)
 

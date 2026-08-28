@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <b><a href="https://mefardales.github.io/easypdf/">mefardales.github.io/easypdf</a></b>
+  <b><a href="https://easypdf.surf">easypdf.surf</a></b>
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@
 ## Descargar (un solo clic)
 
 La forma mas comoda es la pagina web del proyecto:
-**[mefardales.github.io/easypdf](https://mefardales.github.io/easypdf/)**.
+**[easypdf.surf](https://easypdf.surf)**.
 Tambien puedes descargar desde aqui mismo:
 
 ### Windows 10 u 11
