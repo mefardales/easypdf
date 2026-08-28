@@ -41,7 +41,7 @@ from PySide6.QtWidgets import (
 from .. import __app_name__, __url__, __version__
 from ..config import PALETTE, Settings
 from ..document import DEFAULT_PAGE_SIZE, PAGE_SIZES, PasswordRequired, PdfDocument, PdfError
-from ..i18n import LANGUAGES, language, set_language, tr
+from ..i18n import LANGUAGES, language, page_size_label, set_language, tr
 from ..model import Align, Font
 from ..printing import print_document, print_preview
 from ..templates import (
@@ -354,13 +354,15 @@ class MainWindow(QMainWindow):
         self.page_size_group = QActionGroup(self)
         self.page_size_group.setExclusive(True)
         elegido = self.settings.value("document/page_size", DEFAULT_PAGE_SIZE)
+        self.page_size_actions = {}
         for nombre in PAGE_SIZES:
-            act = QAction(nombre, self)
+            act = QAction(page_size_label(nombre), self)
             act.setCheckable(True)
             act.setChecked(nombre == elegido)
             act.triggered.connect(lambda checked=False, n=nombre: self._set_page_size(n))
             self.page_size_group.addAction(act)
             tamano_menu.addAction(act)
+            self.page_size_actions[nombre] = act
         self.new_page_size = str(elegido)
 
         doc_menu.addSeparator()
@@ -1059,6 +1061,8 @@ class MainWindow(QMainWindow):
             act.setStatusTip(tr(tip) if tip else tr(clave, app=__app_name__))
         for menu, clave in self._menu_keys.items():
             menu.setTitle(tr(clave))
+        for nombre, act in getattr(self, "page_size_actions", {}).items():
+            act.setText(page_size_label(nombre))
         for tool, (clave, _icono, key) in self.tool_keys.items():
             accion = self.tool_actions[tool]
             accion.setText(tr(clave))
@@ -1354,8 +1358,19 @@ class MainWindow(QMainWindow):
     def build_page_menu(self, pagina: int):
         """Menu de una pagina. Separado del gesto para poder probarlo."""
         menu = QMenu(self)
-        antes = menu.addAction(tr("page_insert_before"))
-        despues = menu.addAction(tr("page_insert_after"))
+        acciones = {}
+
+        def submenu_insertar(clave: str, texto: str) -> None:
+            """Insertar una pagina, eligiendo su tamano en el momento."""
+            sub = menu.addMenu(texto)
+            igual = sub.addAction(tr("size_same"))
+            acciones[igual] = f"{clave}:"          # sin tamano = como la vecina
+            sub.addSeparator()
+            for nombre in PAGE_SIZES:
+                acciones[sub.addAction(page_size_label(nombre))] = f"{clave}:{nombre}"
+
+        submenu_insertar("insert_before", tr("page_insert_before"))
+        submenu_insertar("insert_after", tr("page_insert_after"))
         menu.addSeparator()
         duplicar = menu.addAction(tr("page_duplicate"))
         menu.addSeparator()
@@ -1370,9 +1385,7 @@ class MainWindow(QMainWindow):
         menu.addSeparator()
         borrar = menu.addAction(tr("page_delete"))
         borrar.setEnabled(self.view.page_count > 1)
-        return menu, {
-            antes: "insert_before",
-            despues: "insert_after",
+        acciones.update({
             duplicar: "duplicate",
             girar_izq: "rotate_left",
             girar_der: "rotate_right",
@@ -1380,17 +1393,24 @@ class MainWindow(QMainWindow):
             arriba: "up",
             abajo: "down",
             borrar: "delete",
-        }
+        })
+        return menu, acciones
 
     def run_page_action(self, accion: str | None, pagina: int) -> None:
         """Ejecuta una de las opciones del menu de pagina."""
         if accion is None or not self.view.has_document():
             return
+        # Las opciones de insertar llevan el tamano detras: "insert_after:A4".
+        # Sin nada detras, la pagina nueva copia el tamano de la de al lado.
+        tamano = None
+        if ":" in accion:
+            accion, _, nombre = accion.partition(":")
+            tamano = nombre or None
         if accion == "insert_before":
-            self.view.add_page(pagina, self.new_page_size)
+            self.view.add_page(pagina, tamano)
             self._after_page_change(pagina)
         elif accion == "insert_after":
-            self.view.add_page(pagina + 1, self.new_page_size)
+            self.view.add_page(pagina + 1, tamano)
             self._after_page_change(pagina + 1)
         elif accion == "duplicate":
             self.view.duplicate_page(pagina)

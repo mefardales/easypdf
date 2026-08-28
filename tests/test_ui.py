@@ -629,7 +629,11 @@ def test_arrastrar_una_miniatura_reordena_el_documento(ventana, qapp):
 
 def test_el_menu_de_una_miniatura_ofrece_todas_las_operaciones(ventana):
     _menu, acciones = ventana.build_page_menu(0)
-    assert set(acciones.values()) == {
+    valores = set(acciones.values())
+    # las de insertar llevan el tamano detras ("insert_after:A4"), asi que se
+    # comparan por el prefijo
+    familias = {v.split(":", 1)[0] for v in valores}
+    assert familias == {
         "insert_before", "insert_after", "duplicate",
         "rotate_left", "rotate_right", "rotate_180",
         "up", "down", "delete",
@@ -683,3 +687,42 @@ def test_girar_180_conserva_el_tamano_de_la_pagina(ventana, qapp):
     qapp.processEvents()
     assert ventana.view.document.page_rotation(0) == 180
     assert ventana.view.document.page_size(0) == tamano
+
+
+def test_insertar_una_pagina_permite_elegir_el_tamano(ventana, qapp):
+    _menu, acciones = ventana.build_page_menu(0)
+    opciones = {v for v in acciones.values() if v.startswith("insert_")}
+    # "igual que esta pagina" mas cada tamano, por delante y por detras
+    assert "insert_after:" in opciones
+    assert "insert_after:A4" in opciones
+    assert "insert_before:Carta" in opciones
+
+    total = ventana.view.page_count
+    ventana.run_page_action("insert_after:Carta", 0)
+    qapp.processEvents()
+    assert ventana.view.page_count == total + 1
+    assert ventana.view.document.page_size(1) == (612.0, 792.0)
+
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
+    assert ventana.view.page_count == total
+
+
+def test_insertar_sin_tamano_copia_el_de_la_pagina_vecina(ventana, qapp):
+    ventana.run_page_action("insert_before:", 0)
+    qapp.processEvents()
+    assert ventana.view.document.page_size(0) == ventana.view.document.page_size(1)
+
+
+def test_los_tamanos_de_pagina_se_traducen(ventana):
+    from easypdf.i18n import page_size_label
+
+    set_language("en")
+    assert page_size_label("Carta") == "Letter"
+    assert page_size_label("Oficio") == "Legal"
+    set_language("es")
+    assert page_size_label("Carta") == "Carta"
+    assert page_size_label("Oficio") == "Oficio"
+    # un nombre desconocido se deja tal cual
+    assert page_size_label("Cuartilla") == "Cuartilla"
+    set_language("en")

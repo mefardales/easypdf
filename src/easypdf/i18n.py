@@ -160,6 +160,14 @@ TEXTS: dict[str, dict[str, str]] = {
         "page_rotate_right": "Rotate &right (90\u00b0)",
         "page_rotate_180": "Rotate 1&80\u00b0",
         "page_rotate_menu": "&Rotate this page",
+        "size_same": "Same as this page",
+        "size_A4": "A4",
+        "size_A4 horizontal": "A4 landscape",
+        "size_Carta": "Letter",
+        "size_Carta horizontal": "Letter landscape",
+        "size_A5": "A5",
+        "size_A3": "A3",
+        "size_Oficio": "Legal",
         "page_move_undo": "Page {origin} moved to position {target}",
         "page_size_menu": "&Size of new pages",
         "templates": "&Templates",
@@ -416,6 +424,14 @@ TEXTS: dict[str, dict[str, str]] = {
         "page_rotate_right": "Girar a la &derecha (90\u00b0)",
         "page_rotate_180": "Girar 1&80\u00b0",
         "page_rotate_menu": "&Girar esta pagina",
+        "size_same": "Igual que esta pagina",
+        "size_A4": "A4",
+        "size_A4 horizontal": "A4 horizontal",
+        "size_Carta": "Carta",
+        "size_Carta horizontal": "Carta horizontal",
+        "size_A5": "A5",
+        "size_A3": "A3",
+        "size_Oficio": "Oficio",
         "page_move_undo": "Pagina {origin} movida a la posicion {target}",
         "page_size_menu": "&Tamano de las paginas nuevas",
         "templates": "&Plantillas",
@@ -586,3 +602,14 @@ __all__ = [
     "system_language",
     "tr",
 ]
+
+
+def page_size_label(name: str) -> str:
+    """Nombre visible de un tamano de pagina en el idioma actual.
+
+    Las claves de PAGE_SIZES son identificadores internos (y estan en
+    castellano por historia); esto las traduce solo de cara al usuario, sin
+    tocar lo que se guarda en los ajustes ni en las plantillas.
+    """
+    clave = f"size_{name}"
+    return tr(clave) if clave in TEXTS[DEFAULT_LANGUAGE] else name
