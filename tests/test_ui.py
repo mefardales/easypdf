@@ -9,6 +9,7 @@ from PySide6.QtCore import QPoint, Qt  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
+from easypdf import __app_name__  # noqa: E402
 from easypdf.model import (
     Annotation,  # noqa: E402
     Kind,  # noqa: E402
@@ -189,7 +190,7 @@ def test_miniaturas(ventana, qapp):
 def test_cerrar_documento(ventana):
     assert ventana.close_document()
     assert not ventana.view.has_document()
-    assert ventana.windowTitle() == "EasyPDF"
+    assert ventana.windowTitle() == __app_name__
 
 
 def test_color_ida_y_vuelta():

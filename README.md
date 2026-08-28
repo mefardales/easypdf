@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/easypdf.png" width="120" alt="EasyPDF">
+  <img src="assets/easypdf.png" width="120" alt="easypdf.surf">
 </p>
 
-<h1 align="center">EasyPDF</h1>
+<h1 align="center">easypdf.surf</h1>
 
 <p align="center">
   <b>Lector de PDF sencillo con anotaciones e impresion.</b><br>
@@ -41,7 +41,7 @@ Tambien puedes descargar desde aqui mismo:
 3. Si Windows muestra un aviso azul de *Windows protegio tu PC*, pulsa
    **Mas informacion** y despues **Ejecutar de todas formas**. Sale porque el
    programa no esta firmado con un certificado de pago, no porque tenga nada raro.
-4. Siguiente, siguiente y listo. EasyPDF queda en el menu Inicio.
+4. Siguiente, siguiente y listo. easypdf.surf queda en el menu Inicio.
 
 No necesitas ser administrador ni instalar Python ni nada mas.
 
@@ -75,7 +75,7 @@ Todo con una interfaz en espanol, sin cuentas, sin publicidad y sin conexion a i
 ## Capturas
 
 <p align="center">
-  <img src="docs/captura-principal.png" width="820" alt="Ventana principal de EasyPDF">
+  <img src="docs/captura-principal.png" width="820" alt="Ventana principal de easypdf.surf">
 </p>
 
 ## Guia rapida
@@ -194,7 +194,7 @@ esa imagen la usan por igual la ventana, el ejecutable y el instalador.
 
 ## Como se guardan las anotaciones
 
-EasyPDF **nunca modifica el contenido original** del PDF. Guarda siempre los bytes
+easypdf.surf **nunca modifica el contenido original** del PDF. Guarda siempre los bytes
 del archivo tal y como se abrio y, al guardar, les anade las anotaciones actuales:
 
 | Herramienta | Anotacion PDF que se escribe |
@@ -258,9 +258,9 @@ Las contribuciones son bienvenidas: lee [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licencia
 
-EasyPDF es software libre bajo la **[GNU AGPL v3 o posterior](LICENSE)**.
+easypdf.surf es software libre bajo la **[GNU AGPL v3 o posterior](LICENSE)**.
 
 Usa [PyMuPDF](https://pymupdf.readthedocs.io/) (AGPL-3.0) para leer y escribir PDF y
 [PySide6](https://doc.qt.io/qtforpython/) (LGPL-3.0) para la interfaz. Al enlazar con
-PyMuPDF, cualquier version distribuida de EasyPDF debe publicarse tambien bajo AGPL
+PyMuPDF, cualquier version distribuida debe publicarse tambien bajo AGPL
 con su codigo fuente disponible.
