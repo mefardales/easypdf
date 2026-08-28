@@ -253,7 +253,19 @@ class AnnotationItemMixin:
         return (xs, ys)
 
     def _snap(self, nueva_pos):
-        """Ajusta la posicion propuesta para que encaje con alguna guia."""
+        """Ajusta la posicion propuesta para que encaje con alguna guia.
+
+        Solo actua mientras el usuario arrastra con el raton. Si no, se
+        dispararia tambien al crear o cargar anotaciones, y dejaria guias
+        pintadas en la pagina sin que nadie este moviendo nada.
+        """
+        escena = self.scene()
+        if escena is None or escena.mouseGrabberItem() is not self:
+            return nueva_pos
+        return self.compute_snap(nueva_pos)
+
+    def compute_snap(self, nueva_pos):
+        """Calculo del ajuste, sin mirar si hay un arrastre en curso."""
         vista = self._view()
         if vista is None or not getattr(vista, "snap_enabled", False):
             return nueva_pos
@@ -762,11 +774,22 @@ class ImageItem(AnnotationItemMixin, QGraphicsRectItem):
             self.paint_handles(painter)
 
 
+#: Margen del texto dentro de una celda, en puntos PDF. Lo comparten el
+#: pintado, el editor y lo que se escribe en el PDF, para que el texto no
+#: se mueva al pasar de uno a otro.
+CELL_PADDING = 2.5
+
+
 class TableItem(AnnotationItemMixin, QGraphicsRectItem):
     """Tabla: rejilla de filas y columnas con texto en las celdas."""
 
     def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
         super().__init__(parent)
+        # Una tabla larga tarda milisegundos en dibujarse (son decenas de
+        # lineas mas el texto de cada celda), y Qt la repinta en cada
+        # movimiento del raton. Con la cache, al arrastrarla mueve la imagen
+        # ya dibujada y solo la rehace cuando cambia de verdad.
+        self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         self._init_common(ann)
         self._editor: QGraphicsTextItem | None = None
         self._editing_cell = -1
@@ -839,17 +862,34 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         return path
 
     # -- celdas ----------------------------------------------------------
+    def _cached_font(self) -> QFont:
+        """Fuente de la tabla, rehecha solo cuando cambia su estilo."""
+        ann = self.ann
+        clave = (ann.font, ann.font_size, ann.bold, ann.italic)
+        if getattr(self, "_font_clave", None) != clave:
+            self._font_cache = annotation_font(ann)
+            self._font_clave = clave
+        return self._font_cache
+
     def local_cell_rects(self) -> list[QRectF]:
-        """Rectangulos de las celdas en coordenadas del propio item."""
+        """Rectangulos de las celdas en coordenadas del propio item.
+
+        Se memorizan: se recalculaban en cada repintado, y con una tabla de
+        muchas filas eso se notaba al arrastrarla.
+        """
         r = self.rect()
         filas, columnas = max(1, self.ann.rows), max(1, self.ann.cols)
-        alto = r.height() / filas
-        ancho = r.width() / columnas
-        return [
-            QRectF(c * ancho, f * alto, ancho, alto)
-            for f in range(filas)
-            for c in range(columnas)
-        ]
+        clave = (r.width(), r.height(), filas, columnas)
+        if getattr(self, "_rects_clave", None) != clave:
+            alto = r.height() / filas
+            ancho = r.width() / columnas
+            self._rects_cache = [
+                QRectF(c * ancho, f * alto, ancho, alto)
+                for f in range(filas)
+                for c in range(columnas)
+            ]
+            self._rects_clave = clave
+        return self._rects_cache
 
     def cell_at(self, pos: QPointF) -> int:
         for indice, celda in enumerate(self.local_cell_rects()):
@@ -871,8 +911,14 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         editor.setFont(annotation_font(self.ann))
         editor.setDefaultTextColor(qcolor(self.ann.color))
         celda = celdas[indice]
-        editor.setTextWidth(max(10.0, celda.width() - 4))
-        editor.setPos(celda.topLeft() + QPointF(2, 2))
+        # Mismo margen y misma alineacion que usa paint(): si no, el texto se
+        # ve en un sitio mientras se escribe y salta a otro al terminar.
+        opciones = editor.document().defaultTextOption()
+        opciones.setAlignment(ALIGN_FLAGS.get(Align(self.ann.align), Qt.AlignLeft))
+        editor.document().setDefaultTextOption(opciones)
+        editor.document().setDocumentMargin(0)
+        editor.setTextWidth(max(10.0, celda.width() - 2 * CELL_PADDING))
+        editor.setPos(celda.topLeft() + QPointF(CELL_PADDING, CELL_PADDING))
         editor.setTextInteractionFlags(Qt.TextEditorInteraction)
         editor.setZValue(self.zValue() + 1)
         editor.setFlag(QGraphicsItem.ItemIsFocusable, True)
@@ -947,16 +993,20 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
             x = rect.left() + rect.width() * c / columnas
             painter.drawLine(QPointF(x, rect.top()), QPointF(x, rect.bottom()))
 
-        painter.setFont(annotation_font(self.ann))
+        painter.setFont(self._cached_font())
         painter.setPen(QPen(qcolor(self.ann.color)))
         bandera = ALIGN_FLAGS.get(Align(self.ann.align), Qt.AlignLeft)
+        visible = option.exposedRect if option is not None else None
         for indice, (texto, celda) in enumerate(
             zip(self.ann.normalized_cells(), self.local_cell_rects())
         ):
             if not texto or indice == self._editing_cell:
                 continue
+            # en una tabla larga solo se dibuja el texto de lo que se ve
+            if visible is not None and not visible.isEmpty() and not visible.intersects(celda):
+                continue
             painter.drawText(
-                celda.adjusted(2.5, 2.5, -2.5, -2.5),
+                celda.adjusted(CELL_PADDING, CELL_PADDING, -CELL_PADDING, -CELL_PADDING),
                 int(bandera | Qt.AlignTop | Qt.TextWordWrap),
                 texto,
             )

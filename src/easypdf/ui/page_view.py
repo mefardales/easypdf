@@ -961,6 +961,9 @@ class PdfView(QGraphicsView):
             if self._draft_item is not None:
                 self.detach_item(self._draft_item)
                 self._draft_item = None
+            # Cerrar los editores abiertos: si no, el editor de una celda se
+            # queda vivo con el foco y luego DEL no llega a borrar la tabla.
+            self.finish_all_editing()
             self._scene.clearSelection()
             self.clear_search()
             self.set_tool(Tool.SELECT)
@@ -977,6 +980,19 @@ class PdfView(QGraphicsView):
         super().keyPressEvent(event)
 
     # ------------------------------------------------------------------ edicion
+    def finish_all_editing(self) -> None:
+        """Cierra cualquier celda o texto que se este editando."""
+        for item in self._annotation_items():
+            terminar = getattr(item, "finish_editing", None)
+            if callable(terminar) and getattr(item, "is_editing", False):
+                terminar()
+            detener = getattr(item, "stop_editing", None)
+            if callable(detener) and getattr(item, "_editing", False):
+                detener()
+        foco = self._scene.focusItem()
+        if isinstance(foco, QGraphicsTextItem):
+            foco.clearFocus()
+
     def delete_selected(self) -> bool:
         items = self.selected_items()
         if not items:

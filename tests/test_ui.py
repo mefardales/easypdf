@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication  # noqa: E402
 from easypdf import __app_name__  # noqa: E402
 from easypdf.i18n import set_language, tr  # noqa: E402
 from easypdf.model import (
+    Align,  # noqa: E402
     Annotation,  # noqa: E402
     Kind,  # noqa: E402
 )
@@ -945,8 +946,12 @@ def test_al_arrastrar_se_alinea_con_otra_anotacion(ventana, qapp):
     item = ventana.view._items[movida.id]
     assert ventana.view.snap_enabled
 
-    # se suelta 3 pt pasado el borde izquierdo de la otra: el iman lo pega
-    item.setPos(item.pos().x() + 3.0, item.pos().y())
+    # se propone soltarla 3 pt pasado el borde izquierdo de la otra
+    from PySide6.QtCore import QPointF
+
+    propuesta = QPointF(item.pos().x() + 3.0, item.pos().y())
+    ajustada = item.compute_snap(propuesta)
+    item.setPos(ajustada)
     qapp.processEvents()
     assert abs(movida.bounds()[0] - 200.0) < 0.01
 
@@ -957,10 +962,13 @@ def test_al_arrastrar_se_alinea_con_el_centro_de_la_hoja(ventana, qapp):
     ventana.view.add_annotation(caja)
     qapp.processEvents()
 
+    from PySide6.QtCore import QPointF
+
     item = ventana.view._items[caja.id]
     medio = ancho / 2.0
     objetivo = medio - (caja.bounds()[2] - caja.bounds()[0]) / 2.0
-    item.setPos(item.pos().x() + (objetivo - caja.bounds()[0]) + 2.0, item.pos().y())
+    propuesta = QPointF(item.pos().x() + (objetivo - caja.bounds()[0]) + 2.0, item.pos().y())
+    item.setPos(item.compute_snap(propuesta))
     qapp.processEvents()
 
     centro = (caja.bounds()[0] + caja.bounds()[2]) / 2.0
@@ -974,9 +982,11 @@ def test_con_el_iman_apagado_no_se_alinea_nada(ventana, qapp):
 
     ventana.view.set_snap(False)
     try:
+        from PySide6.QtCore import QPointF
+
         item = ventana.view._items[caja.id]
         antes = caja.bounds()[0]
-        item.setPos(item.pos().x() + 3.0, item.pos().y())
+        item.setPos(item.compute_snap(QPointF(item.pos().x() + 3.0, item.pos().y())))
         qapp.processEvents()
         assert abs(caja.bounds()[0] - (antes + 3.0)) < 0.01
     finally:
@@ -989,3 +999,125 @@ def test_las_reglas_se_pueden_ocultar(ventana):
     assert not ventana.ruler_v.isVisible()
     ventana.toggle_rulers(True)
     assert ventana.ruler_h.isVisible()
+
+
+def test_colocar_una_anotacion_no_deja_guias_pintadas(ventana, qapp):
+    """El iman solo actua al arrastrar con el raton.
+
+    Si actuara tambien al crear o cargar anotaciones, quedarian guias rosas
+    dibujadas en la pagina sin que nadie este moviendo nada.
+    """
+    ventana.view.add_annotation(
+        Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0), width=2)
+    )
+    qapp.processEvents()
+    assert ventana.view._guides == (None, None, None)
+
+    ventana.view.add_annotation(
+        Annotation(kind=Kind.RECT, page=0, rect=(103.0, 400.0, 180.0, 450.0), width=2)
+    )
+    qapp.processEvents()
+    assert ventana.view._guides == (None, None, None)
+
+
+# --------------------------------------------------------------------------
+# Tablas
+# --------------------------------------------------------------------------
+
+def _tabla(ventana, qapp, alineacion=Align.CENTER):
+    ann = Annotation(
+        kind=Kind.TABLE, page=0, rect=(80.0, 150.0, 460.0, 290.0), rows=3, cols=3,
+        cells=["Nombre", "Cantidad", "Precio", "Tornillo", "120", "3,50",
+               "Tuerca", "80", "1,20"],
+        align=alineacion, width=1,
+    )
+    ventana.view.add_annotation(ann)
+    qapp.processEvents()
+    return ann, ventana.view._items[ann.id]
+
+
+def test_el_editor_de_celda_usa_la_alineacion_de_la_tabla(ventana, qapp):
+    """Si no, el texto se ve a la izquierda al escribir y salta al terminar."""
+    from PySide6.QtCore import Qt
+
+    ann, item = _tabla(ventana, qapp, Align.CENTER)
+    item.edit_cell(4)
+    qapp.processEvents()
+    try:
+        alineacion = item._editor.document().defaultTextOption().alignment()
+        assert alineacion == Qt.AlignHCenter
+    finally:
+        item.finish_editing()
+        qapp.processEvents()
+
+    ann.align = Align.RIGHT
+    item.edit_cell(4)
+    qapp.processEvents()
+    try:
+        assert item._editor.document().defaultTextOption().alignment() == Qt.AlignRight
+    finally:
+        item.finish_editing()
+        qapp.processEvents()
+
+
+def test_el_editor_de_celda_ocupa_el_mismo_sitio_que_el_texto_pintado(ventana, qapp):
+    from easypdf.ui.items import CELL_PADDING
+
+    _ann, item = _tabla(ventana, qapp)
+    celda = item.local_cell_rects()[4]
+    item.edit_cell(4)
+    qapp.processEvents()
+    try:
+        editor = item._editor
+        assert abs(editor.pos().x() - (celda.left() + CELL_PADDING)) < 0.01
+        assert abs(editor.pos().y() - (celda.top() + CELL_PADDING)) < 0.01
+        assert abs(editor.textWidth() - (celda.width() - 2 * CELL_PADDING)) < 0.01
+    finally:
+        item.finish_editing()
+        qapp.processEvents()
+
+
+def test_se_puede_borrar_una_tabla_con_del_despues_de_editarla(ventana, qapp):
+    """Tras editar una celda y pulsar Escape, DEL tiene que borrar la tabla.
+
+    El editor de la celda se quedaba vivo con el foco y se comia la tecla.
+    """
+    from PySide6.QtCore import QEvent, Qt
+    from PySide6.QtGui import QKeyEvent
+
+    _ann, item = _tabla(ventana, qapp)
+    total = len(ventana.view.store)
+
+    item.edit_cell(1)
+    qapp.processEvents()
+    ventana.view.keyPressEvent(QKeyEvent(QEvent.KeyPress, Qt.Key_Escape, Qt.NoModifier))
+    qapp.processEvents()
+    assert not ventana.view._text_editing
+
+    item.setSelected(True)
+    ventana.view.keyPressEvent(QKeyEvent(QEvent.KeyPress, Qt.Key_Delete, Qt.NoModifier))
+    qapp.processEvents()
+    assert len(ventana.view.store) == total - 1
+
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
+    assert len(ventana.view.store) == total
+
+
+def test_la_tabla_se_dibuja_en_cache_para_que_arrastrarla_no_la_repinte(ventana, qapp):
+    from PySide6.QtWidgets import QGraphicsItem
+
+    _ann, item = _tabla(ventana, qapp)
+    assert item.cacheMode() == QGraphicsItem.DeviceCoordinateCache
+
+
+def test_los_rectangulos_de_celda_se_memorizan_y_se_rehacen_al_cambiar(ventana, qapp):
+    ann, item = _tabla(ventana, qapp)
+    primeros = item.local_cell_rects()
+    assert item.local_cell_rects() is primeros        # memorizados
+
+    ann.cols = 4
+    item.apply_model()
+    nuevos = item.local_cell_rects()
+    assert nuevos is not primeros                     # rehechos al cambiar
+    assert len(nuevos) == ann.rows * 4
