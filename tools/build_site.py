@@ -148,6 +148,12 @@ TEXTS = {
             ("Is it really free?", "Yes. No paid version, no subscription, no document limit."),
             ("Do I need an account?", "No. Open it and use it, no sign-up, no email."),
             ("Are there ads?", "None. And it does not sneak in extra software either."),
+            ("My antivirus deleted the file. Is it dangerous?",
+             "No. It is a false alarm that hits small programs built with Python "
+             "and not signed with a paid certificate. You can restore the file "
+             "from your antivirus quarantine, and check it arrived intact with "
+             "the .sha256 file next to the download. The whole source code is "
+             "public, so anyone can inspect it."),
             ("Does it work offline?", "Yes. You only need a connection to download it once."),
             ("Are my documents uploaded anywhere?", "No. Everything happens on your computer."),
             ("What if I do not like it?", "Uninstall it like any other program, from Settings."),
@@ -242,6 +248,12 @@ TEXTS = {
             ("Es gratis del todo?", "Si. No hay version de pago, ni suscripcion, ni limite de documentos."),
             ("Tengo que registrarme?", "No. Se abre y se usa, sin cuenta ni correo electronico."),
             ("Lleva publicidad?", "Ninguna. Y tampoco instala cosas raras de propina."),
+            ("El antivirus me ha borrado el archivo. Es peligroso?",
+             "No. Es una falsa alarma que les pasa a los programas pequenos hechos "
+             "con Python y sin un certificado de pago. Puedes recuperar el archivo "
+             "desde la cuarentena del antivirus, y comprobar que llego intacto con "
+             "el archivo .sha256 que hay junto a la descarga. El codigo es publico, "
+             "asi que cualquiera puede revisarlo."),
             ("Funciona sin internet?", "Si. Solo hace falta conexion para descargarlo la primera vez."),
             ("Mis documentos se suben a algun sitio?", "No. Todo ocurre en tu ordenador."),
             ("Y si no me gusta?", "Se desinstala como cualquier otro programa, desde Configuracion."),
