@@ -138,6 +138,19 @@ portable a la release. Tambien puede lanzarse a mano desde la pestana *Actions*.
 > Para cambiar el numero de version, actualizalo en `src/easypdf/__init__.py`,
 > `pyproject.toml`, `packaging/installer.iss` y `packaging/version_info.txt`.
 
+### Cambiar el icono
+
+El icono actual esta dibujado por codigo en `src/easypdf/ui/icons.py`. Si prefieres
+usar tu propia imagen, deja un PNG cuadrado (512x512 con fondo transparente va
+perfecto) en `assets/easypdf-original.png` y ejecuta:
+
+```bash
+python tools/make_icon.py
+```
+
+Se regeneran `assets/easypdf.ico` y `assets/easypdf.png` con todos los tamanos, y
+esa imagen la usan por igual la ventana, el ejecutable y el instalador.
+
 ## Como se guardan las anotaciones
 
 EasyPDF **nunca modifica el contenido original** del PDF. Guarda siempre los bytes

@@ -7,6 +7,8 @@ para que los iconos se adapten al tema claro u oscuro del sistema.
 from __future__ import annotations
 
 import math
+import os
+import sys
 from typing import Callable
 
 from PySide6.QtCore import QPointF, QRectF, Qt
@@ -382,8 +384,32 @@ def icon(name: str) -> QIcon:
 APP_ICON_SIZES = (16, 24, 32, 48, 64, 128, 256)
 
 
+def asset_path(*parts: str) -> str | None:
+    """Ruta a un archivo de assets/, tanto en el repo como dentro del .exe."""
+    roots = []
+    bundle = getattr(sys, "_MEIPASS", None)      # ejecutable de PyInstaller
+    if bundle:
+        roots.append(bundle)
+    roots.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
+    for root in roots:
+        candidate = os.path.join(root, "assets", *parts)
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+
 def app_icon() -> QIcon:
-    """Icono de la aplicacion en todos los tamanos que pide Windows."""
+    """Icono de la aplicacion en todos los tamanos que pide Windows.
+
+    Si hay un icono en ``assets/`` (por ejemplo uno propio generado con
+    ``tools/make_icon.py``) se usa ese; si no, se dibuja por codigo.
+    """
+    for nombre in ("easypdf.ico", "easypdf.png"):
+        ruta = asset_path(nombre)
+        if ruta:
+            candidato = QIcon(ruta)
+            if not candidato.isNull():
+                return candidato
     result = QIcon()
     for size in APP_ICON_SIZES:
         result.addPixmap(render("app", size))
