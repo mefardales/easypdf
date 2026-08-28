@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>easypdf.surf - Free PDF reader with annotations and tables</title>
 <meta name="description" content="Open, read, annotate and print PDFs. Write on top, highlight, draw tables and drop in images. Free, no account, no ads. For Windows and Linux.">
 <meta name="keywords" content="free pdf reader, annotate pdf, edit pdf, fill pdf, pdf windows">
-<meta name="theme-color" content="#0a0a0b">
+<meta name="theme-color" content="#0b0b0f">
 <link rel="canonical" href="https://easypdf.surf/">
 <link rel="alternate" hreflang="en" href="https://easypdf.surf/">
 <link rel="alternate" hreflang="es" href="https://easypdf.surf/es/">
@@ -24,450 +24,245 @@
 <meta name="twitter:title" content="easypdf.surf - Free PDF reader with annotations and tables">
 <meta name="twitter:description" content="Open, read, annotate and print PDFs. Write on top, highlight, draw tables and drop in images. Free, no account, no ads. For Windows and Linux.">
 <meta name="twitter:image" content="https://easypdf.surf/captura.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "easypdf.surf", "applicationCategory": "BusinessApplication", "applicationSubCategory": "PDF reader and annotator", "operatingSystem": "Windows 10, Windows 11, Linux", "softwareVersion": "1.0.0", "description": "Open, read, annotate and print PDFs. Write on top, highlight, draw tables and drop in images. Free, no account, no ads. For Windows and Linux.", "url": "https://easypdf.surf/", "downloadUrl": "https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-Setup.exe", "image": "https://easypdf.surf/captura.png", "license": "https://www.gnu.org/licenses/agpl-3.0.html", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "inLanguage": ["es", "en"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "easypdf.surf", "applicationCategory": "BusinessApplication", "applicationSubCategory": "PDF reader and annotator", "operatingSystem": "Windows 10, Windows 11, Linux", "softwareVersion": "1.0.0", "description": "Open, read, annotate and print PDFs. Write on top, highlight, draw tables and drop in images. Free, no account, no ads. For Windows and Linux.", "url": "https://easypdf.surf/", "downloadUrl": "https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-Setup.exe", "image": "https://easypdf.surf/captura.png", "license": "https://www.gnu.org/licenses/agpl-3.0.html", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "inLanguage": ["en", "es"]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Is it really free?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. No paid version, no subscription, no document limit."}}, {"@type": "Question", "name": "Do I need an account?", "acceptedAnswer": {"@type": "Answer", "text": "No. Open it and use it, no sign-up, no email."}}, {"@type": "Question", "name": "Are there ads?", "acceptedAnswer": {"@type": "Answer", "text": "None. And it does not sneak in extra software either."}}, {"@type": "Question", "name": "Does it work offline?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. You only need a connection to download it once."}}, {"@type": "Question", "name": "Are my documents uploaded anywhere?", "acceptedAnswer": {"@type": "Answer", "text": "No. Everything happens on your computer."}}, {"@type": "Question", "name": "What if I do not like it?", "acceptedAnswer": {"@type": "Answer", "text": "Uninstall it like any other program, from Settings."}}]}</script>
 <style>
   :root{
-    --bg:#08090b; --panel:#0f1116; --panel-2:#12151b; --line:#1e222b;
-    --fg:#f4f6f8; --muted:#8b93a1; --accent:#ff3b30; --accent-2:#ff8a3d;
-    --accent-fg:#0b0c0e; --paper:#e9edf3; --radius:16px;
+    --bg:#0b0b0f; --panel:#131319; --panel-2:#191921; --line:#25252f;
+    --fg:#f2f2f5; --muted:#95959f; --accent:#ff4d3d; --accent-2:#ff9a3c; --accent-fg:#0b0b0f;
   }
   html[data-theme="light"]{
-    --bg:#ffffff; --panel:#fbfbfd; --panel-2:#f4f5f8; --line:#e6e8ee;
-    --fg:#0b0d12; --muted:#61697a; --accent:#e5121a; --accent-2:#ff6a1a;
-    --accent-fg:#ffffff; --paper:#ffffff;
+    --bg:#fbfbfd; --panel:#ffffff; --panel-2:#f3f3f7; --line:#e6e6ee;
+    --fg:#0c0c11; --muted:#65656f; --accent:#e5121a; --accent-2:#ff6a1a; --accent-fg:#ffffff;
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-  body{
-    margin:0;background:var(--bg);color:var(--fg);overflow-x:hidden;
-    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--fg);overflow-x:hidden;
+    font:15.5px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
   a{color:inherit;text-decoration:none}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .wrap{max-width:960px;margin:0 auto;padding:0 22px}
   .skip{position:absolute;left:-9999px}
-  .skip:focus{left:14px;top:14px;background:var(--accent);color:var(--accent-fg);padding:9px 14px;border-radius:8px;z-index:9}
+  .skip:focus{left:12px;top:12px;background:var(--accent);color:var(--accent-fg);padding:8px 13px;border-radius:8px;z-index:9}
 
-  /* ---------- fondo ---------- */
-  .glow{position:fixed;inset:0;pointer-events:none;z-index:0;
-    background:
-      radial-gradient(680px 420px at 50% -80px, color-mix(in srgb,var(--accent) 26%,transparent), transparent 70%),
-      radial-gradient(520px 380px at 88% 8%, color-mix(in srgb,var(--accent-2) 14%,transparent), transparent 70%);
-    opacity:.55}
-  .grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;
-    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
-    background-size:64px 64px;
-    -webkit-mask-image:radial-gradient(760px 460px at 50% 0,#000,transparent 75%);
-    mask-image:radial-gradient(760px 460px at 50% 0,#000,transparent 75%)}
-  header,main,footer{position:relative;z-index:1}
+  .aura{position:absolute;top:-280px;left:50%;transform:translateX(-50%);
+    width:1100px;height:640px;pointer-events:none;z-index:0;
+    background:radial-gradient(closest-side,color-mix(in srgb,var(--accent) 30%,transparent),transparent 70%);
+    filter:blur(26px);opacity:.5}
 
-  /* ---------- cabecera ---------- */
-  header{position:sticky;top:0;z-index:6;border-bottom:1px solid transparent;transition:.2s}
-  header.stuck{border-color:var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);
-    backdrop-filter:saturate(180%) blur(12px)}
-  .bar{display:flex;align-items:center;gap:10px;height:62px}
-  .brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.3px}
-  .brand img{width:24px;height:24px}
+  header{position:sticky;top:0;z-index:6;background:color-mix(in srgb,var(--bg) 78%,transparent);
+    backdrop-filter:blur(14px) saturate(160%);border-bottom:1px solid transparent}
+  header.stuck{border-color:var(--line)}
+  .bar{display:flex;align-items:center;gap:8px;height:56px}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:640;font-size:15px;letter-spacing:-.2px}
+  .brand img{width:22px;height:22px}
   nav{margin-left:auto;display:flex;align-items:center;gap:4px}
-  nav .nl{color:var(--muted);font-size:14.5px;padding:8px 11px;border-radius:9px}
-  nav .nl:hover{color:var(--fg);background:var(--panel-2)}
-  .icon-btn{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;
-    border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;
-    font-size:13px;font-weight:600;letter-spacing:.02em;opacity:.75}
-  .icon-btn:hover{opacity:1;border-color:var(--muted)}
-  .nav-cta{background:var(--fg);color:var(--bg);font-weight:600;font-size:14px;
-    padding:9px 15px;border-radius:10px;margin-left:6px}
-  .nav-cta:hover{opacity:.88}
-  @media (max-width:760px){ nav .nl{display:none} }
+  .nl{color:var(--muted);font-size:14px;padding:7px 10px;border-radius:8px}
+  .nl:hover{color:var(--fg)}
+  .ib{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel);color:var(--fg);cursor:pointer;font-size:11.5px;font-weight:650;opacity:.8}
+  .ib:hover{opacity:1}
+  .cta-sm{background:var(--fg);color:var(--bg);font-weight:620;font-size:13.5px;padding:8px 14px;border-radius:9px;margin-left:6px}
+  .cta-sm:hover{opacity:.88}
+  @media (max-width:700px){.nl{display:none}}
 
-  /* ---------- portada ---------- */
-  .hero{padding:76px 0 0;text-align:center}
-  .badge{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);
-    background:var(--panel);padding:6px 14px 6px 8px;border-radius:999px;font-size:13px;color:var(--muted)}
-  .badge b{color:var(--fg);background:color-mix(in srgb,var(--accent) 16%,transparent);
-    border:1px solid color-mix(in srgb,var(--accent) 34%,transparent);
-    padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600}
-  h1{font-size:clamp(38px,7.2vw,74px);line-height:1.02;letter-spacing:-2.6px;
-    font-weight:760;margin:26px auto 20px;max-width:15ch}
-  h1 em{font-style:normal;background:linear-gradient(100deg,var(--accent),var(--accent-2));
+  .hero{position:relative;z-index:1;text-align:center;padding:60px 0 0}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);
+    border:1px solid var(--line);background:var(--panel);padding:5px 12px 5px 6px;border-radius:999px}
+  .pill b{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);
+    padding:2px 7px;border-radius:999px;font-size:11px}
+  h1{font-size:clamp(36px,6.4vw,62px);line-height:1.03;letter-spacing:-2.4px;font-weight:750;
+    margin:20px auto 14px;max-width:14ch}
+  h1 em{font-style:normal;background:linear-gradient(96deg,var(--accent),var(--accent-2));
     -webkit-background-clip:text;background-clip:text;color:transparent}
-  .sub{font-size:clamp(16.5px,2.1vw,19px);color:var(--muted);max-width:600px;margin:0 auto 34px}
-  .actions{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap}
-  .btn{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:var(--accent-fg);
-    font-weight:680;font-size:16.5px;padding:15px 26px;border-radius:12px;
-    box-shadow:0 8px 30px color-mix(in srgb,var(--accent) 34%,transparent);
-    transition:transform .16s,filter .16s}
-  .btn:hover{transform:translateY(-2px);filter:brightness(1.07)}
-  .btn-2{background:var(--panel);color:var(--fg);border:1px solid var(--line);
-    font-weight:560;font-size:15.5px;padding:14px 20px;border-radius:12px}
-  .btn-2:hover{border-color:var(--muted)}
-  .hint{margin:16px 0 0;font-size:13.5px;color:var(--muted)}
-  .trust{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin:34px 0 0}
-  .trust span{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-  .trust span+span::before{content:"/";margin-right:22px;opacity:.45}
+  .sub{color:var(--muted);font-size:17px;max-width:520px;margin:0 auto 24px}
+  .btn{display:inline-flex;align-items:center;gap:9px;background:var(--accent);color:var(--accent-fg);
+    font-weight:660;font-size:16px;padding:13px 24px;border-radius:11px;
+    box-shadow:0 10px 30px -8px color-mix(in srgb,var(--accent) 60%,transparent);
+    transition:transform .15s,filter .15s}
+  .btn:hover{transform:translateY(-1px);filter:brightness(1.08)}
+  .meta{margin:12px 0 0;font-size:13px;color:var(--muted)}
+  .meta a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+  .counters{margin:12px 0 0;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .counters b{color:var(--fg);font-weight:620}
+  .counters span+span::before{content:"\00b7";margin:0 9px;opacity:.5}
 
-  .stats{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:26px 0 0}
-  .stat{border:1px solid var(--line);background:var(--panel);border-radius:12px;
-    padding:10px 18px;min-width:110px}
-  .stat dt{font-size:22px;font-weight:700;letter-spacing:-.6px;
-    font-variant-numeric:tabular-nums;line-height:1.15}
-  .stat dd{margin:2px 0 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
-
-  /* ---------- captura ---------- */
-  .shot{margin:58px auto 0;max-width:1000px;border:1px solid var(--line);border-radius:14px;
-    background:var(--panel);overflow:hidden;
-    box-shadow:0 40px 90px -30px rgba(0,0,0,.7),0 0 0 1px color-mix(in srgb,var(--fg) 5%,transparent)}
-  .chrome{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);
-    background:var(--panel-2)}
-  .chrome i{width:10px;height:10px;border-radius:50%;background:var(--line);display:block}
-  .chrome b{margin-left:10px;font-weight:500;font-size:12.5px;color:var(--muted)}
+  .shot{position:relative;z-index:1;margin:42px auto 0;max-width:1000px;border:1px solid var(--line);
+    border-radius:12px;overflow:hidden;background:var(--panel);
+    box-shadow:0 30px 70px -28px rgba(0,0,0,.75)}
+  .chrome{display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+  .chrome i{width:9px;height:9px;border-radius:50%;background:var(--line)}
+  .chrome b{margin-left:8px;font-size:11.5px;font-weight:500;color:var(--muted)}
   .shot img{display:block;width:100%}
 
-  /* ---------- secciones ---------- */
-  section{padding:96px 0}
-  .head{max-width:640px;margin-bottom:38px}
-  h2{font-size:clamp(26px,3.6vw,38px);letter-spacing:-1.2px;line-height:1.12;margin:12px 0 10px;font-weight:720}
-  .lead{color:var(--muted);margin:0;font-size:16.5px}
+  section{padding:60px 0}
+  .kicker{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+  h2{font-size:clamp(22px,3vw,30px);letter-spacing:-.9px;margin:10px 0 24px;font-weight:700}
 
-  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
-  .card{grid-column:span 2;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
-    padding:24px 24px 0;overflow:hidden;display:flex;flex-direction:column;min-height:250px;
-    transition:border-color .18s,transform .18s}
-  .card:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));transform:translateY(-2px)}
-  .card.wide{grid-column:span 3}
-  .card h3{margin:0 0 8px;font-size:17.5px;letter-spacing:-.3px}
-  .card p{margin:0;color:var(--muted);font-size:14.8px}
-  .card-vis{margin-top:auto;padding-top:20px}
-  .v{width:100%;height:auto;display:block;border-radius:10px 10px 0 0}
-  .v-paper{fill:var(--paper);stroke:var(--line)}
-  .v-ghost{fill:none;stroke:var(--line);stroke-width:1.5}
-  .v-ghost2{fill:var(--panel-2);stroke:var(--line)}
-  .v-grid{fill:none;stroke:var(--line);stroke-width:1.5}
-  .v-grid-line{fill:none;stroke:var(--line);stroke-width:1.2}
-  .v-line{fill:var(--muted);opacity:.45}
-  .v-line-stroke{stroke:var(--muted);opacity:.35;stroke-width:2;stroke-linecap:round}
-  .v-mark{fill:var(--accent);opacity:.85}
-  .v-box{fill:none;stroke:var(--accent);stroke-width:2}
-  .v-arrow{stroke:var(--accent-2);stroke-width:2.4;fill:none;stroke-linecap:round}
-  .v-arrow-head{fill:var(--accent-2)}
-  .v-plus{stroke:var(--accent);stroke-width:2.4;stroke-linecap:round}
-  .v-dot{fill:var(--accent)}
-  @media (max-width:900px){
-    .bento{grid-template-columns:repeat(2,1fr)}
-    .card,.card.wide{grid-column:span 2}
-  }
-  @media (max-width:560px){
-    .bento{grid-template-columns:1fr}
-    .card,.card.wide{grid-column:span 1}
-  }
+  ul.feat{list-style:none;padding:0;margin:0;display:grid;gap:0 40px;grid-template-columns:1fr 1fr}
+  ul.feat li{display:flex;gap:13px;padding:15px 0;border-top:1px solid var(--line)}
+  ul.feat svg{flex:none;width:19px;height:19px;margin-top:2px;fill:none;stroke:var(--accent);
+    stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  ul.feat b{display:block;font-size:15px;font-weight:620;margin-bottom:2px}
+  ul.feat span{color:var(--muted);font-size:14px}
+  @media (max-width:720px){ul.feat{grid-template-columns:1fr}}
 
-  ol.steps{list-style:none;padding:0;margin:0;display:grid;gap:14px;
-    grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
-  ol.steps li{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
-  .num{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;
-    color:var(--accent);letter-spacing:.1em}
-  ol.steps b{display:block;margin:10px 0 6px;font-size:16.5px}
-  ol.steps p{margin:0;color:var(--muted);font-size:14.8px}
-  .note{margin-top:22px;border:1px solid var(--line);border-left:2px solid var(--accent-2);
-    background:var(--panel);border-radius:12px;padding:16px 18px;font-size:14.6px;color:var(--muted)}
-  .note b{color:var(--fg)}
+  .dl{display:grid;grid-template-columns:1.05fr 1.7fr auto auto;align-items:center;gap:14px;
+    border:1px solid var(--line);background:var(--panel);border-radius:11px;padding:14px 16px;margin-bottom:8px;
+    transition:border-color .15s,background .15s}
+  .dl:hover{border-color:color-mix(in srgb,var(--accent) 60%,var(--line));background:var(--panel-2)}
+  .dl-os{font-weight:620;font-size:15px}
+  .dl-note{color:var(--muted);font-size:13.5px}
+  .dl-size{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--muted)}
+  .dl-go{width:26px;height:26px;display:grid;place-items:center;border-radius:8px;border:1px solid var(--line);color:var(--accent);font-size:13px}
+  @media (max-width:640px){.dl{grid-template-columns:1fr auto}.dl-note{grid-column:1/-1;order:3}}
+  .fine{margin:14px 0 0;font-size:13px;color:var(--muted)}
 
-  .dl{display:grid;grid-template-columns:1.1fr 2fr auto auto;align-items:center;gap:16px;
-    background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px 20px;
-    margin-bottom:10px;transition:border-color .16s,transform .16s}
-  .dl:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));transform:translateY(-1px)}
-  .dl-os{font-weight:640;font-size:16px}
-  .dl-note{color:var(--muted);font-size:14.4px}
-  .dl-size{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--muted)}
-  .dl-go{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;
-    border:1px solid var(--line);color:var(--accent);font-size:14px}
-  @media (max-width:640px){
-    .dl{grid-template-columns:1fr auto}
-    .dl-note{grid-column:1/-1;order:3}
-  }
-
-  details{border-bottom:1px solid var(--line);padding:18px 2px}
-  details summary{cursor:pointer;font-weight:600;font-size:16px;list-style:none;display:flex;justify-content:space-between;gap:16px}
+  details{border-top:1px solid var(--line);padding:14px 0}
+  details summary{cursor:pointer;font-weight:600;font-size:14.8px;list-style:none;display:flex;justify-content:space-between;gap:14px}
   details summary::-webkit-details-marker{display:none}
   details summary::after{content:"+";color:var(--muted);font-weight:400}
-  details[open] summary::after{content:"3"}
-  details p{margin:12px 0 0;color:var(--muted);font-size:15.2px;max-width:70ch}
+  details[open] summary::after{content:"\2013"}
+  details p{margin:9px 0 0;color:var(--muted);font-size:14.2px;max-width:66ch}
 
-  footer{border-top:1px solid var(--line);padding:40px 0 60px;color:var(--muted);font-size:14.2px}
-  .foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-  footer a:hover{color:var(--fg)}
-
-  .reveal{opacity:0;transform:translateY(14px)}
-  .reveal.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s ease}
-  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+  footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--muted);font-size:13.2px}
+  .foot{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center}
+  .foot a{color:var(--muted)}
+  .foot a:hover{color:var(--fg)}
+  .foot nav{margin:0;gap:16px}
 </style>
 </head>
 <body>
-<div class="glow"></div><div class="grid-bg"></div>
 <a class="skip" href="#main">Skip to content</a>
+<div class="aura"></div>
 
 <header id="top">
   <div class="wrap bar">
     <a class="brand" href="./">
-      <img src="easypdf.png" alt="" width="24" height="24"> easypdf.surf
+      <img src="easypdf.png" alt="" width="22" height="22"> easypdf.surf
     </a>
     <nav>
-      <a class="nl" href="#features">How it works</a>
+      <a class="nl" href="#features">Features</a>
       <a class="nl" href="#downloads">Downloads</a>
-      <a class="nl" href="#faq">FAQ</a>
-      <a class="icon-btn" href="https://easypdf.surf/es/" hreflang="es"
-         lang="es" title="ES">ES</a>
-      <button class="icon-btn" id="theme" type="button"
-              aria-label="Switch between light and dark" title="Switch between light and dark">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+      <a class="ib" href="https://easypdf.surf/es/" hreflang="es" lang="es"
+         title="English">ES</a>
+      <button class="ib" id="theme" type="button" aria-label="Switch between light and dark" title="Switch between light and dark">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <g id="i-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/></g>
           <g id="i-moon" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></g>
         </svg>
       </button>
-      <a class="nav-cta" href="#downloads">Get it</a>
+      <a class="cta-sm" href="#downloads">Get it</a>
     </nav>
   </div>
 </header>
 
 <main id="main">
 <div class="wrap hero">
-  <span class="badge"><b>v1.0.0</b> for Windows and Linux</span>
+  <span class="pill"><b>v1.0.0</b> for Windows and Linux</span>
   <h1>Write <em>on top</em> of your PDFs</h1>
   <p class="sub">Write on top of the document, highlight what matters, add tables, arrows and images, then save or print it. Like Adobe Reader, only much simpler.</p>
-  <div class="actions">
-    <a class="btn" id="cta" href="https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-Setup.exe">
-      <span aria-hidden="true">&#8595;</span><span id="cta-text">Download for Windows</span>
-    </a>
-    <a class="btn-2" href="#downloads">Other downloads</a>
-  </div>
-  <p class="hint" id="cta-note">42 MB installer - Windows 10 and 11 - no admin rights needed</p>
-  <div class="trust"><span>Genuinely free</span><span>Works offline</span><span>Your documents never leave your computer</span></div>
+  <a class="btn" id="cta" href="https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-Setup.exe">
+    <span aria-hidden="true">&#8595;</span><span id="cta-text">Download for Windows</span>
+  </a>
+  <p class="meta"><span id="cta-note">42 MB installer - Windows 10 and 11 - no admin rights needed</span> &middot; <a href="#downloads">Other downloads</a></p>
+  <p class="counters" id="stats" hidden><span id="stat-dl" hidden><b id="n-dl">-</b> downloads</span><span id="stat-today" hidden><b id="n-today">-</b> visits today</span></p>
+</div>
 
-  <dl class="stats" id="stats" hidden>
-    <div class="stat" id="stat-dl" hidden><dt id="n-dl">-</dt><dd>downloads</dd></div>
-    <div class="stat" id="stat-today" hidden><dt id="n-today">-</dt><dd>visits today</dd></div>
-    <div class="stat" id="stat-total" hidden><dt id="n-total">-</dt><dd>visits</dd></div>
-  </dl>
-
-  <figure class="shot reveal" style="margin-bottom:0">
+<div class="wrap">
+  <figure class="shot" style="margin-bottom:0">
     <div class="chrome"><i></i><i></i><i></i><b>easypdf.surf</b></div>
     <img src="captura.png" width="1280" height="860" alt="easypdf.surf window showing an annotated report: highlight, box, arrow, note and table">
   </figure>
 </div>
 
 <section class="wrap" id="features">
-  <div class="head reveal">
-    <span class="mono">Features</span>
-    <h2>What you actually need</h2>
-    <p class="lead">Six things done well, instead of two hundred buried in menus.</p>
-  </div>
-  <div class="bento reveal">
-      <article class="card">
-        <div class="card-txt">
-          <h3>Comfortable reading</h3>
-          <p>Flip through pages, zoom in on small print and search any word in the document.</p>
-        </div>
-        <div class="card-vis">
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="18" y="14" width="46" height="102" rx="5" class="v-ghost2"/>
-  <rect x="26" y="22" width="30" height="26" rx="3" class="v-paper"/>
-  <rect x="26" y="54" width="30" height="26" rx="3" class="v-paper"/>
-  <rect x="26" y="86" width="30" height="26" rx="3" class="v-paper"/>
-  <rect x="78" y="14" width="164" height="102" rx="6" class="v-paper"/>
-  <rect x="94" y="34" width="86" height="9" rx="4" class="v-mark"/>
-  <rect x="94" y="54" width="128" height="7" rx="3" class="v-line"/>
-  <rect x="94" y="70" width="112" height="7" rx="3" class="v-line"/>
-  <circle cx="196" cy="92" r="13" class="v-grid-line"/>
-  <path d="M206 102l12 12" class="v-arrow"/>
-</svg></div>
-      </article>
-      <article class="card wide">
-        <div class="card-txt">
-          <h3>Write on top</h3>
-          <p>Box things out, highlight, add arrows, text notes or draw freehand.</p>
-        </div>
-        <div class="card-vis">
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="8" y="8" width="244" height="114" rx="8" class="v-paper"/>
-  <rect x="26" y="30" width="120" height="9" rx="4" class="v-mark"/>
-  <rect x="26" y="50" width="170" height="7" rx="3" class="v-line"/>
-  <rect x="26" y="66" width="140" height="7" rx="3" class="v-line"/>
-  <rect x="22" y="84" width="130" height="26" rx="5" class="v-box"/>
-  <path d="M232 44 L176 92" class="v-arrow"/>
-  <path d="M172 96 l16 -3 -4 -12 z" class="v-arrow-head"/>
-</svg></div>
-      </article>
-      <article class="card wide">
-        <div class="card-txt">
-          <h3>Tables and images</h3>
-          <p>Drop in tables with typeable cells, plus photos, signatures or logos.</p>
-        </div>
-        <div class="card-vis">
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="18" y="18" width="224" height="94" rx="6" class="v-grid"/>
-  <path d="M18 48h224M18 80h224M92 18v94M166 18v94" class="v-grid-line"/>
-  <rect x="30" y="28" width="44" height="8" rx="4" class="v-mark"/>
-  <rect x="104" y="28" width="40" height="8" rx="4" class="v-mark"/>
-  <rect x="178" y="28" width="34" height="8" rx="4" class="v-mark"/>
-  <rect x="30" y="60" width="38" height="7" rx="3" class="v-line"/>
-  <rect x="104" y="60" width="22" height="7" rx="3" class="v-line"/>
-  <rect x="178" y="60" width="30" height="7" rx="3" class="v-line"/>
-  <rect x="30" y="92" width="30" height="7" rx="3" class="v-line"/>
-  <rect x="104" y="92" width="26" height="7" rx="3" class="v-line"/>
-  <rect x="178" y="92" width="24" height="7" rx="3" class="v-line"/>
-</svg></div>
-      </article>
-      <article class="card">
-        <div class="card-txt">
-          <h3>Printing</h3>
-          <p>With preview and page ranges. What you annotate is what comes out on paper.</p>
-        </div>
-        <div class="card-vis">
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="88" y="12" width="84" height="30" rx="4" class="v-paper"/>
-  <rect x="66" y="42" width="128" height="42" rx="6" class="v-grid"/>
-  <circle cx="176" cy="56" r="4" class="v-dot"/>
-  <rect x="88" y="76" width="84" height="42" rx="4" class="v-paper"/>
-  <rect x="100" y="88" width="52" height="6" rx="3" class="v-line"/>
-  <rect x="100" y="100" width="40" height="6" rx="3" class="v-mark"/>
-</svg></div>
-      </article>
-      <article class="card">
-        <div class="card-txt">
-          <h3>Create documents</h3>
-          <p>Start from a blank page, add as many pages as you need and save the PDF.</p>
-        </div>
-        <div class="card-vis">
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="24" y="20" width="66" height="90" rx="6" class="v-paper"/>
-  <rect x="98" y="20" width="66" height="90" rx="6" class="v-paper"/>
-  <rect x="172" y="20" width="66" height="90" rx="6" class="v-ghost" stroke-dasharray="5 4"/>
-  <path d="M205 52v26M192 65h26" class="v-plus"/>
-</svg></div>
-      </article>
-      <article class="card">
-        <div class="card-txt">
-          <h3>Templates</h3>
-          <p>Save your letterhead or table and reuse it in another document in one click.</p>
-        </div>
-        <div class="card-vis">
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="46" y="10" width="150" height="106" rx="8" class="v-ghost"/>
-  <rect x="58" y="16" width="150" height="106" rx="8" class="v-ghost2"/>
-  <rect x="70" y="22" width="150" height="106" rx="8" class="v-paper"/>
-  <rect x="86" y="40" width="72" height="9" rx="4" class="v-mark"/>
-  <rect x="86" y="60" width="110" height="7" rx="3" class="v-line"/>
-  <rect x="86" y="76" width="92" height="7" rx="3" class="v-line"/>
-</svg></div>
-      </article>
-  </div>
-</section>
-
-<section class="wrap" id="how">
-  <div class="head reveal">
-    <span class="mono">In one minute</span>
-    <h2>One minute to get going</h2>
-  </div>
-  <ol class="steps reveal">
-      <li>
-        <span class="num">01</span>
-        <b>Download</b>
-        <p>Hit the button and save the file.</p>
-      </li>
-      <li>
-        <span class="num">02</span>
-        <b>Install</b>
-        <p>Double click, next, next. No administrator rights needed.</p>
-      </li>
-      <li>
-        <span class="num">03</span>
-        <b>Open your PDF</b>
-        <p>Drag it onto the window and start writing on top.</p>
-      </li>
-  </ol>
-  <div class="note reveal"><b>If Windows says the publisher is unknown</b>. Click <b>More info</b> and then <b>Run anyway</b>. That warning shows up for every small program that has not paid for a certificate; it does not mean there is anything wrong with the file.</div>
+  <span class="kicker">Features</span>
+  <h2>What you actually need</h2>
+  <ul class="feat">
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.2A1.2 1.2 0 0 1 4.2 4H9a3 3 0 0 1 3 3v11a2.4 2.4 0 0 0-2.4-2H4.2A1.2 1.2 0 0 1 3 14.8Z"/><path d="M21 5.2A1.2 1.2 0 0 0 19.8 4H15a3 3 0 0 0-3 3v11a2.4 2.4 0 0 1 2.4-2h5.4A1.2 1.2 0 0 0 21 14.8Z"/></svg>
+          <div><b>Comfortable reading</b><span>Flip through pages, zoom in on small print and search any word in the document.</span></div>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          <div><b>Write on top</b><span>Box things out, highlight, add arrows, text notes or draw freehand.</span></div>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/></svg>
+          <div><b>Tables and images</b><span>Drop in tables with typeable cells, plus photos, signatures or logos.</span></div>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>
+          <div><b>Printing</b><span>With preview and page ranges. What you annotate is what comes out on paper.</span></div>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg>
+          <div><b>Create documents</b><span>Start from a blank page, add as many pages as you need and save the PDF.</span></div>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <div><b>Templates</b><span>Save your letterhead or table and reuse it in another document in one click.</span></div>
+        </li>
+  </ul>
 </section>
 
 <section class="wrap" id="downloads">
-  <div class="head reveal">
-    <span class="mono">Downloads</span>
-    <h2>Downloads</h2>
-    <p class="lead">Version 1.0.0. Nothing else to install.</p>
-  </div>
-  <div class="reveal">
-      <a class="dl" href="https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-Setup.exe">
-        <span class="dl-os">For Windows</span>
-        <span class="dl-note">The usual choice. Installs like any other program.</span>
-        <span class="dl-size">42 MB</span>
-        <span class="dl-go" aria-hidden="true">&darr;</span>
-      </a>
-      <a class="dl" href="https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-windows-x64-portable.zip">
-        <span class="dl-os">Windows, no install</span>
-        <span class="dl-note">Installs nothing. Runs from a USB stick.</span>
-        <span class="dl-size">60 MB</span>
-        <span class="dl-go" aria-hidden="true">&darr;</span>
-      </a>
-      <a class="dl" href="https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-linux-x64.tar.xz">
-        <span class="dl-os">For Linux</span>
-        <span class="dl-note">Unpack and run. 64-bit.</span>
-        <span class="dl-size">62 MB</span>
-        <span class="dl-go" aria-hidden="true">&darr;</span>
-      </a>
-  </div>
-  <p class="lead" style="margin-top:16px;font-size:14.5px">There is no Mac build yet.</p>
+  <span class="kicker">Downloads</span>
+  <h2>Downloads</h2>
+        <a class="dl" href="https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-Setup.exe">
+          <span class="dl-os">For Windows</span>
+          <span class="dl-note">The usual choice. Installs like any other program.</span>
+          <span class="dl-size">42 MB</span>
+          <span class="dl-go" aria-hidden="true">&darr;</span>
+        </a>
+        <a class="dl" href="https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-windows-x64-portable.zip">
+          <span class="dl-os">Windows, no install</span>
+          <span class="dl-note">Installs nothing. Runs from a USB stick.</span>
+          <span class="dl-size">60 MB</span>
+          <span class="dl-go" aria-hidden="true">&darr;</span>
+        </a>
+        <a class="dl" href="https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-linux-x64.tar.xz">
+          <span class="dl-os">For Linux</span>
+          <span class="dl-note">Unpack and run. 64-bit.</span>
+          <span class="dl-size">62 MB</span>
+          <span class="dl-go" aria-hidden="true">&darr;</span>
+        </a>
+  <p class="fine">There is no Mac build yet. &middot; If Windows warns about an unknown publisher, click <b>More info</b> then <b>Run anyway</b>: the app is not signed with a paid certificate.</p>
 </section>
 
 <section class="wrap" id="faq">
-  <div class="head reveal">
-    <span class="mono">FAQ</span>
-    <h2>Quick answers</h2>
-  </div>
-  <div class="reveal">
-      <details>
-        <summary>Is it really free?</summary>
-        <p>Yes. No paid version, no subscription, no document limit.</p>
-      </details>
-      <details>
-        <summary>Do I need an account?</summary>
-        <p>No. Open it and use it, no sign-up, no email.</p>
-      </details>
-      <details>
-        <summary>Are there ads?</summary>
-        <p>None. And it does not sneak in extra software either.</p>
-      </details>
-      <details>
-        <summary>Does it work offline?</summary>
-        <p>Yes. You only need a connection to download it once.</p>
-      </details>
-      <details>
-        <summary>Are my documents uploaded anywhere?</summary>
-        <p>No. Everything happens on your computer.</p>
-      </details>
-      <details>
-        <summary>What if I do not like it?</summary>
-        <p>Uninstall it like any other program, from Settings.</p>
-      </details>
-  </div>
+  <span class="kicker">FAQ</span>
+  <h2>Quick answers</h2>
+        <details>
+          <summary>Is it really free?</summary>
+          <p>Yes. No paid version, no subscription, no document limit.</p>
+        </details>
+        <details>
+          <summary>Do I need an account?</summary>
+          <p>No. Open it and use it, no sign-up, no email.</p>
+        </details>
+        <details>
+          <summary>Are there ads?</summary>
+          <p>None. And it does not sneak in extra software either.</p>
+        </details>
+        <details>
+          <summary>Does it work offline?</summary>
+          <p>Yes. You only need a connection to download it once.</p>
+        </details>
 </section>
 </main>
 
 <footer>
   <div class="wrap foot">
-    <div>
-      <p><b style="color:var(--fg)">easypdf.surf 1.0.0</b> &middot; free and open for everyone.</p>
-      <p>Provided as is, without warranty.</p>
-    </div>
-    <div>
-      <p><a href="https://github.com/mefardales/easypdf">See the code and the licence</a></p>
-      <p><a href="https://github.com/mefardales/easypdf/issues">Tell us here</a></p>
-      <p><a href="https://easypdf.surf/es/" hreflang="es">English</a></p>
-    </div>
+    <span>easypdf.surf 1.0.0 &middot; free and open for everyone</span>
+    <nav>
+      <a href="https://github.com/mefardales/easypdf">See the code and the licence</a>
+      <a href="https://github.com/mefardales/easypdf/issues">Tell us here</a>
+      <a href="https://easypdf.surf/es/" hreflang="es">English</a>
+    </nav>
   </div>
 </footer>
 
@@ -476,11 +271,12 @@
   var raiz = document.documentElement, boton = document.getElementById("theme");
   function pintar(modo) {
     raiz.setAttribute("data-theme", modo);
-    boton.innerHTML = modo === "dark" ? "☼" : "☽";
+    boton.querySelector("#i-sun").style.display = modo === "dark" ? "" : "none";
+    boton.querySelector("#i-moon").style.display = modo === "dark" ? "none" : "";
   }
-  var guardado = null;
-  try { guardado = localStorage.getItem("tema"); } catch (e) {}
-  pintar(guardado || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+  var elegido = null;
+  try { elegido = localStorage.getItem("tema"); } catch (e) {}
+  pintar(elegido || "dark");
   boton.addEventListener("click", function () {
     var nuevo = raiz.getAttribute("data-theme") === "dark" ? "light" : "dark";
     pintar(nuevo);
@@ -489,25 +285,22 @@
 
   var cabecera = document.getElementById("top");
   addEventListener("scroll", function () {
-    cabecera.classList.toggle("stuck", scrollY > 8);
-  }, {passive:true});
+    cabecera.classList.toggle("stuck", scrollY > 6);
+  }, {passive: true});
 
-  var ua = navigator.userAgent || "", plat =
-      (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
-  var texto = document.getElementById("cta-text"), nota = document.getElementById("cta-note");
+  var ua = navigator.userAgent || "",
+      plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
   if (/Linux/i.test(plat + ua) && !/Android/i.test(ua)) {
     document.getElementById("cta").href = "https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-linux-x64.tar.xz";
-    texto.textContent = "Download for Linux";
-    nota.textContent = "Portable - 62 MB - Linux 64-bit";
+    document.getElementById("cta-text").textContent = "Download for Linux";
+    document.getElementById("cta-note").textContent = "Portable - 62 MB - Linux 64-bit";
   } else if (/Mac/i.test(plat + ua)) {
-    nota.textContent = "There is no Mac build yet.";
+    document.getElementById("cta-note").textContent = "There is no Mac build yet.";
   }
 
-  // ---- numeros de la portada -------------------------------------------
-  // Si alguna peticion falla, el numero simplemente no aparece: nunca se
-  // ensena una cifra inventada ni se rompe la pagina.
+  // Numeros de la portada. Si una peticion falla, ese numero no se ensena.
   var tira = document.getElementById("stats");
-  function poner(caja, valor, texto) {
+  function poner(caja, texto, valor) {
     if (valor === null || valor === undefined || isNaN(valor)) return;
     document.getElementById(texto).textContent = Number(valor).toLocaleString();
     document.getElementById(caja).hidden = false;
@@ -515,20 +308,13 @@
   }
   function leerCache(clave) {
     try {
-      var crudo = localStorage.getItem(clave);
-      if (!crudo) return null;
-      var dato = JSON.parse(crudo);
-      return (Date.now() - dato.t) < 3600000 ? dato.v : null;
+      var dato = JSON.parse(localStorage.getItem(clave) || "null");
+      return dato && (Date.now() - dato.t) < 3600000 ? dato.v : null;
     } catch (e) { return null; }
   }
-  function recordar(clave, valor) {
-    try { localStorage.setItem(clave, JSON.stringify({v: valor, t: Date.now()})); } catch (e) {}
-  }
-
-  // Descargas: las cuenta GitHub en los archivos de cada release.
   var cacheDl = leerCache("dl");
   if (cacheDl !== null) {
-    poner("stat-dl", cacheDl, "n-dl");
+    poner("stat-dl", "n-dl", cacheDl);
   } else {
     fetch("https://api.github.com/repos/mefardales/easypdf/releases", {headers: {Accept: "application/vnd.github+json"}})
       .then(function (r) { return r.ok ? r.json() : null; })
@@ -540,47 +326,24 @@
             if (a.name && a.name.slice(-7) !== ".sha256") total += a.download_count || 0;
           });
         });
-        recordar("dl", total);
-        poner("stat-dl", total, "n-dl");
-      })
-      .catch(function () {});
+        try { localStorage.setItem("dl", JSON.stringify({v: total, t: Date.now()})); } catch (e) {}
+        poner("stat-dl", "n-dl", total);
+      }).catch(function () {});
   }
 
-  // Visitas: contador publico sin cookies. Se suma una vez por dia y navegador.
-  var hoy = new Date().toISOString().slice(0, 10);
-  var yaContado = false;
-  try { yaContado = localStorage.getItem("visita") === hoy; } catch (e) {}
-  var verbo = yaContado ? "" : "/up";
-  function numero(dato) {
-    if (dato === null || typeof dato !== "object") return null;
-    if (typeof dato.count === "number") return dato.count;
-    if (typeof dato.value === "number") return dato.value;
-    if (dato.data && typeof dato.data.up_count === "number") return dato.data.up_count;
-    if (dato.data && typeof dato.data.count === "number") return dato.data.count;
-    return null;
-  }
-  function contar(clave, caja, texto) {
-    return fetch("https://api.counterapi.dev/v1/easypdf-surf" + "/" + clave + (verbo || "/"))
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { poner(caja, numero(d), texto); })
-      .catch(function () {});
-  }
-  contar("visitas-" + hoy, "stat-today", "n-today");
-  contar("visitas", "stat-total", "n-total");
-  if (!yaContado) {
-    try { localStorage.setItem("visita", hoy); } catch (e) {}
-  }
-
-  if ("IntersectionObserver" in window) {
-    var obs = new IntersectionObserver(function (entradas) {
-      entradas.forEach(function (e) {
-        if (e.isIntersecting) { e.target.classList.add("in"); obs.unobserve(e.target); }
-      });
-    }, {rootMargin:"0px 0px -8% 0px"});
-    document.querySelectorAll(".reveal").forEach(function (el) { obs.observe(el); });
-  } else {
-    document.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("in"); });
-  }
+  var hoy = new Date().toISOString().slice(0, 10), contado = false;
+  try { contado = localStorage.getItem("visita") === hoy; } catch (e) {}
+  fetch("https://api.counterapi.dev/v1/easypdf-surf" + "/visitas-" + hoy + (contado ? "/" : "/up"))
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d) return;
+      var n = typeof d.count === "number" ? d.count
+            : typeof d.value === "number" ? d.value
+            : d.data && typeof d.data.up_count === "number" ? d.data.up_count
+            : d.data && typeof d.data.count === "number" ? d.data.count : null;
+      poner("stat-today", "n-today", n);
+    }).catch(function () {});
+  if (!contado) { try { localStorage.setItem("visita", hoy); } catch (e) {} }
 })();
 </script>
 </body>
