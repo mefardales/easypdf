@@ -1,7 +1,7 @@
 name: Publicar la web
 
 # Copia site/ a la rama gh-pages, que es lo que sirve GitHub Pages en
-# https://mefardales.github.io/easypdf/
+# https://easypdf.surf (el dominio propio va en site/CNAME)
 #
 # Se usa una rama en vez de las acciones oficiales de Pages porque activar
 # Pages por API necesita permisos de administrador que el token de Actions
@@ -56,4 +56,4 @@ jobs:
           fi
           git commit -m "Actualizar la web desde ${GITHUB_SHA::7}"
           git push origin gh-pages
-          echo "Publicado en https://mefardales.github.io/easypdf/"
+          echo "Publicado en https://easypdf.surf"
