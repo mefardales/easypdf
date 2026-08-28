@@ -45,23 +45,31 @@ TEXTS = {
         "keywords": "lector pdf gratis, anotar pdf, editar pdf, rellenar pdf, pdf windows",
         "skip": "Ir al contenido",
         "nav_download": "Descargas",
+        "nav_cta": "Descargar",
         "nav_how": "Como funciona",
         "nav_faq": "Preguntas",
         "theme": "Cambiar entre claro y oscuro",
-        "eyebrow": "Software libre - sin cuentas, sin anuncios",
+        "eyebrow": "libre y gratis, sin cuentas",
         "h1": "Lee, anota e imprime tus PDF",
+        "h1_html": "Escribe <em>encima</em> de tus PDF",
+        "switch": "English",
+        "features_kicker": "Funciones",
+        "how_kicker": "En un minuto",
+        "downloads_kicker": "Descargas",
+        "cta_linux": "Descargar para Linux",
+        "cta_note_linux": "Portable - 62 MB - Linux 64 bits",
         "sub": (
             "Escribe encima del documento, resalta lo importante, anade tablas, "
             "flechas e imagenes, y guarda o imprime el resultado. Como Adobe "
             "Reader, pero mucho mas simple."
         ),
         "cta": "Descargar para Windows",
-        "cta_note": "Instalador - 42 MB - Windows 10 y 11",
-        "cta_second": "Ver todas las descargas",
+        "cta_note": "Instalador de 42 MB - Windows 10 y 11 - sin permisos de administrador",
+        "cta_second": "Otras descargas",
         "trust": "Gratis de verdad - Funciona sin internet - Tus documentos no salen de tu ordenador",
         "shot_alt": "Ventana de easypdf.surf con un informe anotado: resaltado, recuadro, flecha, nota y tabla",
-        "features_title": "Todo lo que necesitas, nada mas",
-        "features_sub": "Sin menus interminables ni funciones que nunca usaras.",
+        "features_title": "Lo que de verdad hace falta",
+        "features_sub": "Seis cosas bien hechas, en vez de doscientas escondidas en menus.",
         "features": [
             ("read", "Leer comodo",
              "Pasa paginas, acerca la letra pequena y busca cualquier palabra del documento."),
@@ -126,23 +134,31 @@ TEXTS = {
         "keywords": "free pdf reader, annotate pdf, edit pdf, fill pdf, pdf windows",
         "skip": "Skip to content",
         "nav_download": "Downloads",
+        "nav_cta": "Get it",
         "nav_how": "How it works",
         "nav_faq": "FAQ",
         "theme": "Switch between light and dark",
-        "eyebrow": "Open source - no accounts, no ads",
+        "eyebrow": "free and open, no accounts",
         "h1": "Read, annotate and print your PDFs",
+        "h1_html": "Write <em>on top</em> of your PDFs",
+        "switch": "Espanol",
+        "features_kicker": "Features",
+        "how_kicker": "In one minute",
+        "downloads_kicker": "Downloads",
+        "cta_linux": "Download for Linux",
+        "cta_note_linux": "Portable - 62 MB - Linux 64-bit",
         "sub": (
             "Write on top of the document, highlight what matters, add tables, "
             "arrows and images, then save or print it. Like Adobe Reader, only "
             "much simpler."
         ),
         "cta": "Download for Windows",
-        "cta_note": "Installer - 42 MB - Windows 10 and 11",
-        "cta_second": "See all downloads",
+        "cta_note": "42 MB installer - Windows 10 and 11 - no admin rights needed",
+        "cta_second": "Other downloads",
         "trust": "Genuinely free - Works offline - Your documents never leave your computer",
         "shot_alt": "easypdf.surf window showing an annotated report: highlight, box, arrow, note and table",
-        "features_title": "Everything you need, nothing else",
-        "features_sub": "No endless menus, no features you will never open.",
+        "features_title": "What you actually need",
+        "features_sub": "Six things done well, instead of two hundred buried in menus.",
         "features": [
             ("read", "Comfortable reading",
              "Flip through pages, zoom in on small print and search any word in the document."),
@@ -195,13 +211,78 @@ TEXTS = {
     },
 }
 
-ICONS = {
-    "read": '<path d="M3 5.5A1.5 1.5 0 0 1 4.5 4H9a3 3 0 0 1 3 3v11a2.5 2.5 0 0 0-2.5-2H4.5A1.5 1.5 0 0 1 3 14.5Z"/><path d="M21 5.5A1.5 1.5 0 0 0 19.5 4H15a3 3 0 0 0-3 3v11a2.5 2.5 0 0 1 2.5-2h5A1.5 1.5 0 0 0 21 14.5Z"/>',
-    "write": '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
-    "table": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/>',
-    "print": '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>',
-    "create": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/>',
-    "template": '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+# Visuales pequenos que van dentro de las tarjetas: dibujados con SVG para que
+# la pagina siga pesando unos pocos kB y se vea nitida en cualquier pantalla.
+VISUALS = {
+    "annotate": """
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="8" y="8" width="244" height="114" rx="8" class="v-paper"/>
+  <rect x="26" y="30" width="120" height="9" rx="4" class="v-mark"/>
+  <rect x="26" y="50" width="170" height="7" rx="3" class="v-line"/>
+  <rect x="26" y="66" width="140" height="7" rx="3" class="v-line"/>
+  <rect x="22" y="84" width="130" height="26" rx="5" class="v-box"/>
+  <path d="M232 44 L176 92" class="v-arrow"/>
+  <path d="M172 96 l16 -3 -4 -12 z" class="v-arrow-head"/>
+</svg>""",
+    "table": """
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="18" y="18" width="224" height="94" rx="6" class="v-grid"/>
+  <path d="M18 48h224M18 80h224M92 18v94M166 18v94" class="v-grid-line"/>
+  <rect x="30" y="28" width="44" height="8" rx="4" class="v-mark"/>
+  <rect x="104" y="28" width="40" height="8" rx="4" class="v-mark"/>
+  <rect x="178" y="28" width="34" height="8" rx="4" class="v-mark"/>
+  <rect x="30" y="60" width="38" height="7" rx="3" class="v-line"/>
+  <rect x="104" y="60" width="22" height="7" rx="3" class="v-line"/>
+  <rect x="178" y="60" width="30" height="7" rx="3" class="v-line"/>
+  <rect x="30" y="92" width="30" height="7" rx="3" class="v-line"/>
+  <rect x="104" y="92" width="26" height="7" rx="3" class="v-line"/>
+  <rect x="178" y="92" width="24" height="7" rx="3" class="v-line"/>
+</svg>""",
+    "template": """
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="46" y="10" width="150" height="106" rx="8" class="v-ghost"/>
+  <rect x="58" y="16" width="150" height="106" rx="8" class="v-ghost2"/>
+  <rect x="70" y="22" width="150" height="106" rx="8" class="v-paper"/>
+  <rect x="86" y="40" width="72" height="9" rx="4" class="v-mark"/>
+  <rect x="86" y="60" width="110" height="7" rx="3" class="v-line"/>
+  <rect x="86" y="76" width="92" height="7" rx="3" class="v-line"/>
+</svg>""",
+    "pages": """
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="24" y="20" width="66" height="90" rx="6" class="v-paper"/>
+  <rect x="98" y="20" width="66" height="90" rx="6" class="v-paper"/>
+  <rect x="172" y="20" width="66" height="90" rx="6" class="v-ghost" stroke-dasharray="5 4"/>
+  <path d="M205 52v26M192 65h26" class="v-plus"/>
+</svg>""",
+    "read": """
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="18" y="14" width="46" height="102" rx="5" class="v-ghost2"/>
+  <rect x="26" y="22" width="30" height="26" rx="3" class="v-paper"/>
+  <rect x="26" y="54" width="30" height="26" rx="3" class="v-paper"/>
+  <rect x="26" y="86" width="30" height="26" rx="3" class="v-paper"/>
+  <rect x="78" y="14" width="164" height="102" rx="6" class="v-paper"/>
+  <rect x="94" y="34" width="86" height="9" rx="4" class="v-mark"/>
+  <rect x="94" y="54" width="128" height="7" rx="3" class="v-line"/>
+  <rect x="94" y="70" width="112" height="7" rx="3" class="v-line"/>
+  <circle cx="196" cy="92" r="13" class="v-grid-line"/>
+  <path d="M206 102l12 12" class="v-arrow"/>
+</svg>""",
+    "print": """
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="88" y="12" width="84" height="30" rx="4" class="v-paper"/>
+  <rect x="66" y="42" width="128" height="42" rx="6" class="v-grid"/>
+  <circle cx="176" cy="56" r="4" class="v-dot"/>
+  <rect x="88" y="76" width="84" height="42" rx="4" class="v-paper"/>
+  <rect x="100" y="88" width="52" height="6" rx="3" class="v-line"/>
+  <rect x="100" y="100" width="40" height="6" rx="3" class="v-mark"/>
+</svg>""",
+    "private": """
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="94" y="52" width="72" height="52" rx="8" class="v-grid"/>
+  <path d="M110 52V40a20 20 0 0 1 40 0v12" class="v-grid-line"/>
+  <circle cx="130" cy="76" r="7" class="v-dot"/>
+  <path d="M42 78h34M184 78h34" class="v-line-stroke"/>
+</svg>""",
 }
 
 
@@ -213,30 +294,39 @@ def build_page(lang: str) -> str:
     t = TEXTS[lang]
     otro = TEXTS[t["other_lang"]]
     base = f"{DOMAIN}/{t['path']}"
-    prefijo = "../" if t["path"] else ""      # rutas a los archivos comunes
+    prefijo = "../" if t["path"] else ""
 
+    visual_de = {
+        "read": "read", "write": "annotate", "table": "table",
+        "print": "print", "create": "pages", "template": "template",
+    }
+    grandes = {"write", "table"}
     tarjetas = "\n".join(
-        f'''      <article class="card">
-        <svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[clave]}</svg>
-        <h3>{esc(titulo)}</h3>
-        <p>{esc(texto)}</p>
+        f'''      <article class="card{' wide' if clave in grandes else ''}">
+        <div class="card-txt">
+          <h3>{esc(titulo)}</h3>
+          <p>{esc(texto)}</p>
+        </div>
+        <div class="card-vis">{VISUALS[visual_de.get(clave, "annotate")]}</div>
       </article>'''
         for clave, titulo, texto in t["features"]
     )
 
     pasos = "\n".join(
         f'''      <li>
-        <span class="step">{i}</span>
-        <div><b>{esc(titulo)}</b><p>{esc(texto)}</p></div>
+        <span class="num">{i:02d}</span>
+        <b>{esc(titulo)}</b>
+        <p>{esc(texto)}</p>
       </li>'''
         for i, (titulo, texto) in enumerate(t["how"], start=1)
     )
 
     descargas = "\n".join(
-        f'''      <a class="row" href="{FILES[clave]}">
-        <span class="row-main"><b>{esc(titulo)}</b><span>{esc(detalle)}</span></span>
-        <span class="row-size">{esc(peso)}</span>
-        <span class="row-cta">{esc(t["download_verb"])} &rarr;</span>
+        f'''      <a class="dl" href="{FILES[clave]}">
+        <span class="dl-os">{esc(titulo)}</span>
+        <span class="dl-note">{esc(detalle)}</span>
+        <span class="dl-size">{esc(peso)}</span>
+        <span class="dl-go" aria-hidden="true">&darr;</span>
       </a>'''
         for clave, titulo, detalle, peso in t["downloads"]
     )
@@ -247,6 +337,10 @@ def build_page(lang: str) -> str:
         <p>{esc(respuesta)}</p>
       </details>'''
         for pregunta, respuesta in t["faq"]
+    )
+
+    trust = "".join(
+        f'<span>{esc(x)}</span>' for x in t["trust"].split(" - ")
     )
 
     datos_app = {
@@ -287,7 +381,7 @@ def build_page(lang: str) -> str:
 <title>{esc(t['title'])}</title>
 <meta name="description" content="{esc(t['description'])}">
 <meta name="keywords" content="{esc(t['keywords'])}">
-<meta name="theme-color" content="#e5121a">
+<meta name="theme-color" content="#0a0a0b">
 <link rel="canonical" href="{base}">
 <link rel="alternate" hreflang="es" href="{DOMAIN}/">
 <link rel="alternate" hreflang="en" href="{DOMAIN}/en/">
@@ -309,210 +403,324 @@ def build_page(lang: str) -> str:
 <script type="application/ld+json">{json.dumps(datos_faq, ensure_ascii=False)}</script>
 <style>
   :root{{
-    --bg:#ffffff; --bg-soft:#f7f8fa; --line:#e5e8ec; --card:#ffffff;
-    --fg:#0f1419; --muted:#5d6773; --accent:#e5121a; --accent-fg:#ffffff;
-    --shadow:0 1px 2px rgba(15,20,25,.06), 0 12px 32px rgba(15,20,25,.07);
-    --radius:14px;
+    --bg:#08090b; --panel:#0f1116; --panel-2:#12151b; --line:#1e222b;
+    --fg:#f4f6f8; --muted:#8b93a1; --accent:#ff3b30; --accent-2:#ff8a3d;
+    --accent-fg:#0b0c0e; --paper:#e9edf3; --radius:16px;
   }}
-  html[data-theme="dark"]{{
-    --bg:#0d1117; --bg-soft:#131923; --line:#242c38; --card:#141b25;
-    --fg:#e9eef5; --muted:#98a3b3; --accent:#ff4d4d; --accent-fg:#12161c;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.35);
+  html[data-theme="light"]{{
+    --bg:#ffffff; --panel:#fbfbfd; --panel-2:#f4f5f8; --line:#e6e8ee;
+    --fg:#0b0d12; --muted:#61697a; --accent:#e5121a; --accent-2:#ff6a1a;
+    --accent-fg:#ffffff; --paper:#ffffff;
   }}
   *{{box-sizing:border-box}}
-  html{{scroll-behavior:smooth}}
+  html{{scroll-behavior:smooth;-webkit-text-size-adjust:100%}}
   body{{
-    margin:0; background:var(--bg); color:var(--fg);
-    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
-    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    margin:0;background:var(--bg);color:var(--fg);overflow-x:hidden;
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
   }}
-  a{{color:inherit}}
-  .wrap{{max-width:1020px;margin:0 auto;padding:0 22px}}
+  a{{color:inherit;text-decoration:none}}
+  .wrap{{max-width:1080px;margin:0 auto;padding:0 24px}}
+  .mono{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}}
   .skip{{position:absolute;left:-9999px}}
-  .skip:focus{{left:12px;top:12px;background:var(--accent);color:var(--accent-fg);padding:8px 14px;border-radius:8px;z-index:9}}
+  .skip:focus{{left:14px;top:14px;background:var(--accent);color:var(--accent-fg);padding:9px 14px;border-radius:8px;z-index:9}}
 
-  header{{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);
-    backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid var(--line)}}
-  .bar{{display:flex;align-items:center;gap:14px;height:60px}}
-  .brand{{display:flex;align-items:center;gap:9px;text-decoration:none;font-weight:700;letter-spacing:-.3px}}
-  .brand img{{width:26px;height:26px}}
-  nav{{margin-left:auto;display:flex;align-items:center;gap:6px}}
-  nav a.link{{color:var(--muted);text-decoration:none;font-size:14.5px;padding:8px 10px;border-radius:8px}}
-  nav a.link:hover{{color:var(--fg);background:var(--bg-soft)}}
-  .chip{{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);
-    color:var(--muted);font-size:13px;padding:6px 10px;border-radius:999px;text-decoration:none;cursor:pointer}}
-  .chip:hover{{color:var(--fg);border-color:var(--muted)}}
-  @media (max-width:640px){{ nav a.link{{display:none}} }}
+  /* ---------- fondo ---------- */
+  .glow{{position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(680px 420px at 50% -80px, color-mix(in srgb,var(--accent) 26%,transparent), transparent 70%),
+      radial-gradient(520px 380px at 88% 8%, color-mix(in srgb,var(--accent-2) 14%,transparent), transparent 70%);
+    opacity:.55}}
+  .grid-bg{{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px;
+    -webkit-mask-image:radial-gradient(760px 460px at 50% 0,#000,transparent 75%);
+    mask-image:radial-gradient(760px 460px at 50% 0,#000,transparent 75%)}}
+  header,main,footer{{position:relative;z-index:1}}
 
-  .hero{{padding:70px 0 10px;text-align:center}}
-  .eyebrow{{display:inline-block;font-size:13px;color:var(--muted);border:1px solid var(--line);
-    background:var(--bg-soft);padding:5px 12px;border-radius:999px;margin-bottom:22px}}
-  h1{{font-size:clamp(34px,5.6vw,54px);line-height:1.08;letter-spacing:-1.6px;margin:0 0 16px}}
-  .sub{{font-size:clamp(17px,2.2vw,19.5px);color:var(--muted);max-width:660px;margin:0 auto 32px}}
-  .btn{{display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:var(--accent);
-    color:var(--accent-fg);text-decoration:none;font-weight:700;font-size:17.5px;padding:15px 30px;
-    border-radius:12px;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 35%,transparent);
-    transition:transform .15s ease, filter .15s ease}}
-  .btn:hover{{transform:translateY(-1px);filter:brightness(1.06)}}
-  .btn small{{font-weight:500;font-size:12.5px;opacity:.92}}
-  .second{{display:block;margin-top:14px;font-size:14.5px;color:var(--muted)}}
-  .trust{{margin-top:26px;font-size:13.5px;color:var(--muted)}}
+  /* ---------- cabecera ---------- */
+  header{{position:sticky;top:0;z-index:6;border-bottom:1px solid transparent;transition:.2s}}
+  header.stuck{{border-color:var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);
+    backdrop-filter:saturate(180%) blur(12px)}}
+  .bar{{display:flex;align-items:center;gap:10px;height:62px}}
+  .brand{{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.3px}}
+  .brand img{{width:24px;height:24px}}
+  nav{{margin-left:auto;display:flex;align-items:center;gap:4px}}
+  nav .nl{{color:var(--muted);font-size:14.5px;padding:8px 11px;border-radius:9px}}
+  nav .nl:hover{{color:var(--fg);background:var(--panel-2)}}
+  .icon-btn{{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;
+    border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px}}
+  .icon-btn:hover{{color:var(--fg);border-color:var(--muted)}}
+  .nav-cta{{background:var(--fg);color:var(--bg);font-weight:600;font-size:14px;
+    padding:9px 15px;border-radius:10px;margin-left:6px}}
+  .nav-cta:hover{{opacity:.88}}
+  @media (max-width:760px){{ nav .nl{{display:none}} }}
 
-  .shot{{margin:46px 0 10px}}
-  .shot img{{width:100%;display:block;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}}
+  /* ---------- portada ---------- */
+  .hero{{padding:76px 0 0;text-align:center}}
+  .badge{{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);
+    background:var(--panel);padding:6px 14px 6px 8px;border-radius:999px;font-size:13px;color:var(--muted)}}
+  .badge b{{color:var(--fg);background:color-mix(in srgb,var(--accent) 16%,transparent);
+    border:1px solid color-mix(in srgb,var(--accent) 34%,transparent);
+    padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600}}
+  h1{{font-size:clamp(38px,7.2vw,74px);line-height:1.02;letter-spacing:-2.6px;
+    font-weight:760;margin:26px auto 20px;max-width:15ch}}
+  h1 em{{font-style:normal;background:linear-gradient(100deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}}
+  .sub{{font-size:clamp(16.5px,2.1vw,19px);color:var(--muted);max-width:600px;margin:0 auto 34px}}
+  .actions{{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap}}
+  .btn{{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:var(--accent-fg);
+    font-weight:680;font-size:16.5px;padding:15px 26px;border-radius:12px;
+    box-shadow:0 8px 30px color-mix(in srgb,var(--accent) 34%,transparent);
+    transition:transform .16s,filter .16s}}
+  .btn:hover{{transform:translateY(-2px);filter:brightness(1.07)}}
+  .btn-2{{background:var(--panel);color:var(--fg);border:1px solid var(--line);
+    font-weight:560;font-size:15.5px;padding:14px 20px;border-radius:12px}}
+  .btn-2:hover{{border-color:var(--muted)}}
+  .hint{{margin:16px 0 0;font-size:13.5px;color:var(--muted)}}
+  .trust{{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin:34px 0 0}}
+  .trust span{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}}
+  .trust span+span::before{{content:"/";margin-right:22px;opacity:.45}}
 
-  section{{padding:64px 0}}
-  h2{{font-size:clamp(24px,3.2vw,30px);letter-spacing:-.7px;margin:0 0 8px}}
-  .lead{{color:var(--muted);margin:0 0 30px}}
-  .soft{{background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}}
+  /* ---------- captura ---------- */
+  .shot{{margin:58px auto 0;max-width:1000px;border:1px solid var(--line);border-radius:14px;
+    background:var(--panel);overflow:hidden;
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.7),0 0 0 1px color-mix(in srgb,var(--fg) 5%,transparent)}}
+  .chrome{{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);
+    background:var(--panel-2)}}
+  .chrome i{{width:10px;height:10px;border-radius:50%;background:var(--line);display:block}}
+  .chrome b{{margin-left:10px;font-weight:500;font-size:12.5px;color:var(--muted)}}
+  .shot img{{display:block;width:100%}}
 
-  .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:16px}}
-  .card{{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px}}
-  .card svg{{width:22px;height:22px;fill:none;stroke:var(--accent);stroke-width:1.8;
-    stroke-linecap:round;stroke-linejoin:round;margin-bottom:12px}}
-  .card h3{{margin:0 0 6px;font-size:16.5px}}
+  /* ---------- secciones ---------- */
+  section{{padding:96px 0}}
+  .head{{max-width:640px;margin-bottom:38px}}
+  h2{{font-size:clamp(26px,3.6vw,38px);letter-spacing:-1.2px;line-height:1.12;margin:12px 0 10px;font-weight:720}}
+  .lead{{color:var(--muted);margin:0;font-size:16.5px}}
+
+  .bento{{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}}
+  .card{{grid-column:span 2;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:24px 24px 0;overflow:hidden;display:flex;flex-direction:column;min-height:250px;
+    transition:border-color .18s,transform .18s}}
+  .card:hover{{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));transform:translateY(-2px)}}
+  .card.wide{{grid-column:span 3}}
+  .card h3{{margin:0 0 8px;font-size:17.5px;letter-spacing:-.3px}}
   .card p{{margin:0;color:var(--muted);font-size:14.8px}}
+  .card-vis{{margin-top:auto;padding-top:20px}}
+  .v{{width:100%;height:auto;display:block;border-radius:10px 10px 0 0}}
+  .v-paper{{fill:var(--paper);stroke:var(--line)}}
+  .v-ghost{{fill:none;stroke:var(--line);stroke-width:1.5}}
+  .v-ghost2{{fill:var(--panel-2);stroke:var(--line)}}
+  .v-grid{{fill:none;stroke:var(--line);stroke-width:1.5}}
+  .v-grid-line{{fill:none;stroke:var(--line);stroke-width:1.2}}
+  .v-line{{fill:var(--muted);opacity:.45}}
+  .v-line-stroke{{stroke:var(--muted);opacity:.35;stroke-width:2;stroke-linecap:round}}
+  .v-mark{{fill:var(--accent);opacity:.85}}
+  .v-box{{fill:none;stroke:var(--accent);stroke-width:2}}
+  .v-arrow{{stroke:var(--accent-2);stroke-width:2.4;fill:none;stroke-linecap:round}}
+  .v-arrow-head{{fill:var(--accent-2)}}
+  .v-plus{{stroke:var(--accent);stroke-width:2.4;stroke-linecap:round}}
+  .v-dot{{fill:var(--accent)}}
+  @media (max-width:900px){{
+    .bento{{grid-template-columns:repeat(2,1fr)}}
+    .card,.card.wide{{grid-column:span 2}}
+  }}
+  @media (max-width:560px){{
+    .bento{{grid-template-columns:1fr}}
+    .card,.card.wide{{grid-column:span 1}}
+  }}
 
-  ol.steps{{list-style:none;padding:0;margin:0;display:grid;gap:14px}}
-  ol.steps li{{display:flex;gap:14px;align-items:flex-start}}
-  .step{{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-fg);
-    display:grid;place-items:center;font-size:14px;font-weight:700}}
-  ol.steps p{{margin:2px 0 0;color:var(--muted);font-size:15px}}
-
-  .note{{margin-top:26px;border:1px solid var(--line);border-left:3px solid #f0a500;background:var(--card);
-    border-radius:10px;padding:16px 18px;font-size:14.8px;color:var(--muted)}}
+  ol.steps{{list-style:none;padding:0;margin:0;display:grid;gap:14px;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+  ol.steps li{{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}}
+  .num{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;
+    color:var(--accent);letter-spacing:.1em}}
+  ol.steps b{{display:block;margin:10px 0 6px;font-size:16.5px}}
+  ol.steps p{{margin:0;color:var(--muted);font-size:14.8px}}
+  .note{{margin-top:22px;border:1px solid var(--line);border-left:2px solid var(--accent-2);
+    background:var(--panel);border-radius:12px;padding:16px 18px;font-size:14.6px;color:var(--muted)}}
   .note b{{color:var(--fg)}}
 
-  .row{{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--card);
-    border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:10px;
-    text-decoration:none;transition:border-color .15s ease, transform .15s ease}}
-  .row:hover{{border-color:var(--accent);transform:translateY(-1px)}}
-  .row-main{{flex:1;min-width:220px;display:flex;flex-direction:column}}
-  .row-main span{{color:var(--muted);font-size:14.3px}}
-  .row-size{{color:var(--muted);font-size:14px;white-space:nowrap}}
-  .row-cta{{color:var(--accent);font-weight:600;font-size:14.5px;white-space:nowrap}}
+  .dl{{display:grid;grid-template-columns:1.1fr 2fr auto auto;align-items:center;gap:16px;
+    background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px 20px;
+    margin-bottom:10px;transition:border-color .16s,transform .16s}}
+  .dl:hover{{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));transform:translateY(-1px)}}
+  .dl-os{{font-weight:640;font-size:16px}}
+  .dl-note{{color:var(--muted);font-size:14.4px}}
+  .dl-size{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--muted)}}
+  .dl-go{{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;
+    border:1px solid var(--line);color:var(--accent);font-size:14px}}
+  @media (max-width:640px){{
+    .dl{{grid-template-columns:1fr auto}}
+    .dl-note{{grid-column:1/-1;order:3}}
+  }}
 
-  details{{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px}}
-  details summary{{cursor:pointer;font-weight:600;list-style:none}}
+  details{{border-bottom:1px solid var(--line);padding:18px 2px}}
+  details summary{{cursor:pointer;font-weight:600;font-size:16px;list-style:none;display:flex;justify-content:space-between;gap:16px}}
   details summary::-webkit-details-marker{{display:none}}
-  details summary::after{{content:"+";float:right;color:var(--muted)}}
-  details[open] summary::after{{content:"\\2212"}}
-  details p{{margin:10px 0 0;color:var(--muted);font-size:15px}}
+  details summary::after{{content:"+";color:var(--muted);font-weight:400}}
+  details[open] summary::after{{content:"\2013"}}
+  details p{{margin:12px 0 0;color:var(--muted);font-size:15.2px;max-width:70ch}}
 
-  footer{{border-top:1px solid var(--line);padding:34px 0 54px;color:var(--muted);font-size:14.3px}}
-  footer p{{margin:6px 0}}
-  footer a{{color:var(--muted)}}
+  footer{{border-top:1px solid var(--line);padding:40px 0 60px;color:var(--muted);font-size:14.2px}}
+  .foot{{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}}
+  footer a:hover{{color:var(--fg)}}
+
+  .reveal{{opacity:0;transform:translateY(14px)}}
+  .reveal.in{{opacity:1;transform:none;transition:opacity .5s ease,transform .5s ease}}
+  @media (prefers-reduced-motion:reduce){{.reveal{{opacity:1;transform:none}}}}
 </style>
 </head>
 <body>
+<div class="glow"></div><div class="grid-bg"></div>
 <a class="skip" href="#main">{esc(t['skip'])}</a>
 
-<header>
+<header id="top">
   <div class="wrap bar">
     <a class="brand" href="{'../' if t['path'] else './'}">
-      <img src="{prefijo}easypdf.png" alt="" width="26" height="26">
-      easypdf.surf
+      <img src="{prefijo}easypdf.png" alt="" width="24" height="24"> easypdf.surf
     </a>
     <nav>
-      <a class="link" href="#downloads">{esc(t['nav_download'])}</a>
-      <a class="link" href="#how">{esc(t['nav_how'])}</a>
-      <a class="link" href="#faq">{esc(t['nav_faq'])}</a>
-      <a class="chip" href="{DOMAIN}/{otro['path']}" hreflang="{otro['lang']}"
-         lang="{otro['lang']}">{otro['lang'].upper()}</a>
-      <button class="chip" id="theme" type="button" aria-label="{esc(t['theme'])}"
-              title="{esc(t['theme'])}"><span id="theme-icon">&#9788;</span></button>
+      <a class="nl" href="#features">{esc(t['nav_how'])}</a>
+      <a class="nl" href="#downloads">{esc(t['nav_download'])}</a>
+      <a class="nl" href="#faq">{esc(t['nav_faq'])}</a>
+      <a class="icon-btn" href="{DOMAIN}/{otro['path']}" hreflang="{otro['lang']}"
+         lang="{otro['lang']}" title="{otro['lang'].upper()}">{otro['lang'].upper()}</a>
+      <button class="icon-btn" id="theme" type="button"
+              aria-label="{esc(t['theme'])}" title="{esc(t['theme'])}">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+          <g id="i-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/></g>
+          <g id="i-moon" style="display:none"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></g>
+        </svg>
+      </button>
+      <a class="nav-cta" href="#downloads">{esc(t['nav_cta'])}</a>
     </nav>
   </div>
 </header>
 
 <main id="main">
 <div class="wrap hero">
-  <span class="eyebrow">{esc(t['eyebrow'])}</span>
-  <h1>{esc(t['h1'])}</h1>
+  <span class="badge"><b>v{VERSION}</b> {esc(t['eyebrow'])}</span>
+  <h1>{t['h1_html']}</h1>
   <p class="sub">{esc(t['sub'])}</p>
-  <a class="btn" id="cta" href="{FILES['setup']}">
-    <span id="cta-text">{esc(t['cta'])}</span>
-    <small id="cta-note">{esc(t['cta_note'])}</small>
-  </a>
-  <a class="second" href="#downloads">{esc(t['cta_second'])}</a>
-  <p class="trust">{esc(t['trust'])}</p>
-  <div class="shot">
-    <img src="{prefijo}captura.png" width="1280" height="860" alt="{esc(t['shot_alt'])}">
+  <div class="actions">
+    <a class="btn" id="cta" href="{FILES['setup']}">
+      <span aria-hidden="true">&#8595;</span><span id="cta-text">{esc(t['cta'])}</span>
+    </a>
+    <a class="btn-2" href="#downloads">{esc(t['cta_second'])}</a>
   </div>
+  <p class="hint" id="cta-note">{esc(t['cta_note'])}</p>
+  <div class="trust">{trust}</div>
+
+  <figure class="shot reveal" style="margin-bottom:0">
+    <div class="chrome"><i></i><i></i><i></i><b>easypdf.surf</b></div>
+    <img src="{prefijo}captura.png" width="1280" height="860" alt="{esc(t['shot_alt'])}">
+  </figure>
 </div>
 
-<section class="wrap">
-  <h2>{esc(t['features_title'])}</h2>
-  <p class="lead">{esc(t['features_sub'])}</p>
-  <div class="grid">
+<section class="wrap" id="features">
+  <div class="head reveal">
+    <span class="mono">{esc(t['features_kicker'])}</span>
+    <h2>{esc(t['features_title'])}</h2>
+    <p class="lead">{esc(t['features_sub'])}</p>
+  </div>
+  <div class="bento reveal">
 {tarjetas}
   </div>
 </section>
 
-<section class="soft" id="how">
-  <div class="wrap">
+<section class="wrap" id="how">
+  <div class="head reveal">
+    <span class="mono">{esc(t['how_kicker'])}</span>
     <h2>{esc(t['how_title'])}</h2>
-    <p class="lead"></p>
-    <ol class="steps">
-{pasos}
-    </ol>
-    <div class="note"><b>{esc(t['warn_title'])}</b>. {t['warn']}</div>
   </div>
+  <ol class="steps reveal">
+{pasos}
+  </ol>
+  <div class="note reveal"><b>{esc(t['warn_title'])}</b>. {t['warn']}</div>
 </section>
 
 <section class="wrap" id="downloads">
-  <h2>{esc(t['downloads_title'])}</h2>
-  <p class="lead">{esc(t['downloads_sub'])}</p>
+  <div class="head reveal">
+    <span class="mono">{esc(t['downloads_kicker'])}</span>
+    <h2>{esc(t['downloads_title'])}</h2>
+    <p class="lead">{esc(t['downloads_sub'])}</p>
+  </div>
+  <div class="reveal">
 {descargas}
-  <p class="lead" style="margin-top:18px">{esc(t['mac'])}</p>
+  </div>
+  <p class="lead" style="margin-top:16px;font-size:14.5px">{esc(t['mac'])}</p>
 </section>
 
-<section class="soft" id="faq">
-  <div class="wrap">
+<section class="wrap" id="faq">
+  <div class="head reveal">
+    <span class="mono">FAQ</span>
     <h2>{esc(t['faq_title'])}</h2>
-    <p class="lead"></p>
+  </div>
+  <div class="reveal">
 {faq}
   </div>
 </section>
 </main>
 
 <footer>
-  <div class="wrap">
-    <p><b>easypdf.surf {VERSION}</b> - {esc(t['footer_free'])}.</p>
-    <p>{esc(t['footer_issues'])} <a href="{REPO}/issues">{esc(t['footer_issues_link'])}</a>.</p>
-    <p><a href="{REPO}">{esc(t['footer_source'])}</a> - {esc(t['footer_warranty'])}</p>
+  <div class="wrap foot">
+    <div>
+      <p><b style="color:var(--fg)">easypdf.surf {VERSION}</b> &middot; {esc(t['footer_free'])}.</p>
+      <p>{esc(t['footer_warranty'])}</p>
+    </div>
+    <div>
+      <p><a href="{REPO}">{esc(t['footer_source'])}</a></p>
+      <p><a href="{REPO}/issues">{esc(t['footer_issues_link'])}</a></p>
+      <p><a href="{DOMAIN}/{otro['path']}" hreflang="{otro['lang']}">{esc(otro['switch'])}</a></p>
+    </div>
   </div>
 </footer>
 
 <script>
 (function () {{
-  // Tema: el del sistema por defecto, y se recuerda si se cambia a mano.
-  var raiz = document.documentElement, icono = document.getElementById("theme-icon");
+  var raiz = document.documentElement, boton = document.getElementById("theme");
   function pintar(modo) {{
     raiz.setAttribute("data-theme", modo);
-    icono.innerHTML = modo === "dark" ? "&#9789;" : "&#9788;";
+    boton.innerHTML = modo === "dark" ? "\u263C" : "\u263D";
   }}
   var guardado = null;
   try {{ guardado = localStorage.getItem("tema"); }} catch (e) {{}}
-  pintar(guardado || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
-  document.getElementById("theme").addEventListener("click", function () {{
+  pintar(guardado || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+  boton.addEventListener("click", function () {{
     var nuevo = raiz.getAttribute("data-theme") === "dark" ? "light" : "dark";
     pintar(nuevo);
     try {{ localStorage.setItem("tema", nuevo); }} catch (e) {{}}
   }});
 
-  // El boton principal se adapta al sistema de quien visita la pagina.
-  var ua = navigator.userAgent || "", plataforma =
+  var cabecera = document.getElementById("top");
+  addEventListener("scroll", function () {{
+    cabecera.classList.toggle("stuck", scrollY > 8);
+  }}, {{passive:true}});
+
+  var ua = navigator.userAgent || "", plat =
       (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
-  var boton = document.getElementById("cta"),
-      texto = document.getElementById("cta-text"),
-      nota = document.getElementById("cta-note");
-  if (/Linux/i.test(plataforma + ua) && !/Android/i.test(ua)) {{
-    boton.href = {json.dumps(FILES['linux'])};
-    texto.textContent = {json.dumps(t['cta'].replace('Windows', 'Linux'))};
-    nota.textContent = {json.dumps('62 MB - x86-64')};
-  }} else if (/Mac/i.test(plataforma + ua)) {{
+  var texto = document.getElementById("cta-text"), nota = document.getElementById("cta-note");
+  if (/Linux/i.test(plat + ua) && !/Android/i.test(ua)) {{
+    document.getElementById("cta").href = {json.dumps(FILES['linux'])};
+    texto.textContent = {json.dumps(t['cta_linux'])};
+    nota.textContent = {json.dumps(t['cta_note_linux'])};
+  }} else if (/Mac/i.test(plat + ua)) {{
     nota.textContent = {json.dumps(t['mac'])};
+  }}
+
+  if ("IntersectionObserver" in window) {{
+    var obs = new IntersectionObserver(function (entradas) {{
+      entradas.forEach(function (e) {{
+        if (e.isIntersecting) {{ e.target.classList.add("in"); obs.unobserve(e.target); }}
+      }});
+    }}, {{rootMargin:"0px 0px -8% 0px"}});
+    document.querySelectorAll(".reveal").forEach(function (el) {{ obs.observe(el); }});
+  }} else {{
+    document.querySelectorAll(".reveal").forEach(function (el) {{ el.classList.add("in"); }});
   }}
 }})();
 </script>
