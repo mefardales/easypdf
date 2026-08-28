@@ -1,0 +1,45 @@
+# Despliegue de la web de easypdf.surf en Render (https://render.com)
+#
+# Render detecta este archivo al conectar el repositorio ("New > Blueprint") y
+# crea un sitio estatico que sirve la carpeta site/. Las paginas ya vienen
+# generadas en el repositorio, asi que no hace falta ningun paso de compilacion.
+#
+# Para regenerarlas despues de tocar los textos:
+#     python tools/build_site.py
+#
+# Dominio propio: en Render, Settings > Custom Domains, anadir easypdf.surf y
+# www.easypdf.surf, y crear en el proveedor del dominio los registros DNS que
+# Render indique en esa misma pantalla (normalmente un registro A para el
+# dominio raiz y un CNAME para www). El certificado HTTPS lo emite Render solo.
+
+services:
+  - type: web
+    name: easypdf-surf
+    runtime: static
+    rootDir: .
+    buildCommand: "echo 'La web ya esta generada en site/'"
+    staticPublishPath: ./site
+    pullRequestPreviewsEnabled: false
+
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*.png
+        name: Cache-Control
+        value: public, max-age=604800
+      - path: /*.html
+        name: Cache-Control
+        value: public, max-age=600
+
+    routes:
+      # /en (sin barra) lleva a la version en ingles
+      - type: redirect
+        source: /en
+        destination: /en/
