@@ -10,7 +10,7 @@ on:
       version:
         description: "Version a publicar (sin la v)"
         type: string
-        default: "1.1.0"
+        default: "1.2.0"
 
 permissions:
   contents: write
@@ -56,25 +56,30 @@ jobs:
           prerelease: false
           generate_release_notes: false
           body: |
-            ## Novedades de la 1.1.0
+            ## Novedades de la 1.2.0
 
-            **Organizar las paginas**
-            - Reordenar arrastrando las miniaturas del panel lateral.
-            - Menu con el boton derecho sobre una miniatura: insertar, duplicar,
-              girar, subir, bajar y eliminar.
-            - Girar paginas 90 grados a cada lado y 180. Las anotaciones giran
-              con la hoja.
-            - Al insertar una pagina se elige su tamano (o se copia el de la
-              pagina de al lado).
+            **Herramientas nuevas**
+            - **Goma** (tecla E): borra arrastrando por encima. Sobre un trazo
+              a mano alzada quita solo la parte que tocas, y lo parte en dos si
+              lo cruzas por el medio. Ctrl+ y Ctrl- cambian su tamano.
+            - **Notas** (tecla N): un clic coloca una nota y pide su texto. Se
+              guardan como nota estandar del PDF, asi que se ven en cualquier
+              lector, y vuelven a aparecer al abrir el documento.
+            - **Marcadores**: panel propio para anadirlos, quitarlos y saltar a
+              su pagina. Se guardan como el indice del PDF.
+
+            **Reglas y alineacion**
+            - Reglas arriba y a la izquierda que miden desde la esquina de la
+              hoja, en milimetros, centimetros, pulgadas o puntos.
+            - Al arrastrar, los elementos se alinean solos con los bordes y el
+              centro de la hoja y con las demas anotaciones, ensenando una guia.
 
             **Correcciones**
-            - Al arrastrar un cuadro de texto ya no queda una franja azul detras.
-            - Las miniaturas llevan borde: una pagina en blanco ya no parecia
-              estar sin cargar.
-            - Los tamanos de pagina se leian en castellano ("Carta", "Oficio")
-              con el programa en ingles.
-            - Cerrar el documento o la ventana mientras se generaban las
-              miniaturas ya no suelta un error.
+            - Al reordenar paginas arrastrando una miniatura, soltarla entre dos
+              paginas ya no la mandaba al final de todas.
+            - El instalador de Windows se compila con el bootloader de
+              PyInstaller hecho desde el codigo fuente, para que algunos
+              antivirus dejen de dar un falso positivo.
 
             ## Descargas
 
