@@ -15,9 +15,11 @@ import datetime
 import html
 import json
 import os
+from string import Template
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.path.join(ROOT, "site")
+TEMPLATE = os.path.join(ROOT, "tools", "site_template.html")
 
 DOMAIN = "https://easypdf.surf"
 REPO = "https://github.com/mefardales/easypdf"
@@ -57,6 +59,7 @@ TEXTS = {
         ),
         "keywords": "free pdf reader, annotate pdf, edit pdf, fill pdf, pdf windows",
         "skip": "Skip to content",
+        "nav_features": "Features",
         "nav_download": "Downloads",
         "nav_cta": "Get it",
         "nav_how": "How it works",
@@ -106,6 +109,7 @@ TEXTS = {
             ("Install", "Double click, next, next. No administrator rights needed."),
             ("Open your PDF", "Drag it onto the window and start writing on top."),
         ],
+        "warn_short": "If Windows warns about an unknown publisher, click <b>More info</b> then <b>Run anyway</b>: the app is not signed with a paid certificate.",
         "warn_title": "If Windows says the publisher is unknown",
         "warn": (
             "Click <b>More info</b> and then <b>Run anyway</b>. That warning shows "
@@ -149,6 +153,7 @@ TEXTS = {
         ),
         "keywords": "lector pdf gratis, anotar pdf, editar pdf, rellenar pdf, pdf windows",
         "skip": "Ir al contenido",
+        "nav_features": "Funciones",
         "nav_download": "Descargas",
         "nav_cta": "Descargar",
         "nav_how": "Como funciona",
@@ -198,6 +203,7 @@ TEXTS = {
             ("Instala", "Doble clic y siguiente, siguiente. No hace falta ser administrador."),
             ("Abre tu PDF", "Arrastralo a la ventana y empieza a escribir encima."),
         ],
+        "warn_short": "Si Windows avisa de un editor desconocido, pulsa <b>Mas informacion</b> y <b>Ejecutar de todas formas</b>: el programa no esta firmado con un certificado de pago.",
         "warn_title": "Si Windows avisa de que el editor es desconocido",
         "warn": (
             "Pulsa <b>Mas informacion</b> y luego <b>Ejecutar de todas formas</b>. "
@@ -230,78 +236,14 @@ TEXTS = {
     },
 }
 
-# Visuales pequenos que van dentro de las tarjetas: dibujados con SVG para que
-# la pagina siga pesando unos pocos kB y se vea nitida en cualquier pantalla.
-VISUALS = {
-    "annotate": """
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="8" y="8" width="244" height="114" rx="8" class="v-paper"/>
-  <rect x="26" y="30" width="120" height="9" rx="4" class="v-mark"/>
-  <rect x="26" y="50" width="170" height="7" rx="3" class="v-line"/>
-  <rect x="26" y="66" width="140" height="7" rx="3" class="v-line"/>
-  <rect x="22" y="84" width="130" height="26" rx="5" class="v-box"/>
-  <path d="M232 44 L176 92" class="v-arrow"/>
-  <path d="M172 96 l16 -3 -4 -12 z" class="v-arrow-head"/>
-</svg>""",
-    "table": """
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="18" y="18" width="224" height="94" rx="6" class="v-grid"/>
-  <path d="M18 48h224M18 80h224M92 18v94M166 18v94" class="v-grid-line"/>
-  <rect x="30" y="28" width="44" height="8" rx="4" class="v-mark"/>
-  <rect x="104" y="28" width="40" height="8" rx="4" class="v-mark"/>
-  <rect x="178" y="28" width="34" height="8" rx="4" class="v-mark"/>
-  <rect x="30" y="60" width="38" height="7" rx="3" class="v-line"/>
-  <rect x="104" y="60" width="22" height="7" rx="3" class="v-line"/>
-  <rect x="178" y="60" width="30" height="7" rx="3" class="v-line"/>
-  <rect x="30" y="92" width="30" height="7" rx="3" class="v-line"/>
-  <rect x="104" y="92" width="26" height="7" rx="3" class="v-line"/>
-  <rect x="178" y="92" width="24" height="7" rx="3" class="v-line"/>
-</svg>""",
-    "template": """
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="46" y="10" width="150" height="106" rx="8" class="v-ghost"/>
-  <rect x="58" y="16" width="150" height="106" rx="8" class="v-ghost2"/>
-  <rect x="70" y="22" width="150" height="106" rx="8" class="v-paper"/>
-  <rect x="86" y="40" width="72" height="9" rx="4" class="v-mark"/>
-  <rect x="86" y="60" width="110" height="7" rx="3" class="v-line"/>
-  <rect x="86" y="76" width="92" height="7" rx="3" class="v-line"/>
-</svg>""",
-    "pages": """
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="24" y="20" width="66" height="90" rx="6" class="v-paper"/>
-  <rect x="98" y="20" width="66" height="90" rx="6" class="v-paper"/>
-  <rect x="172" y="20" width="66" height="90" rx="6" class="v-ghost" stroke-dasharray="5 4"/>
-  <path d="M205 52v26M192 65h26" class="v-plus"/>
-</svg>""",
-    "read": """
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="18" y="14" width="46" height="102" rx="5" class="v-ghost2"/>
-  <rect x="26" y="22" width="30" height="26" rx="3" class="v-paper"/>
-  <rect x="26" y="54" width="30" height="26" rx="3" class="v-paper"/>
-  <rect x="26" y="86" width="30" height="26" rx="3" class="v-paper"/>
-  <rect x="78" y="14" width="164" height="102" rx="6" class="v-paper"/>
-  <rect x="94" y="34" width="86" height="9" rx="4" class="v-mark"/>
-  <rect x="94" y="54" width="128" height="7" rx="3" class="v-line"/>
-  <rect x="94" y="70" width="112" height="7" rx="3" class="v-line"/>
-  <circle cx="196" cy="92" r="13" class="v-grid-line"/>
-  <path d="M206 102l12 12" class="v-arrow"/>
-</svg>""",
-    "print": """
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="88" y="12" width="84" height="30" rx="4" class="v-paper"/>
-  <rect x="66" y="42" width="128" height="42" rx="6" class="v-grid"/>
-  <circle cx="176" cy="56" r="4" class="v-dot"/>
-  <rect x="88" y="76" width="84" height="42" rx="4" class="v-paper"/>
-  <rect x="100" y="88" width="52" height="6" rx="3" class="v-line"/>
-  <rect x="100" y="100" width="40" height="6" rx="3" class="v-mark"/>
-</svg>""",
-    "private": """
-<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
-  <rect x="94" y="52" width="72" height="52" rx="8" class="v-grid"/>
-  <path d="M110 52V40a20 20 0 0 1 40 0v12" class="v-grid-line"/>
-  <circle cx="130" cy="76" r="7" class="v-dot"/>
-  <path d="M42 78h34M184 78h34" class="v-line-stroke"/>
-</svg>""",
+# Iconos de linea, 20x20, para la lista de funciones.
+ICONS = {
+    "read": '<path d="M3 5.2A1.2 1.2 0 0 1 4.2 4H9a3 3 0 0 1 3 3v11a2.4 2.4 0 0 0-2.4-2H4.2A1.2 1.2 0 0 1 3 14.8Z"/><path d="M21 5.2A1.2 1.2 0 0 0 19.8 4H15a3 3 0 0 0-3 3v11a2.4 2.4 0 0 1 2.4-2h5.4A1.2 1.2 0 0 0 21 14.8Z"/>',
+    "write": '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+    "table": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/>',
+    "print": '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>',
+    "create": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/>',
+    "template": '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
 }
 
 
@@ -315,51 +257,30 @@ def build_page(lang: str) -> str:
     base = f"{DOMAIN}/{t['path']}"
     prefijo = "../" if t["path"] else ""
 
-    visual_de = {
-        "read": "read", "write": "annotate", "table": "table",
-        "print": "print", "create": "pages", "template": "template",
-    }
-    grandes = {"write", "table"}
-    tarjetas = "\n".join(
-        f'''      <article class="card{' wide' if clave in grandes else ''}">
-        <div class="card-txt">
-          <h3>{esc(titulo)}</h3>
-          <p>{esc(texto)}</p>
-        </div>
-        <div class="card-vis">{VISUALS[visual_de.get(clave, "annotate")]}</div>
-      </article>'''
+    funciones = "\n".join(
+        "        <li>\n"
+        f'          <svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[clave]}</svg>\n'
+        f"          <div><b>{esc(titulo)}</b><span>{esc(texto)}</span></div>\n"
+        "        </li>"
         for clave, titulo, texto in t["features"]
     )
 
-    pasos = "\n".join(
-        f'''      <li>
-        <span class="num">{i:02d}</span>
-        <b>{esc(titulo)}</b>
-        <p>{esc(texto)}</p>
-      </li>'''
-        for i, (titulo, texto) in enumerate(t["how"], start=1)
-    )
-
     descargas = "\n".join(
-        f'''      <a class="dl" href="{FILES[clave]}">
-        <span class="dl-os">{esc(titulo)}</span>
-        <span class="dl-note">{esc(detalle)}</span>
-        <span class="dl-size">{esc(peso)}</span>
-        <span class="dl-go" aria-hidden="true">&darr;</span>
-      </a>'''
+        f'        <a class="dl" href="{FILES[clave]}">\n'
+        f'          <span class="dl-os">{esc(titulo)}</span>\n'
+        f'          <span class="dl-note">{esc(detalle)}</span>\n'
+        f'          <span class="dl-size">{esc(peso)}</span>\n'
+        '          <span class="dl-go" aria-hidden="true">&darr;</span>\n'
+        "        </a>"
         for clave, titulo, detalle, peso in t["downloads"]
     )
 
     faq = "\n".join(
-        f'''      <details>
-        <summary>{esc(pregunta)}</summary>
-        <p>{esc(respuesta)}</p>
-      </details>'''
-        for pregunta, respuesta in t["faq"]
-    )
-
-    trust = "".join(
-        f'<span>{esc(x)}</span>' for x in t["trust"].split(" - ")
+        "        <details>\n"
+        f"          <summary>{esc(pregunta)}</summary>\n"
+        f"          <p>{esc(respuesta)}</p>\n"
+        "        </details>"
+        for pregunta, respuesta in t["faq"][:4]
     )
 
     datos_app = {
@@ -377,7 +298,7 @@ def build_page(lang: str) -> str:
         "license": "https://www.gnu.org/licenses/agpl-3.0.html",
         "isAccessibleForFree": True,
         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
-        "inLanguage": ["es", "en"],
+        "inLanguage": ["en", "es"],
     }
     datos_faq = {
         "@context": "https://schema.org",
@@ -392,443 +313,60 @@ def build_page(lang: str) -> str:
         ],
     }
 
-    return f"""<!doctype html>
-<html lang="{t['lang']}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(t['title'])}</title>
-<meta name="description" content="{esc(t['description'])}">
-<meta name="keywords" content="{esc(t['keywords'])}">
-<meta name="theme-color" content="#0a0a0b">
-<link rel="canonical" href="{base}">
-<link rel="alternate" hreflang="en" href="{DOMAIN}/">
-<link rel="alternate" hreflang="es" href="{DOMAIN}/es/">
-<link rel="alternate" hreflang="x-default" href="{DOMAIN}/">
-<link rel="icon" href="{prefijo}easypdf.png" type="image/png">
-<link rel="apple-touch-icon" href="{prefijo}easypdf.png">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="easypdf.surf">
-<meta property="og:locale" content="{'es_ES' if lang == 'es' else 'en_US'}">
-<meta property="og:url" content="{base}">
-<meta property="og:title" content="{esc(t['title'])}">
-<meta property="og:description" content="{esc(t['description'])}">
-<meta property="og:image" content="{DOMAIN}/captura.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{esc(t['title'])}">
-<meta name="twitter:description" content="{esc(t['description'])}">
-<meta name="twitter:image" content="{DOMAIN}/captura.png">
-<script type="application/ld+json">{json.dumps(datos_app, ensure_ascii=False)}</script>
-<script type="application/ld+json">{json.dumps(datos_faq, ensure_ascii=False)}</script>
-<style>
-  :root{{
-    --bg:#08090b; --panel:#0f1116; --panel-2:#12151b; --line:#1e222b;
-    --fg:#f4f6f8; --muted:#8b93a1; --accent:#ff3b30; --accent-2:#ff8a3d;
-    --accent-fg:#0b0c0e; --paper:#e9edf3; --radius:16px;
-  }}
-  html[data-theme="light"]{{
-    --bg:#ffffff; --panel:#fbfbfd; --panel-2:#f4f5f8; --line:#e6e8ee;
-    --fg:#0b0d12; --muted:#61697a; --accent:#e5121a; --accent-2:#ff6a1a;
-    --accent-fg:#ffffff; --paper:#ffffff;
-  }}
-  *{{box-sizing:border-box}}
-  html{{scroll-behavior:smooth;-webkit-text-size-adjust:100%}}
-  body{{
-    margin:0;background:var(--bg);color:var(--fg);overflow-x:hidden;
-    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }}
-  a{{color:inherit;text-decoration:none}}
-  .wrap{{max-width:1080px;margin:0 auto;padding:0 24px}}
-  .mono{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}}
-  .skip{{position:absolute;left:-9999px}}
-  .skip:focus{{left:14px;top:14px;background:var(--accent);color:var(--accent-fg);padding:9px 14px;border-radius:8px;z-index:9}}
-
-  /* ---------- fondo ---------- */
-  .glow{{position:fixed;inset:0;pointer-events:none;z-index:0;
-    background:
-      radial-gradient(680px 420px at 50% -80px, color-mix(in srgb,var(--accent) 26%,transparent), transparent 70%),
-      radial-gradient(520px 380px at 88% 8%, color-mix(in srgb,var(--accent-2) 14%,transparent), transparent 70%);
-    opacity:.55}}
-  .grid-bg{{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;
-    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
-    background-size:64px 64px;
-    -webkit-mask-image:radial-gradient(760px 460px at 50% 0,#000,transparent 75%);
-    mask-image:radial-gradient(760px 460px at 50% 0,#000,transparent 75%)}}
-  header,main,footer{{position:relative;z-index:1}}
-
-  /* ---------- cabecera ---------- */
-  header{{position:sticky;top:0;z-index:6;border-bottom:1px solid transparent;transition:.2s}}
-  header.stuck{{border-color:var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);
-    backdrop-filter:saturate(180%) blur(12px)}}
-  .bar{{display:flex;align-items:center;gap:10px;height:62px}}
-  .brand{{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.3px}}
-  .brand img{{width:24px;height:24px}}
-  nav{{margin-left:auto;display:flex;align-items:center;gap:4px}}
-  nav .nl{{color:var(--muted);font-size:14.5px;padding:8px 11px;border-radius:9px}}
-  nav .nl:hover{{color:var(--fg);background:var(--panel-2)}}
-  .icon-btn{{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;
-    border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;
-    font-size:13px;font-weight:600;letter-spacing:.02em;opacity:.75}}
-  .icon-btn:hover{{opacity:1;border-color:var(--muted)}}
-  .nav-cta{{background:var(--fg);color:var(--bg);font-weight:600;font-size:14px;
-    padding:9px 15px;border-radius:10px;margin-left:6px}}
-  .nav-cta:hover{{opacity:.88}}
-  @media (max-width:760px){{ nav .nl{{display:none}} }}
-
-  /* ---------- portada ---------- */
-  .hero{{padding:76px 0 0;text-align:center}}
-  .badge{{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);
-    background:var(--panel);padding:6px 14px 6px 8px;border-radius:999px;font-size:13px;color:var(--muted)}}
-  .badge b{{color:var(--fg);background:color-mix(in srgb,var(--accent) 16%,transparent);
-    border:1px solid color-mix(in srgb,var(--accent) 34%,transparent);
-    padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600}}
-  h1{{font-size:clamp(38px,7.2vw,74px);line-height:1.02;letter-spacing:-2.6px;
-    font-weight:760;margin:26px auto 20px;max-width:15ch}}
-  h1 em{{font-style:normal;background:linear-gradient(100deg,var(--accent),var(--accent-2));
-    -webkit-background-clip:text;background-clip:text;color:transparent}}
-  .sub{{font-size:clamp(16.5px,2.1vw,19px);color:var(--muted);max-width:600px;margin:0 auto 34px}}
-  .actions{{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap}}
-  .btn{{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:var(--accent-fg);
-    font-weight:680;font-size:16.5px;padding:15px 26px;border-radius:12px;
-    box-shadow:0 8px 30px color-mix(in srgb,var(--accent) 34%,transparent);
-    transition:transform .16s,filter .16s}}
-  .btn:hover{{transform:translateY(-2px);filter:brightness(1.07)}}
-  .btn-2{{background:var(--panel);color:var(--fg);border:1px solid var(--line);
-    font-weight:560;font-size:15.5px;padding:14px 20px;border-radius:12px}}
-  .btn-2:hover{{border-color:var(--muted)}}
-  .hint{{margin:16px 0 0;font-size:13.5px;color:var(--muted)}}
-  .trust{{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin:34px 0 0}}
-  .trust span{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}}
-  .trust span+span::before{{content:"/";margin-right:22px;opacity:.45}}
-
-  .stats{{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:26px 0 0}}
-  .stat{{border:1px solid var(--line);background:var(--panel);border-radius:12px;
-    padding:10px 18px;min-width:110px}}
-  .stat dt{{font-size:22px;font-weight:700;letter-spacing:-.6px;
-    font-variant-numeric:tabular-nums;line-height:1.15}}
-  .stat dd{{margin:2px 0 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}}
-
-  /* ---------- captura ---------- */
-  .shot{{margin:58px auto 0;max-width:1000px;border:1px solid var(--line);border-radius:14px;
-    background:var(--panel);overflow:hidden;
-    box-shadow:0 40px 90px -30px rgba(0,0,0,.7),0 0 0 1px color-mix(in srgb,var(--fg) 5%,transparent)}}
-  .chrome{{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);
-    background:var(--panel-2)}}
-  .chrome i{{width:10px;height:10px;border-radius:50%;background:var(--line);display:block}}
-  .chrome b{{margin-left:10px;font-weight:500;font-size:12.5px;color:var(--muted)}}
-  .shot img{{display:block;width:100%}}
-
-  /* ---------- secciones ---------- */
-  section{{padding:96px 0}}
-  .head{{max-width:640px;margin-bottom:38px}}
-  h2{{font-size:clamp(26px,3.6vw,38px);letter-spacing:-1.2px;line-height:1.12;margin:12px 0 10px;font-weight:720}}
-  .lead{{color:var(--muted);margin:0;font-size:16.5px}}
-
-  .bento{{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}}
-  .card{{grid-column:span 2;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
-    padding:24px 24px 0;overflow:hidden;display:flex;flex-direction:column;min-height:250px;
-    transition:border-color .18s,transform .18s}}
-  .card:hover{{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));transform:translateY(-2px)}}
-  .card.wide{{grid-column:span 3}}
-  .card h3{{margin:0 0 8px;font-size:17.5px;letter-spacing:-.3px}}
-  .card p{{margin:0;color:var(--muted);font-size:14.8px}}
-  .card-vis{{margin-top:auto;padding-top:20px}}
-  .v{{width:100%;height:auto;display:block;border-radius:10px 10px 0 0}}
-  .v-paper{{fill:var(--paper);stroke:var(--line)}}
-  .v-ghost{{fill:none;stroke:var(--line);stroke-width:1.5}}
-  .v-ghost2{{fill:var(--panel-2);stroke:var(--line)}}
-  .v-grid{{fill:none;stroke:var(--line);stroke-width:1.5}}
-  .v-grid-line{{fill:none;stroke:var(--line);stroke-width:1.2}}
-  .v-line{{fill:var(--muted);opacity:.45}}
-  .v-line-stroke{{stroke:var(--muted);opacity:.35;stroke-width:2;stroke-linecap:round}}
-  .v-mark{{fill:var(--accent);opacity:.85}}
-  .v-box{{fill:none;stroke:var(--accent);stroke-width:2}}
-  .v-arrow{{stroke:var(--accent-2);stroke-width:2.4;fill:none;stroke-linecap:round}}
-  .v-arrow-head{{fill:var(--accent-2)}}
-  .v-plus{{stroke:var(--accent);stroke-width:2.4;stroke-linecap:round}}
-  .v-dot{{fill:var(--accent)}}
-  @media (max-width:900px){{
-    .bento{{grid-template-columns:repeat(2,1fr)}}
-    .card,.card.wide{{grid-column:span 2}}
-  }}
-  @media (max-width:560px){{
-    .bento{{grid-template-columns:1fr}}
-    .card,.card.wide{{grid-column:span 1}}
-  }}
-
-  ol.steps{{list-style:none;padding:0;margin:0;display:grid;gap:14px;
-    grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
-  ol.steps li{{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}}
-  .num{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;
-    color:var(--accent);letter-spacing:.1em}}
-  ol.steps b{{display:block;margin:10px 0 6px;font-size:16.5px}}
-  ol.steps p{{margin:0;color:var(--muted);font-size:14.8px}}
-  .note{{margin-top:22px;border:1px solid var(--line);border-left:2px solid var(--accent-2);
-    background:var(--panel);border-radius:12px;padding:16px 18px;font-size:14.6px;color:var(--muted)}}
-  .note b{{color:var(--fg)}}
-
-  .dl{{display:grid;grid-template-columns:1.1fr 2fr auto auto;align-items:center;gap:16px;
-    background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px 20px;
-    margin-bottom:10px;transition:border-color .16s,transform .16s}}
-  .dl:hover{{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));transform:translateY(-1px)}}
-  .dl-os{{font-weight:640;font-size:16px}}
-  .dl-note{{color:var(--muted);font-size:14.4px}}
-  .dl-size{{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--muted)}}
-  .dl-go{{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;
-    border:1px solid var(--line);color:var(--accent);font-size:14px}}
-  @media (max-width:640px){{
-    .dl{{grid-template-columns:1fr auto}}
-    .dl-note{{grid-column:1/-1;order:3}}
-  }}
-
-  details{{border-bottom:1px solid var(--line);padding:18px 2px}}
-  details summary{{cursor:pointer;font-weight:600;font-size:16px;list-style:none;display:flex;justify-content:space-between;gap:16px}}
-  details summary::-webkit-details-marker{{display:none}}
-  details summary::after{{content:"+";color:var(--muted);font-weight:400}}
-  details[open] summary::after{{content:"\2013"}}
-  details p{{margin:12px 0 0;color:var(--muted);font-size:15.2px;max-width:70ch}}
-
-  footer{{border-top:1px solid var(--line);padding:40px 0 60px;color:var(--muted);font-size:14.2px}}
-  .foot{{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}}
-  footer a:hover{{color:var(--fg)}}
-
-  .reveal{{opacity:0;transform:translateY(14px)}}
-  .reveal.in{{opacity:1;transform:none;transition:opacity .5s ease,transform .5s ease}}
-  @media (prefers-reduced-motion:reduce){{.reveal{{opacity:1;transform:none}}}}
-</style>
-</head>
-<body>
-<div class="glow"></div><div class="grid-bg"></div>
-<a class="skip" href="#main">{esc(t['skip'])}</a>
-
-<header id="top">
-  <div class="wrap bar">
-    <a class="brand" href="{'../' if t['path'] else './'}">
-      <img src="{prefijo}easypdf.png" alt="" width="24" height="24"> easypdf.surf
-    </a>
-    <nav>
-      <a class="nl" href="#features">{esc(t['nav_how'])}</a>
-      <a class="nl" href="#downloads">{esc(t['nav_download'])}</a>
-      <a class="nl" href="#faq">{esc(t['nav_faq'])}</a>
-      <a class="icon-btn" href="{DOMAIN}/{otro['path']}" hreflang="{otro['lang']}"
-         lang="{otro['lang']}" title="{otro['lang'].upper()}">{otro['lang'].upper()}</a>
-      <button class="icon-btn" id="theme" type="button"
-              aria-label="{esc(t['theme'])}" title="{esc(t['theme'])}">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
-             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <g id="i-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/></g>
-          <g id="i-moon" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></g>
-        </svg>
-      </button>
-      <a class="nav-cta" href="#downloads">{esc(t['nav_cta'])}</a>
-    </nav>
-  </div>
-</header>
-
-<main id="main">
-<div class="wrap hero">
-  <span class="badge"><b>v{VERSION}</b> {esc(t['badge'])}</span>
-  <h1>{t['h1_html']}</h1>
-  <p class="sub">{esc(t['sub'])}</p>
-  <div class="actions">
-    <a class="btn" id="cta" href="{FILES['setup']}">
-      <span aria-hidden="true">&#8595;</span><span id="cta-text">{esc(t['cta'])}</span>
-    </a>
-    <a class="btn-2" href="#downloads">{esc(t['cta_second'])}</a>
-  </div>
-  <p class="hint" id="cta-note">{esc(t['cta_note'])}</p>
-  <div class="trust">{trust}</div>
-
-  <dl class="stats" id="stats" hidden>
-    <div class="stat" id="stat-dl" hidden><dt id="n-dl">-</dt><dd>{esc(t['stat_downloads'])}</dd></div>
-    <div class="stat" id="stat-today" hidden><dt id="n-today">-</dt><dd>{esc(t['stat_today'])}</dd></div>
-    <div class="stat" id="stat-total" hidden><dt id="n-total">-</dt><dd>{esc(t['stat_total'])}</dd></div>
-  </dl>
-
-  <figure class="shot reveal" style="margin-bottom:0">
-    <div class="chrome"><i></i><i></i><i></i><b>easypdf.surf</b></div>
-    <img src="{prefijo}captura.png" width="1280" height="860" alt="{esc(t['shot_alt'])}">
-  </figure>
-</div>
-
-<section class="wrap" id="features">
-  <div class="head reveal">
-    <span class="mono">{esc(t['features_kicker'])}</span>
-    <h2>{esc(t['features_title'])}</h2>
-    <p class="lead">{esc(t['features_sub'])}</p>
-  </div>
-  <div class="bento reveal">
-{tarjetas}
-  </div>
-</section>
-
-<section class="wrap" id="how">
-  <div class="head reveal">
-    <span class="mono">{esc(t['how_kicker'])}</span>
-    <h2>{esc(t['how_title'])}</h2>
-  </div>
-  <ol class="steps reveal">
-{pasos}
-  </ol>
-  <div class="note reveal"><b>{esc(t['warn_title'])}</b>. {t['warn']}</div>
-</section>
-
-<section class="wrap" id="downloads">
-  <div class="head reveal">
-    <span class="mono">{esc(t['downloads_kicker'])}</span>
-    <h2>{esc(t['downloads_title'])}</h2>
-    <p class="lead">{esc(t['downloads_sub'])}</p>
-  </div>
-  <div class="reveal">
-{descargas}
-  </div>
-  <p class="lead" style="margin-top:16px;font-size:14.5px">{esc(t['mac'])}</p>
-</section>
-
-<section class="wrap" id="faq">
-  <div class="head reveal">
-    <span class="mono">FAQ</span>
-    <h2>{esc(t['faq_title'])}</h2>
-  </div>
-  <div class="reveal">
-{faq}
-  </div>
-</section>
-</main>
-
-<footer>
-  <div class="wrap foot">
-    <div>
-      <p><b style="color:var(--fg)">easypdf.surf {VERSION}</b> &middot; {esc(t['footer_free'])}.</p>
-      <p>{esc(t['footer_warranty'])}</p>
-    </div>
-    <div>
-      <p><a href="{REPO}">{esc(t['footer_source'])}</a></p>
-      <p><a href="{REPO}/issues">{esc(t['footer_issues_link'])}</a></p>
-      <p><a href="{DOMAIN}/{otro['path']}" hreflang="{otro['lang']}">{esc(otro['switch'])}</a></p>
-    </div>
-  </div>
-</footer>
-
-<script>
-(function () {{
-  var raiz = document.documentElement, boton = document.getElementById("theme");
-  function pintar(modo) {{
-    raiz.setAttribute("data-theme", modo);
-    boton.innerHTML = modo === "dark" ? "\u263C" : "\u263D";
-  }}
-  var guardado = null;
-  try {{ guardado = localStorage.getItem("tema"); }} catch (e) {{}}
-  pintar(guardado || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
-  boton.addEventListener("click", function () {{
-    var nuevo = raiz.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    pintar(nuevo);
-    try {{ localStorage.setItem("tema", nuevo); }} catch (e) {{}}
-  }});
-
-  var cabecera = document.getElementById("top");
-  addEventListener("scroll", function () {{
-    cabecera.classList.toggle("stuck", scrollY > 8);
-  }}, {{passive:true}});
-
-  var ua = navigator.userAgent || "", plat =
-      (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
-  var texto = document.getElementById("cta-text"), nota = document.getElementById("cta-note");
-  if (/Linux/i.test(plat + ua) && !/Android/i.test(ua)) {{
-    document.getElementById("cta").href = {json.dumps(FILES['linux'])};
-    texto.textContent = {json.dumps(t['cta_linux'])};
-    nota.textContent = {json.dumps(t['cta_note_linux'])};
-  }} else if (/Mac/i.test(plat + ua)) {{
-    nota.textContent = {json.dumps(t['mac'])};
-  }}
-
-  // ---- numeros de la portada -------------------------------------------
-  // Si alguna peticion falla, el numero simplemente no aparece: nunca se
-  // ensena una cifra inventada ni se rompe la pagina.
-  var tira = document.getElementById("stats");
-  function poner(caja, valor, texto) {{
-    if (valor === null || valor === undefined || isNaN(valor)) return;
-    document.getElementById(texto).textContent = Number(valor).toLocaleString();
-    document.getElementById(caja).hidden = false;
-    tira.hidden = false;
-  }}
-  function leerCache(clave) {{
-    try {{
-      var crudo = localStorage.getItem(clave);
-      if (!crudo) return null;
-      var dato = JSON.parse(crudo);
-      return (Date.now() - dato.t) < 3600000 ? dato.v : null;
-    }} catch (e) {{ return null; }}
-  }}
-  function recordar(clave, valor) {{
-    try {{ localStorage.setItem(clave, JSON.stringify({{v: valor, t: Date.now()}})); }} catch (e) {{}}
-  }}
-
-  // Descargas: las cuenta GitHub en los archivos de cada release.
-  var cacheDl = leerCache("dl");
-  if (cacheDl !== null) {{
-    poner("stat-dl", cacheDl, "n-dl");
-  }} else {{
-    fetch({json.dumps(RELEASES_API)}, {{headers: {{Accept: "application/vnd.github+json"}}}})
-      .then(function (r) {{ return r.ok ? r.json() : null; }})
-      .then(function (releases) {{
-        if (!Array.isArray(releases)) return;
-        var total = 0;
-        releases.forEach(function (rel) {{
-          (rel.assets || []).forEach(function (a) {{
-            if (a.name && a.name.slice(-7) !== ".sha256") total += a.download_count || 0;
-          }});
-        }});
-        recordar("dl", total);
-        poner("stat-dl", total, "n-dl");
-      }})
-      .catch(function () {{}});
-  }}
-
-  // Visitas: contador publico sin cookies. Se suma una vez por dia y navegador.
-  var hoy = new Date().toISOString().slice(0, 10);
-  var yaContado = false;
-  try {{ yaContado = localStorage.getItem("visita") === hoy; }} catch (e) {{}}
-  var verbo = yaContado ? "" : "/up";
-  function numero(dato) {{
-    if (dato === null || typeof dato !== "object") return null;
-    if (typeof dato.count === "number") return dato.count;
-    if (typeof dato.value === "number") return dato.value;
-    if (dato.data && typeof dato.data.up_count === "number") return dato.data.up_count;
-    if (dato.data && typeof dato.data.count === "number") return dato.data.count;
-    return null;
-  }}
-  function contar(clave, caja, texto) {{
-    return fetch({json.dumps(VISITS_API)} + "/" + clave + (verbo || "/"))
-      .then(function (r) {{ return r.ok ? r.json() : null; }})
-      .then(function (d) {{ poner(caja, numero(d), texto); }})
-      .catch(function () {{}});
-  }}
-  contar("visitas-" + hoy, "stat-today", "n-today");
-  contar("visitas", "stat-total", "n-total");
-  if (!yaContado) {{
-    try {{ localStorage.setItem("visita", hoy); }} catch (e) {{}}
-  }}
-
-  if ("IntersectionObserver" in window) {{
-    var obs = new IntersectionObserver(function (entradas) {{
-      entradas.forEach(function (e) {{
-        if (e.isIntersecting) {{ e.target.classList.add("in"); obs.unobserve(e.target); }}
-      }});
-    }}, {{rootMargin:"0px 0px -8% 0px"}});
-    document.querySelectorAll(".reveal").forEach(function (el) {{ obs.observe(el); }});
-  }} else {{
-    document.querySelectorAll(".reveal").forEach(function (el) {{ el.classList.add("in"); }});
-  }}
-}})();
-</script>
-</body>
-</html>
-"""
+    plantilla = Template(open(TEMPLATE, encoding="utf-8").read())
+    return plantilla.safe_substitute(
+        lang=t["lang"],
+        titulo=esc(t["title"]),
+        OTRO_LANG=otro["lang"].upper(),
+        url_setup=FILES["setup"],
+        descripcion=esc(t["description"]),
+        claves=esc(t["keywords"]),
+        base=base,
+        dominio=DOMAIN,
+        prefijo=prefijo,
+        locale="en_US" if lang == "en" else "es_ES",
+        json_app=json.dumps(datos_app, ensure_ascii=False),
+        json_faq=json.dumps(datos_faq, ensure_ascii=False),
+        saltar=esc(t["skip"]),
+        inicio="../" if t["path"] else "./",
+        nav_features=esc(t["nav_features"]),
+        nav_download=esc(t["nav_download"]),
+        nav_cta=esc(t["nav_cta"]),
+        otro_lang=otro["lang"],
+        otro_path=otro["path"],
+        otro_nombre=esc(otro["switch"]),
+        tema=esc(t["theme"]),
+        version=VERSION,
+        distintivo=esc(t["badge"]),
+        h1=t["h1_html"],
+        sub=esc(t["sub"]),
+        cta=esc(t["cta"]),
+        cta_note=esc(t["cta_note"]),
+        cta_second=esc(t["cta_second"]),
+        stat_downloads=esc(t["stat_downloads"]),
+        stat_today=esc(t["stat_today"]),
+        alt=esc(t["shot_alt"]),
+        features_kicker=esc(t["features_kicker"]),
+        features_title=esc(t["features_title"]),
+        funciones=funciones,
+        downloads_kicker=esc(t["downloads_kicker"]),
+        downloads_title=esc(t["downloads_title"]),
+        descargas=descargas,
+        mac=esc(t["mac"]),
+        warn_short=t["warn_short"],
+        faq_title=esc(t["faq_title"]),
+        faq=faq,
+        repo=REPO,
+        footer_free=esc(t["footer_free"]),
+        footer_source=esc(t["footer_source"]),
+        footer_issues=esc(t["footer_issues_link"]),
+        url_linux=json.dumps(FILES["linux"]),
+        cta_linux=json.dumps(t["cta_linux"]),
+        cta_note_linux=json.dumps(t["cta_note_linux"]),
+        mac_json=json.dumps(t["mac"]),
+        releases_api=json.dumps(RELEASES_API),
+        visits_api=json.dumps(VISITS_API),
+    )
 
 
 def main() -> int:
