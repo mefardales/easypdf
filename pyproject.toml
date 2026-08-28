@@ -33,6 +33,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4",
+    "pytest-timeout>=2.3",
     "ruff>=0.4",
     "pyinstaller>=6.6",
     "pillow>=10.0",
@@ -55,6 +56,9 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# Si una prueba se cuelga (por ejemplo esperando a la cola de impresion del
+# sistema), se corta sola en lugar de bloquear la integracion continua.
+timeout = 180
 filterwarnings = ["ignore::DeprecationWarning"]
 
 [tool.ruff]

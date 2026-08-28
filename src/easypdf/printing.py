@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 
 import pymupdf
@@ -13,8 +14,29 @@ from PySide6.QtWidgets import QApplication, QMessageBox, QProgressDialog
 from .document import PdfDocument
 from .model import Annotation
 
-#: Limite de resolucion para no agotar la memoria en impresoras de 1200 ppp.
-MAX_PRINT_DPI = 600
+#: Limite de resolucion del rasterizado. 300 ppp es calidad de impresion normal
+#: y evita rasterizar a 1200 ppp (16 veces mas memoria por el mismo resultado).
+MAX_PRINT_DPI = 300
+
+#: Tope duro de pixeles por pagina, por si la impresora declara un area enorme.
+MAX_PAGE_PIXELS = 40_000_000
+
+
+def page_scale(page_width: float, page_height: float, target_width: float, target_height: float) -> float:
+    """Factor de rasterizado de una pagina para que quepa en la hoja.
+
+    Se limita por ``MAX_PRINT_DPI`` y por ``MAX_PAGE_PIXELS``: una impresora de
+    1200 ppp pediria imagenes de cientos de megabytes sin ninguna mejora
+    visible.
+    """
+    if page_width <= 0 or page_height <= 0:
+        return 1.0
+    scale = min(target_width / page_width, target_height / page_height)
+    scale = min(scale, MAX_PRINT_DPI / 72.0)
+    pixels = (page_width * scale) * (page_height * scale)
+    if pixels > MAX_PAGE_PIXELS:
+        scale *= math.sqrt(MAX_PAGE_PIXELS / pixels)
+    return max(0.2, scale)
 
 
 def pages_for_printer(printer: QPrinter, page_count: int) -> list[int]:
@@ -76,8 +98,7 @@ def render_to_printer(
             if rect.width <= 0 or rect.height <= 0:
                 continue
             # Se rasteriza justo a la resolucion que cabe en la hoja.
-            scale = min(target.width() / rect.width, target.height() / rect.height)
-            scale = max(0.2, min(scale, MAX_PRINT_DPI / 72.0))
+            scale = page_scale(rect.width, rect.height, target.width(), target.height())
             pix = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False, annots=True)
             image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
             width = rect.width * scale
@@ -167,4 +188,10 @@ def print_preview(
     dialog.exec()
 
 
-__all__ = ["print_document", "print_preview", "render_to_printer", "pages_for_printer"]
+__all__ = [
+    "print_document",
+    "print_preview",
+    "render_to_printer",
+    "pages_for_printer",
+    "page_scale",
+]

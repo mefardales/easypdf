@@ -2,6 +2,7 @@
 
 # Pruebas, estilo y empaquetado
 pytest>=7.4
+pytest-timeout>=2.3
 ruff>=0.4
 pyinstaller>=6.6
 pillow>=10.0
