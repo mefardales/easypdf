@@ -26,7 +26,6 @@ def documento():
         (Annotation(kind=Kind.RECT, page=0, rect=(50, 50, 200, 150)), "Square"),
         (Annotation(kind=Kind.HIGHLIGHT, page=0, rect=(50, 50, 200, 80)), "Highlight"),
         (Annotation(kind=Kind.LINE, page=0, p1=(50, 50), p2=(200, 150)), "Line"),
-        (Annotation(kind=Kind.ARROW, page=0, p1=(50, 50), p2=(200, 150)), "Line"),
         (Annotation(kind=Kind.TEXT, page=0, rect=(50, 50, 250, 110), text="hola"), "FreeText"),
         (Annotation(kind=Kind.INK, page=0, strokes=[[(10, 10), (60, 60), (90, 20)]]), "Ink"),
     ],
@@ -37,13 +36,6 @@ def test_cada_tipo_genera_su_anotacion(documento, ann, esperado):
     creadas = list(page.annots())
     assert [a.type[1] for a in creadas] == [esperado]
     assert creadas[0].info.get("title") == AUTHOR
-
-
-def test_la_flecha_lleva_punta(documento):
-    doc, page = documento
-    apply_annotations(doc, [Annotation(kind=Kind.ARROW, page=0, p1=(50, 50), p2=(200, 150))])
-    annot = list(page.annots())[0]
-    assert annot.line_ends == (pymupdf.PDF_ANNOT_LE_NONE, pymupdf.PDF_ANNOT_LE_CLOSED_ARROW)
 
 
 def test_colores_y_opacidad(documento):
@@ -94,3 +86,23 @@ def test_tipo_desconocido_falla(documento):
     ann.kind = "inventado"  # type: ignore[assignment]
     with pytest.raises(ValueError):
         apply_annotations(doc, [ann])
+
+
+def test_la_flecha_lleva_su_propia_punta(documento):
+    """La punta es un triangulo propio: la estandar del PDF sale gigante."""
+    doc, page = documento
+    ann = Annotation(kind=Kind.ARROW, page=0, p1=(50, 50), p2=(250, 50), width=4.0)
+    apply_annotations(doc, [ann])
+    tipos = [a.type[1] for a in page.annots()]
+    assert tipos == ["Line", "Polygon"]
+
+    from easypdf.model import arrow_head
+
+    _base, punta, izquierda, derecha = arrow_head(ann.p1, ann.p2, ann.width)
+    largo = punta[0] - _base[0]
+    ancho = derecha[1] - izquierda[1]
+    # con grosor 4 la punta estandar del PDF mediria unos 40 pt de largo
+    assert 15 < largo < 25
+    assert abs(ancho) == pytest.approx(largo, rel=0.1)
+    poligono = list(page.annots())[1]
+    assert poligono.colors["fill"] == [pytest.approx(c) for c in ann.color]

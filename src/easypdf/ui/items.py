@@ -7,8 +7,6 @@ que se escribe despues en el archivo.
 
 from __future__ import annotations
 
-import math
-
 from PySide6.QtCore import QLineF, QPointF, QRectF, Qt
 from PySide6.QtGui import (
     QBrush,
@@ -28,7 +26,7 @@ from PySide6.QtWidgets import (
     QStyle,
 )
 
-from ..model import Annotation, Kind
+from ..model import Annotation, Kind, arrow_head, arrow_line_end
 
 #: Tamano del tirador de redimension, en pixeles de pantalla.
 HANDLE_PX = 9.0
@@ -334,20 +332,14 @@ class LineItem(AnnotationItemMixin, QGraphicsLineItem):
             line.setP2(pos)
         self.setLine(line)
 
-    def _arrow_polygon(self) -> QPolygonF:
+    def _arrow_points(self):
+        """Punta de flecha, con la misma geometria que se guarda en el PDF."""
         line = self.line()
-        size = max(6.0, self.ann.width * 4.0)
-        angle = math.atan2(line.dy(), line.dx())
-        tip = line.p2()
-        left = QPointF(
-            tip.x() - size * math.cos(angle - math.pi / 7),
-            tip.y() - size * math.sin(angle - math.pi / 7),
-        )
-        right = QPointF(
-            tip.x() - size * math.cos(angle + math.pi / 7),
-            tip.y() - size * math.sin(angle + math.pi / 7),
-        )
-        return QPolygonF([tip, left, right])
+        p1 = (line.x1(), line.y1())
+        p2 = (line.x2(), line.y2())
+        _base, punta, izquierda, derecha = arrow_head(p1, p2, self.ann.width)
+        poligono = QPolygonF([QPointF(*punta), QPointF(*izquierda), QPointF(*derecha)])
+        return poligono, QPointF(*arrow_line_end(p1, p2, self.ann.width))
 
     def boundingRect(self) -> QRectF:
         margin = max(self.pen().widthF() * 3, self.handle_size()) + 4.0
@@ -377,11 +369,15 @@ class LineItem(AnnotationItemMixin, QGraphicsLineItem):
         option.state &= ~QStyle.State_Selected
         painter.setPen(self.pen())
         painter.setBrush(Qt.NoBrush)
-        painter.drawLine(self.line())
         if self.ann.kind is Kind.ARROW:
+            poligono, fin = self._arrow_points()
+            # El trazo termina dentro de la punta para que no asome por delante.
+            painter.drawLine(QLineF(self.line().p1(), fin))
             painter.setPen(QPen(Qt.NoPen))
             painter.setBrush(QBrush(qcolor(self.ann.color)))
-            painter.drawPolygon(self._arrow_polygon())
+            painter.drawPolygon(poligono)
+        else:
+            painter.drawLine(self.line())
         if self.isSelected():
             self.paint_handles(painter)
 
@@ -397,6 +393,9 @@ class InkItem(AnnotationItemMixin, QGraphicsPathItem):
     def _apply_model(self) -> None:
         ann = self.ann
         self.setPos(0, 0)
+        # Copia de los trazos tal y como estan en el modelo: al arrastrar, el
+        # desplazamiento vive en la posicion del item y se suma sobre esta base.
+        self._base = [list(stroke) for stroke in ann.strokes]
         path = QPainterPath()
         for stroke in ann.strokes:
             if not stroke:
@@ -417,18 +416,18 @@ class InkItem(AnnotationItemMixin, QGraphicsPathItem):
         if new_stroke or not self.ann.strokes:
             self.ann.strokes.append([])
         self.ann.strokes[-1].append((point.x(), point.y()))
+        self.prepareGeometryChange()
         self.apply_model()
 
     def _sync_model(self) -> None:
+        # Nunca se toca setPos() aqui: esto se llama desde itemChange mientras
+        # Qt esta arrastrando el item, y mover la posicion en mitad del arrastre
+        # hacia que el dibujo saliera disparado fuera de la pantalla.
         offset = self.pos()
-        if offset.isNull():
-            return
+        base = getattr(self, "_base", None) or self.ann.strokes
         self.ann.strokes = [
-            [(x + offset.x(), y + offset.y()) for x, y in stroke]
-            for stroke in self.ann.strokes
+            [(x + offset.x(), y + offset.y()) for x, y in stroke] for stroke in base
         ]
-        self.setPos(0, 0)
-        self.apply_model()
 
     def paint(self, painter: QPainter, option, widget=None) -> None:
         option.state &= ~QStyle.State_Selected

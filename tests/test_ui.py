@@ -261,3 +261,51 @@ def test_escribir_texto_libera_supr_y_ctrl_a(ventana):
     assert not ventana.view.is_editing_text
     assert ventana.act_delete.isEnabled()
     assert ventana.act_select_all.isEnabled()
+
+
+def test_arrastrar_un_dibujo_no_lo_manda_fuera_de_la_pantalla(ventana):
+    """Regresion: mover la posicion dentro de itemChange disparaba el dibujo."""
+    ventana.select_tool(Tool.INK)
+    viewport = ventana.view.viewport()
+    QTest.mousePress(viewport, Qt.LeftButton, Qt.NoModifier, QPoint(200, 300))
+    for x in range(210, 360, 10):
+        QTest.mouseMove(viewport, QPoint(x, 300 + (20 if (x // 10) % 2 else -20)))
+        QApplication.processEvents()
+    QTest.mouseRelease(viewport, Qt.LeftButton, Qt.NoModifier, QPoint(360, 300))
+    QApplication.processEvents()
+
+    item = ventana.view._annotation_items()[0]
+    antes = item.ann.bounds()
+    ancho = antes[2] - antes[0]
+
+    ventana.select_tool(Tool.SELECT)
+    item.setSelected(True)
+    centro = ventana.view.mapFromScene(item.sceneBoundingRect().center())
+    QTest.mousePress(viewport, Qt.LeftButton, Qt.NoModifier, centro)
+    for paso in range(1, 5):
+        QTest.mouseMove(viewport, centro + QPoint(10 * paso, 5 * paso))
+        QApplication.processEvents()
+    QTest.mouseRelease(viewport, Qt.LeftButton, Qt.NoModifier, centro + QPoint(40, 20))
+    QApplication.processEvents()
+
+    despues = item.ann.bounds()
+    escala = ventana.view.zoom * (ventana.view.logicalDpiX() / 72.0)
+    assert despues[0] - antes[0] == pytest.approx(40 / escala, abs=3)
+    assert despues[1] - antes[1] == pytest.approx(20 / escala, abs=3)
+    assert (despues[2] - despues[0]) == pytest.approx(ancho, abs=0.5)
+    assert item.scene() is not None and item.isVisible()
+
+
+def test_la_punta_de_flecha_es_la_misma_en_pantalla_y_en_el_pdf(qapp):
+    """La punta que se dibuja y la que se guarda tienen que medir lo mismo."""
+    from easypdf.model import arrow_head
+
+    ann = Annotation(kind=Kind.ARROW, page=0, p1=(20, 20), p2=(200, 100), width=3.0)
+    item = create_item(ann)
+    poligono, fin = item._arrow_points()
+    _base, punta, izquierda, derecha = arrow_head(ann.p1, ann.p2, ann.width)
+    assert (poligono[0].x(), poligono[0].y()) == pytest.approx(punta)
+    assert (poligono[1].x(), poligono[1].y()) == pytest.approx(izquierda)
+    assert (poligono[2].x(), poligono[2].y()) == pytest.approx(derecha)
+    # el trazo termina dentro de la punta, no en el vertice
+    assert fin.x() < punta[0] and fin.y() < punta[1]

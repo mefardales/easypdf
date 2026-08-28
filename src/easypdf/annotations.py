@@ -11,7 +11,7 @@ from collections.abc import Iterable
 
 import pymupdf
 
-from .model import Annotation, Kind
+from .model import Annotation, Kind, arrow_head
 
 #: Nombre que se guarda en el campo /T de la anotacion.
 AUTHOR = "easypdf.surf"
@@ -62,15 +62,31 @@ def add_annotation(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
         _apply_common(annot, ann)
         return annot
 
-    if ann.kind in (Kind.LINE, Kind.ARROW):
+    if ann.kind is Kind.LINE:
         annot = page.add_line_annot(_point(ann.p1, page), _point(ann.p2, page))
         annot.set_colors(stroke=_color(ann.color))
         annot.set_border(width=max(0.1, ann.width))
-        if ann.kind is Kind.ARROW:
-            annot.set_line_ends(pymupdf.PDF_ANNOT_LE_NONE, pymupdf.PDF_ANNOT_LE_CLOSED_ARROW)
-            # La punta de flecha se rellena con el mismo color del trazo.
-            annot.set_colors(stroke=_color(ann.color), fill=_color(ann.color))
         _apply_common(annot, ann)
+        return annot
+
+    if ann.kind is Kind.ARROW:
+        # La punta se dibuja como un triangulo propio en vez de usar la punta
+        # estandar del PDF: PyMuPDF la hace diez veces el grosor de la linea,
+        # que con trazos gruesos tapa media pagina y no coincide con lo que se
+        # ve en pantalla.
+        base, punta, izquierda, derecha = arrow_head(ann.p1, ann.p2, ann.width)
+        fin = ((base[0] + punta[0]) / 2.0, (base[1] + punta[1]) / 2.0)
+        annot = page.add_line_annot(_point(ann.p1, page), _point(fin, page))
+        annot.set_colors(stroke=_color(ann.color))
+        annot.set_border(width=max(0.1, ann.width))
+        _apply_common(annot, ann)
+
+        cabeza = page.add_polygon_annot(
+            [tuple(_point(pt, page)) for pt in (punta, izquierda, derecha)]
+        )
+        cabeza.set_colors(stroke=_color(ann.color), fill=_color(ann.color))
+        cabeza.set_border(width=0.1)
+        _apply_common(cabeza, ann)
         return annot
 
     if ann.kind is Kind.TEXT:
