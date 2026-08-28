@@ -40,6 +40,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      # El wheel de PyInstaller trae un bootloader ya compilado, identico en
+      # todas las aplicaciones hechas con PyInstaller. Los antivirus firman
+      # contra ese binario porque tambien lo usa el malware, y cualquier
+      # programa legitimo hereda la deteccion. Compilarlo aqui desde el codigo
+      # fuente es el remedio que recomienda la propia documentacion de
+      # PyInstaller: el bootloader deja de coincidir con esas firmas.
+      # No sustituye a firmar el ejecutable, que es la solucion de verdad.
+      - name: Compilar el bootloader de PyInstaller desde fuente
+        run: |
+          pip install --upgrade --force-reinstall --no-binary pyinstaller pyinstaller
+          python -c "import PyInstaller, pathlib; print('bootloader:', pathlib.Path(PyInstaller.__file__).parent / 'bootloader')"
+
       - name: Generar el icono
         run: python tools/make_icon.py
 
