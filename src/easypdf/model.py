@@ -122,6 +122,46 @@ def arrow_line_end(p1: Point, p2: Point, width: float) -> Point:
     return ((base[0] + punta[0]) / 2.0, (base[1] + punta[1]) / 2.0)
 
 
+def rotate_point(point: Point, degrees: int, width: float, height: float) -> Point:
+    """Gira un punto junto con su pagina.
+
+    ``width`` y ``height`` son los de la pagina **antes** de girar, y
+    ``degrees`` el giro en sentido horario (90, 180 o 270). Con 90 y 270 la
+    pagina cambia de orientacion, asi que el punto pasa a un lienzo de
+    ``height`` x ``width``.
+    """
+    x, y = point
+    giro = degrees % 360
+    if giro == 90:
+        return (height - y, x)
+    if giro == 180:
+        return (width - x, height - y)
+    if giro == 270:
+        return (y, width - x)
+    return (x, y)
+
+
+def rotate_annotation(ann: Annotation, degrees: int, width: float, height: float) -> None:
+    """Gira una anotacion con su pagina, en el sitio.
+
+    El texto no se inclina: la caja se recoloca donde le toca pero las letras
+    siguen leyendose en horizontal, que es lo unico que sabe dibujar un
+    FreeText de PDF sin incrustar una apariencia propia.
+    """
+    if degrees % 360 == 0:
+        return
+
+    def gira(p: Point) -> Point:
+        return rotate_point(p, degrees, width, height)
+
+    x0, y0, x1, y1 = ann.rect
+    (a, b), (c, d) = gira((x0, y0)), gira((x1, y1))
+    ann.rect = (min(a, c), min(b, d), max(a, c), max(b, d))
+    ann.p1 = gira(ann.p1)
+    ann.p2 = gira(ann.p2)
+    ann.strokes = [[gira(p) for p in stroke] for stroke in ann.strokes]
+
+
 @dataclass
 class Annotation:
     """Una anotacion colocada encima de una pagina.

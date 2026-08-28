@@ -36,6 +36,7 @@ from .commands import (
     DeleteAnnotationsCommand,
     DeletePageCommand,
     MovePageCommand,
+    RotatePageCommand,
 )
 from .items import (
     AnnotationItemMixin,
@@ -319,6 +320,12 @@ class PdfView(QGraphicsView):
         if self.document is None or self.document.page_count <= 1:
             return
         self.undo_stack.push(DeletePageCommand(self, index))
+
+    def rotate_page(self, index: int, delta: int) -> None:
+        """Gira una pagina (delta en grados horarios: 90, 180 o -90)."""
+        if self.document is None or delta % 360 == 0:
+            return
+        self.undo_stack.push(RotatePageCommand(self, index, delta))
 
     def move_page(self, index: int, destino: int) -> None:
         if self.document is None or index == destino:

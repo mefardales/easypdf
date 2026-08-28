@@ -89,3 +89,53 @@ def test_la_punta_de_flecha_crece_con_el_grosor_pero_no_pasa_de_la_linea():
     # en una linea muy corta la punta no puede ser mas larga que la linea
     base_corta, punta_corta, _, _ = arrow_head((0, 0), (6, 0), 6.0)
     assert base_corta[0] >= 0.0
+
+
+# --------------------------------------------------------------------------
+# Giro de pagina
+# --------------------------------------------------------------------------
+
+def test_rotate_point_lleva_las_esquinas_a_su_sitio():
+    from easypdf.model import rotate_point
+
+    ancho, alto = 600.0, 800.0
+    # Girando 90 grados en horario, la esquina superior izquierda pasa a ser
+    # la superior derecha de una pagina que ahora mide 800x600.
+    assert rotate_point((0.0, 0.0), 90, ancho, alto) == (800.0, 0.0)
+    assert rotate_point((600.0, 0.0), 90, ancho, alto) == (800.0, 600.0)
+    assert rotate_point((0.0, 0.0), 180, ancho, alto) == (600.0, 800.0)
+    assert rotate_point((0.0, 0.0), 270, ancho, alto) == (0.0, 600.0)
+    assert rotate_point((10.0, 20.0), 0, ancho, alto) == (10.0, 20.0)
+
+
+def test_cuatro_giros_de_90_devuelven_el_punto_al_origen():
+    from easypdf.model import rotate_point
+
+    punto, ancho, alto = (123.0, 456.0), 600.0, 800.0
+    for _ in range(4):
+        punto = rotate_point(punto, 90, ancho, alto)
+        ancho, alto = alto, ancho          # la pagina cambia de orientacion
+    assert punto == (123.0, 456.0)
+    assert (ancho, alto) == (600.0, 800.0)
+
+
+def test_rotate_annotation_gira_rectangulo_linea_y_trazos():
+    from easypdf.model import rotate_annotation
+
+    ann = Annotation(
+        kind=Kind.INK, page=0, rect=(50.0, 100.0, 150.0, 200.0),
+        p1=(10.0, 20.0), p2=(30.0, 40.0), strokes=[[(0.0, 0.0), (10.0, 10.0)]],
+    )
+    rotate_annotation(ann, 90, 600.0, 800.0)
+    assert ann.rect == (600.0, 50.0, 700.0, 150.0)
+    assert ann.p1 == (780.0, 10.0)
+    assert ann.p2 == (760.0, 30.0)
+    assert ann.strokes == [[(800.0, 0.0), (790.0, 10.0)]]
+
+
+def test_rotate_annotation_no_toca_nada_si_el_giro_es_cero():
+    from easypdf.model import rotate_annotation
+
+    ann = Annotation(kind=Kind.RECT, page=0, rect=(1.0, 2.0, 3.0, 4.0))
+    rotate_annotation(ann, 0, 600.0, 800.0)
+    assert ann.rect == (1.0, 2.0, 3.0, 4.0)
