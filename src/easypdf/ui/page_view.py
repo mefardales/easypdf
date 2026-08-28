@@ -183,6 +183,7 @@ class PdfView(QGraphicsView):
     toolFinished = Signal()
     eraserSizeChanged = Signal(float)
     noteCreated = Signal(object)
+    mouseMovedOnPage = Signal(object)   # posicion en el viewport
     selectionChanged = Signal()
     textEditing = Signal(bool)
 
@@ -212,9 +213,13 @@ class PdfView(QGraphicsView):
         self._fit_mode: str | None = "width"
         self._current_page = 0
         self._tool = Tool.SELECT
+        self.setMouseTracking(True)
+        self.viewport().setMouseTracking(True)
         self._draft_item = None
         self._draft_origin = QPointF()
         self._draft_page = 0
+        self.snap_enabled = True
+        self._guides = (None, None, None)
         self._eraser_size = ERASER_DEFAULT
         self._erasing = False
         self._erase_before: dict[str, list] = {}   # id -> trazos antes de borrar
@@ -387,6 +392,12 @@ class PdfView(QGraphicsView):
     @property
     def page_count(self) -> int:
         return len(self._page_items)
+
+    def current_page_item(self):
+        """PageItem de la pagina en la que se esta trabajando (o None)."""
+        if 0 <= self._current_page < len(self._page_items):
+            return self._page_items[self._current_page]
+        return None
 
     @property
     def current_page(self) -> int:
@@ -765,6 +776,40 @@ class PdfView(QGraphicsView):
             self.noteCreated.emit(item)   # la ventana pide el texto
         self.toolFinished.emit()
 
+    # ------------------------------------------------------------------ guias
+    def show_guides(self, x, y, page) -> None:
+        """Marca las guias a las que se esta alineando (None = ninguna)."""
+        nuevas = (x, y, page)
+        if nuevas != self._guides:
+            self._guides = nuevas
+            self.viewport().update()
+
+    def clear_guides(self) -> None:
+        self.show_guides(None, None, None)
+
+    def set_snap(self, enabled: bool) -> None:
+        self.snap_enabled = bool(enabled)
+        if not enabled:
+            self.clear_guides()
+
+    def drawForeground(self, painter, rect) -> None:  # pragma: no cover - dibujo
+        super().drawForeground(painter, rect)
+        x, y, page = self._guides
+        if page is None or (x is None and y is None):
+            return
+        caja = page.sceneBoundingRect()
+        lapiz = QPen(QColor("#e91e63"))
+        lapiz.setStyle(Qt.DashLine)
+        lapiz.setWidthF(1.0 / max(self._zoom, 1e-6))
+        lapiz.setCosmetic(True)
+        painter.setPen(lapiz)
+        if x is not None:
+            escena_x = page.mapToScene(QPointF(x, 0)).x()
+            painter.drawLine(QPointF(escena_x, caja.top()), QPointF(escena_x, caja.bottom()))
+        if y is not None:
+            escena_y = page.mapToScene(QPointF(0, y)).y()
+            painter.drawLine(QPointF(caja.left(), escena_y), QPointF(caja.right(), escena_y))
+
     # ------------------------------------------------------------------ goma
     @property
     def eraser_size(self) -> float:
@@ -874,6 +919,7 @@ class PdfView(QGraphicsView):
         event.accept()
 
     def mouseMoveEvent(self, event) -> None:
+        self.mouseMovedOnPage.emit(event.position().toPoint())
         if self._erasing:
             scene_pos = self.mapToScene(event.position().toPoint())
             page = self.nearest_page(scene_pos)
@@ -913,6 +959,7 @@ class PdfView(QGraphicsView):
         event.accept()
 
     def mouseReleaseEvent(self, event) -> None:
+        self.clear_guides()
         if self._erasing and event.button() == Qt.LeftButton:
             self._finish_erase()
             event.accept()
