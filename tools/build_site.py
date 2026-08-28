@@ -21,7 +21,10 @@ SITE = os.path.join(ROOT, "site")
 
 DOMAIN = "https://easypdf.surf"
 REPO = "https://github.com/mefardales/easypdf"
-RAW = f"{REPO}/raw/main/build"
+#: Las descargas apuntan a los archivos de la release, no a los del repositorio:
+#: GitHub solo cuenta las descargas de las releases, y de ese numero sale el
+#: contador de la portada.
+DESCARGAS_URL = f"{REPO}/releases/download/v1.0.0"
 VERSION = "1.0.0"
 
 #: De donde salen los numeros que se ensenan en la portada.
@@ -35,9 +38,9 @@ RELEASES_API = "https://api.github.com/repos/mefardales/easypdf/releases"
 VISITS_API = "https://api.counterapi.dev/v1/easypdf-surf"
 
 FILES = {
-    "setup": f"{RAW}/EasyPDF-{VERSION}-Setup.exe",
-    "portable": f"{RAW}/EasyPDF-{VERSION}-windows-x64-portable.zip",
-    "linux": f"{RAW}/EasyPDF-{VERSION}-linux-x64.tar.xz",
+    "setup": f"{DESCARGAS_URL}/EasyPDF-{VERSION}-Setup.exe",
+    "portable": f"{DESCARGAS_URL}/EasyPDF-{VERSION}-windows-x64-portable.zip",
+    "linux": f"{DESCARGAS_URL}/EasyPDF-{VERSION}-linux-x64.tar.xz",
 }
 
 TEXTS = {

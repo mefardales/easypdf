@@ -31,7 +31,7 @@ Tambien puedes descargar desde aqui mismo:
 ### Windows 10 u 11
 
 <p align="center">
-  <a href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-Setup.exe">
+  <a href="https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-Setup.exe">
     <img src="https://img.shields.io/badge/%E2%AC%87%20DESCARGAR%20EasyPDF%20para%20Windows-instalador-d81b1b?style=for-the-badge" alt="Descargar EasyPDF para Windows">
   </a>
 </p>
@@ -52,8 +52,8 @@ No necesitas ser administrador ni instalar Python ni nada mas.
 
 | Descarga | Para que sirve |
 |---|---|
-| [**EasyPDF portable para Windows (.zip)**](https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-windows-x64-portable.zip) | No instala nada. Descomprime la carpeta y abre `EasyPDF.exe`. Funciona desde un pendrive. |
-| [**EasyPDF para Linux (.tar.xz)**](https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-linux-x64.tar.xz) | Descomprime y ejecuta `./EasyPDF`. No necesita instalacion. |
+| [**EasyPDF portable para Windows (.zip)**](https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-windows-x64-portable.zip) | No instala nada. Descomprime la carpeta y abre `EasyPDF.exe`. Funciona desde un pendrive. |
+| [**EasyPDF para Linux (.tar.xz)**](https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-linux-x64.tar.xz) | Descomprime y ejecuta `./EasyPDF`. No necesita instalacion. |
 
 Tambien estan todos en la carpeta [`build/`](build/) y en la
 [pagina de releases](https://github.com/mefardales/easypdf/releases), con sus
