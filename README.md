@@ -18,6 +18,41 @@
 
 ---
 
+## Descargar (un solo clic)
+
+### Windows 10 u 11
+
+<p align="center">
+  <a href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-Setup.exe">
+    <img src="https://img.shields.io/badge/%E2%AC%87%20DESCARGAR%20EasyPDF%20para%20Windows-instalador-d81b1b?style=for-the-badge" alt="Descargar EasyPDF para Windows">
+  </a>
+</p>
+
+1. Pulsa el boton de arriba: se descarga `EasyPDF-1.0.0-Setup.exe`.
+2. Doble clic en el archivo descargado (suele quedar en la carpeta *Descargas*).
+3. Si Windows muestra un aviso azul de *Windows protegio tu PC*, pulsa
+   **Mas informacion** y despues **Ejecutar de todas formas**. Sale porque el
+   programa no esta firmado con un certificado de pago, no porque tenga nada raro.
+4. Siguiente, siguiente y listo. EasyPDF queda en el menu Inicio.
+
+No necesitas ser administrador ni instalar Python ni nada mas.
+
+<details>
+<summary>Otras descargas (portable y Linux)</summary>
+
+<br>
+
+| Descarga | Para que sirve |
+|---|---|
+| [**EasyPDF portable para Windows (.zip)**](https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-windows-x64-portable.zip) | No instala nada. Descomprime la carpeta y abre `EasyPDF.exe`. Funciona desde un pendrive. |
+| [**EasyPDF para Linux (.tar.xz)**](https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-linux-x64.tar.xz) | Descomprime y ejecuta `./EasyPDF`. No necesita instalacion. |
+
+Tambien estan todos en la carpeta [`build/`](build/) y en la
+[pagina de releases](https://github.com/mefardales/easypdf/releases), con sus
+`sha256` para comprobar la descarga.
+
+</details>
+
 ## Que hace
 
 | | |
@@ -34,21 +69,6 @@ Todo con una interfaz en espanol, sin cuentas, sin publicidad y sin conexion a i
 <p align="center">
   <img src="docs/captura-principal.png" width="820" alt="Ventana principal de EasyPDF">
 </p>
-
-## Descargar
-
-Los programas ya compilados estan en la carpeta [**`build/`**](build/) de este
-mismo repositorio (y tambien adjuntos a cada
-[release](https://github.com/mefardales/easypdf/releases)):
-
-| Archivo | Plataforma |
-|---|---|
-| `EasyPDF-1.0.0-Setup.exe` | Windows 10/11 — instalador (sin permisos de administrador) |
-| `EasyPDF-1.0.0-windows-x64-portable.zip` | Windows 10/11 — portable, se ejecuta desde la carpeta |
-| `EasyPDF-1.0.0-linux-x64.tar.xz` | Linux x86-64 — portable |
-
-No hace falta tener Python instalado: el ejecutable lo lleva todo dentro. En
-[`build/README.md`](build/README.md) estan las instrucciones y los `sha256`.
 
 ## Guia rapida
 
