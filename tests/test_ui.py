@@ -542,3 +542,59 @@ def test_cambiar_el_idioma_de_la_interfaz(ventana):
     ventana.set_language("en")
     assert ventana.act_save.text() == "&Save"
     assert ventana.tool_actions[Tool.TABLE].text() == "Ta&ble"
+
+
+# --------------------------------------------------------------------------
+# Repintado: un item que dibuja fuera de su boundingRect() deja rastro en
+# pantalla al arrastrarlo, porque Qt solo repinta el area que el item declara.
+# --------------------------------------------------------------------------
+
+ANOTACIONES_A_REPINTAR = {
+    "texto": Annotation(kind=Kind.TEXT, page=0, rect=(0, 0, 180, 40), text="sdfsdfs", width=0),
+    "texto_con_borde": Annotation(kind=Kind.TEXT, page=0, rect=(0, 0, 180, 40), text="hola", width=2),
+    "cuadro": Annotation(kind=Kind.RECT, page=0, rect=(0, 0, 120, 80), width=3),
+    "resaltado": Annotation(kind=Kind.HIGHLIGHT, page=0, rect=(0, 0, 120, 30)),
+    "linea": Annotation(kind=Kind.LINE, page=0, p1=(0, 0), p2=(120, 60), width=3),
+    "flecha": Annotation(kind=Kind.ARROW, page=0, p1=(0, 0), p2=(120, 60), width=3),
+    "dibujo": Annotation(kind=Kind.INK, page=0, strokes=[[(0, 0), (40, 50), (90, 10)]], width=3),
+    "tabla": Annotation(
+        kind=Kind.TABLE, page=0, rect=(0, 0, 180, 90), rows=2, cols=3,
+        cells=["a", "b", "c", "d", "e", "f"],
+    ),
+}
+
+
+@pytest.mark.parametrize("nombre", sorted(ANOTACIONES_A_REPINTAR))
+def test_el_item_no_pinta_fuera_de_su_bounding_rect(qapp, nombre):
+    from PySide6.QtGui import QImage, QPainter
+    from PySide6.QtWidgets import QGraphicsScene, QStyleOptionGraphicsItem
+
+    fondo = qcolor((1.0, 1.0, 1.0))
+    margen = 40                       # cuanto se mira alrededor del boundingRect
+
+    escena = QGraphicsScene()
+    item = create_item(ANOTACIONES_A_REPINTAR[nombre].copy())
+    escena.addItem(item)
+    item.setSelected(True)            # peor caso: borde de seleccion y tiradores
+
+    limites = item.boundingRect()
+    zona = limites.adjusted(-margen, -margen, margen, margen)
+    imagen = QImage(int(zona.width()), int(zona.height()), QImage.Format_RGB888)
+    imagen.fill(fondo)
+    painter = QPainter(imagen)
+    painter.setRenderHint(QPainter.Antialiasing)
+    painter.translate(-zona.left(), -zona.top())
+    item.paint(painter, QStyleOptionGraphicsItem(), None)
+    painter.end()
+
+    x0 = limites.left() - zona.left()
+    y0 = limites.top() - zona.top()
+    x1, y1 = x0 + limites.width(), y0 + limites.height()
+    fuera = sum(
+        1
+        for y in range(imagen.height())
+        for x in range(imagen.width())
+        if not ((x0 - 1) <= x <= (x1 + 1) and (y0 - 1) <= y <= (y1 + 1))
+        and imagen.pixelColor(x, y) != fondo
+    )
+    assert fuera == 0, f"{nombre} pinta {fuera} pixeles fuera de su boundingRect()"
