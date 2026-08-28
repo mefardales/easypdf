@@ -4,6 +4,11 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      publicar_en_build:
+        description: "Guardar el instalador y la version portable en la carpeta build/ del repositorio"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -21,6 +26,14 @@ jobs:
           python-version: "3.11"
           cache: pip
 
+      - name: Leer la version
+        id: version
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path src/easypdf/__init__.py -Pattern '__version__ = "(.+)"').Matches[0].Groups[1].Value
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $v"
+
       - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
@@ -35,9 +48,10 @@ jobs:
         run: pytest -q
 
       - name: Empaquetar con PyInstaller
-        run: pyinstaller packaging/easypdf.spec --noconfirm --clean
+        run: pyinstaller packaging/easypdf.spec --noconfirm --clean --workpath .pyinstaller
 
-      - name: Comprobar que el ejecutable arranca
+      - name: Comprobar que el ejecutable existe
+        shell: pwsh
         run: |
           if (-not (Test-Path "dist/EasyPDF/EasyPDF.exe")) { throw "No se genero el .exe" }
           Get-Item "dist/EasyPDF/EasyPDF.exe" | Format-List Name, Length
@@ -48,22 +62,54 @@ jobs:
       - name: Compilar el instalador
         run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\installer.iss'
 
-      - name: Comprimir la version portable
-        run: Compress-Archive -Path dist/EasyPDF/* -DestinationPath dist/EasyPDF-portable-windows-x64.zip
+      - name: Preparar la carpeta build/
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          Copy-Item dist/installer/*.exe build/ -Force
+          $zip = "build/EasyPDF-$env:VERSION-windows-x64-portable.zip"
+          Remove-Item $zip -ErrorAction SilentlyContinue
+          Compress-Archive -Path dist/EasyPDF/* -DestinationPath $zip
+          Get-ChildItem build | ForEach-Object {
+            if ($_.Extension -in ".exe", ".zip") {
+              (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower() + "  " + $_.Name |
+                Out-File "$($_.FullName).sha256" -Encoding ascii
+            }
+          }
+          Get-ChildItem build | Format-Table Name, Length
 
       - uses: actions/upload-artifact@v4
         with:
           name: EasyPDF-windows
-          path: |
-            dist/installer/*.exe
-            dist/EasyPDF-portable-windows-x64.zip
+          path: build/*
           if-no-files-found: error
+
+      - name: Guardar los binarios en la rama principal
+        if: github.event_name == 'workflow_dispatch' && inputs.publicar_en_build
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f build
+          if git diff --cached --quiet; then
+            echo "Sin cambios en build/"
+            exit 0
+          fi
+          git commit -m "Compilados de Windows ${{ steps.version.outputs.version }} en build/
+
+          Instalador y version portable generados por GitHub Actions en
+          windows-latest (run ${{ github.run_id }})."
+          for intento in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((intento * 5))
+          done
+          exit 1
 
       - name: Publicar la release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist/installer/*.exe
-            dist/EasyPDF-portable-windows-x64.zip
+          files: build/*
           generate_release_notes: true
