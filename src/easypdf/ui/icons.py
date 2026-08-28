@@ -13,6 +13,7 @@ from typing import Callable
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import (
+    QBrush,
     QColor,
     QFont,
     QIcon,
@@ -199,6 +200,24 @@ def _draw_ink(p: QPainter) -> None:
     path.cubicTo(20, 12, 30, 60, 40, 30)
     path.cubicTo(46, 14, 52, 30, 56, 22)
     p.drawPath(path)
+
+
+def _draw_eraser(p: QPainter) -> None:
+    """Goma inclinada, con la parte de borrar en rosa y el cuerpo en gris."""
+    # cuerpo (la mitad que se agarra)
+    cuerpo = QPolygonF([QPointF(30, 12), QPointF(52, 34), QPointF(40, 46), QPointF(18, 24)])
+    p.setPen(_pen(p, 3.5))
+    p.setBrush(QBrush(QColor("#b0bec5")))
+    p.drawPolygon(cuerpo)
+    # punta que borra
+    punta = QPolygonF([QPointF(18, 24), QPointF(40, 46), QPointF(28, 58), QPointF(6, 36)])
+    p.setBrush(QBrush(QColor("#ef9a9a")))
+    p.drawPolygon(punta)
+    p.setBrush(Qt.NoBrush)
+    # restos de lo borrado
+    _pen(p, 3, QColor("#90a4ae"))
+    p.drawLine(46, 54, 58, 54)
+    p.drawLine(48, 46, 58, 46)
 
 
 def _draw_delete(p: QPainter) -> None:
@@ -462,6 +481,7 @@ _DRAWINGS: dict[str, Callable[[QPainter], None]] = {
     "arrow": _draw_arrow,
     "text": _draw_text,
     "ink": _draw_ink,
+    "eraser": _draw_eraser,
     "delete": _draw_delete,
     "undo": _draw_undo,
     "redo": _draw_redo,

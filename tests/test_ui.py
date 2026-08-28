@@ -778,3 +778,100 @@ def test_soltar_sobre_una_miniatura_da_su_posicion_o_la_siguiente(ventana):
     for fila in range(min(3, lista.count())):
         centro = lista.visualRect(lista.model().index(fila, 0)).center()
         assert lista.drop_row(centro) in (fila, fila + 1)
+
+
+# --------------------------------------------------------------------------
+# Goma
+# --------------------------------------------------------------------------
+
+def test_ctrl_mas_y_menos_cambian_la_goma_cuando_esta_activa(ventana):
+    from easypdf.model import ERASER_SIZES
+
+    ventana.select_tool(Tool.ERASER)
+    inicial = ventana.view.eraser_size
+    zoom = ventana.view.zoom
+
+    ventana.zoom_or_eraser(1)
+    assert ventana.view.eraser_size > inicial
+    assert ventana.view.zoom == zoom          # el zoom no se toca
+
+    ventana.zoom_or_eraser(-1)
+    assert ventana.view.eraser_size == inicial
+
+    for _ in range(20):
+        ventana.zoom_or_eraser(1)
+    assert ventana.view.eraser_size == ERASER_SIZES[-1]
+    for _ in range(20):
+        ventana.zoom_or_eraser(-1)
+    assert ventana.view.eraser_size == ERASER_SIZES[0]
+
+
+def test_con_otra_herramienta_ctrl_mas_vuelve_a_ser_zoom(ventana):
+    ventana.select_tool(Tool.SELECT)
+    zoom, goma = ventana.view.zoom, ventana.view.eraser_size
+    ventana.zoom_or_eraser(1)
+    assert ventana.view.zoom > zoom
+    assert ventana.view.eraser_size == goma
+
+
+def _pasar_la_goma(ventana, puntos, pagina=0):
+    """Simula un arrastre de goma completo, con su paso de deshacer."""
+    from PySide6.QtCore import QPointF
+
+    ventana.view._erasing = True
+    ventana.view._erase_before = {}
+    ventana.view._erase_removed = []
+    for x, y in puntos:
+        ventana.view.erase_at(pagina, QPointF(x, y))
+    ventana.view._finish_erase()
+
+
+def test_la_goma_recorta_un_trazo_y_se_deshace_de_una_vez(ventana, qapp):
+    trazo = [[(float(x), 300.0) for x in range(100, 401, 5)]]
+    ann = Annotation(kind=Kind.INK, page=0, strokes=trazo, width=2)
+    ventana.view.add_annotation(ann)
+    qapp.processEvents()
+    puntos = sum(len(t) for t in ann.strokes)
+
+    ventana.select_tool(Tool.ERASER)
+    ventana.view.set_eraser_size(16)
+    _pasar_la_goma(ventana, [(250, 300)])
+    qapp.processEvents()
+
+    assert sum(len(t) for t in ann.strokes) < puntos
+    assert len(ann.strokes) == 2               # partido por el medio
+
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
+    assert len(ann.strokes) == 1
+    assert sum(len(t) for t in ann.strokes) == puntos
+
+
+def test_la_goma_borra_entera_una_anotacion_que_no_es_trazo(ventana, qapp):
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(500.0, 100.0, 560.0, 160.0), width=2)
+    ventana.view.add_annotation(caja)
+    qapp.processEvents()
+    total = len(ventana.view.store)
+
+    ventana.select_tool(Tool.ERASER)
+    ventana.view.set_eraser_size(16)
+    _pasar_la_goma(ventana, [(530, 130)])
+    qapp.processEvents()
+    assert len(ventana.view.store) == total - 1
+
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
+    assert len(ventana.view.store) == total
+
+
+def test_la_goma_por_una_zona_vacia_no_borra_nada(ventana, qapp):
+    ann = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 150.0, 150.0), width=2)
+    ventana.view.add_annotation(ann)
+    qapp.processEvents()
+    total = len(ventana.view.store)
+    limpio = ventana.view.undo_stack.count()
+
+    ventana.select_tool(Tool.ERASER)
+    _pasar_la_goma(ventana, [(500, 700)])
+    assert len(ventana.view.store) == total
+    assert ventana.view.undo_stack.count() == limpio   # ni un paso de deshacer

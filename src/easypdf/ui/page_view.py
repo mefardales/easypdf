@@ -10,6 +10,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
+    QCursor,
     QImage,
     QPainter,
     QPen,
@@ -28,13 +29,24 @@ from PySide6.QtWidgets import (
 from ..config import MAX_ZOOM, MIN_ZOOM
 from ..document import PdfDocument, SearchHit
 from ..i18n import tr
-from ..model import Align, Annotation, AnnotationStore, Font, Kind
+from ..model import (
+    ERASER_DEFAULT,
+    ERASER_SIZES,
+    Align,
+    Annotation,
+    AnnotationStore,
+    Font,
+    Kind,
+    circle_touches_rect,
+    erase_strokes,
+)
 from .commands import (
     AddAnnotationCommand,
     AddPageCommand,
     ChangeAnnotationsCommand,
     DeleteAnnotationsCommand,
     DeletePageCommand,
+    EraseCommand,
     MovePageCommand,
     RotatePageCommand,
 )
@@ -64,6 +76,7 @@ class Tool(str, Enum):
     INK = "ink"
     TABLE = "table"
     IMAGE = "image"
+    ERASER = "eraser"
 
     @property
     def kind(self) -> Kind | None:
@@ -166,6 +179,7 @@ class PdfView(QGraphicsView):
     zoomChanged = Signal(float)
     modified = Signal()
     toolFinished = Signal()
+    eraserSizeChanged = Signal(float)
     selectionChanged = Signal()
     textEditing = Signal(bool)
 
@@ -198,6 +212,10 @@ class PdfView(QGraphicsView):
         self._draft_item = None
         self._draft_origin = QPointF()
         self._draft_page = 0
+        self._eraser_size = ERASER_DEFAULT
+        self._erasing = False
+        self._erase_before: dict[str, list] = {}   # id -> trazos antes de borrar
+        self._erase_removed: list = []
         self._search_items: list[QGraphicsRectItem] = []
         self._hits: list[SearchHit] = []
         self._hit_index = -1
@@ -515,21 +533,44 @@ class PdfView(QGraphicsView):
 
     def set_tool(self, tool: Tool) -> None:
         self._tool = tool
-        if tool is Tool.PAN:
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
-            self.viewport().setCursor(Qt.OpenHandCursor)
-        elif tool is Tool.SELECT:
-            self.setDragMode(QGraphicsView.RubberBandDrag)
-            self.viewport().setCursor(Qt.ArrowCursor)
-        else:
-            self.setDragMode(QGraphicsView.NoDrag)
-            self.viewport().setCursor(Qt.CrossCursor)
+        self._update_cursor()
         editable = tool is Tool.SELECT
         for item in self._annotation_items():
             item.setFlag(QGraphicsItem.ItemIsMovable, editable)
             item.setFlag(QGraphicsItem.ItemIsSelectable, editable)
         if not editable:
             self._scene.clearSelection()
+
+    def _update_cursor(self) -> None:
+        """Pone el cursor de la herramienta activa."""
+        tool = self._tool
+        if tool is Tool.PAN:
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
+            self.viewport().setCursor(Qt.OpenHandCursor)
+        elif tool is Tool.SELECT:
+            self.setDragMode(QGraphicsView.RubberBandDrag)
+            self.viewport().setCursor(Qt.ArrowCursor)
+        elif tool is Tool.ERASER:
+            self.setDragMode(QGraphicsView.NoDrag)
+            self.viewport().setCursor(self._eraser_cursor())
+        else:
+            self.setDragMode(QGraphicsView.NoDrag)
+            self.viewport().setCursor(Qt.CrossCursor)
+
+    def _eraser_cursor(self) -> QCursor:
+        """Circulo del tamano real de la goma, para ver que se va a borrar."""
+        lado = max(8, min(128, int(self._eraser_size * self._zoom)))
+        pixmap = QPixmap(lado + 2, lado + 2)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        # doble trazo para que se vea sobre fondo claro y sobre fondo oscuro
+        painter.setPen(QPen(QColor(255, 255, 255, 220), 3))
+        painter.drawEllipse(1, 1, lado, lado)
+        painter.setPen(QPen(QColor(20, 20, 20, 230), 1))
+        painter.drawEllipse(1, 1, lado, lado)
+        painter.end()
+        return QCursor(pixmap, lado // 2, lado // 2)
 
     def _annotation_items(self) -> list[AnnotationItemMixin]:
         return [item for item in self._items.values() if item.scene() is not None]
@@ -693,8 +734,98 @@ class PdfView(QGraphicsView):
             item.edit_cell(0)
         self.toolFinished.emit()
 
+    # ------------------------------------------------------------------ goma
+    @property
+    def eraser_size(self) -> float:
+        """Diametro de la goma, en puntos PDF."""
+        return self._eraser_size
+
+    def set_eraser_size(self, size: float) -> None:
+        menor, mayor = ERASER_SIZES[0], ERASER_SIZES[-1]
+        nuevo = max(menor, min(float(size), mayor))
+        if nuevo != self._eraser_size:
+            self._eraser_size = nuevo
+            self.eraserSizeChanged.emit(nuevo)
+            self._update_cursor()
+
+    def step_eraser_size(self, delta: int) -> None:
+        """Pasa al tamano siguiente o anterior de la lista (Ctrl+ / Ctrl-)."""
+        actual = min(ERASER_SIZES, key=lambda t: abs(t - self._eraser_size))
+        posicion = ERASER_SIZES.index(actual) + (1 if delta > 0 else -1)
+        posicion = max(0, min(posicion, len(ERASER_SIZES) - 1))
+        self.set_eraser_size(ERASER_SIZES[posicion])
+
+    def erase_at(self, page_index: int, point: QPointF) -> bool:
+        """Borra lo que haya bajo la goma. True si quito algo."""
+        radio = self._eraser_size / 2.0
+        centro = (point.x(), point.y())
+        cambio = False
+        for ann in list(self.store.for_page(page_index)):
+            item = self._items.get(ann.id)
+            if item is None or item is self._draft_item:
+                continue
+            if ann.kind is Kind.INK:
+                quedan = erase_strokes(ann.strokes, centro, radio)
+                if quedan == ann.strokes:
+                    continue
+                # se guarda como estaba la primera vez que se toca, para deshacer
+                self._erase_before.setdefault(ann.id, [list(t) for t in ann.strokes])
+                ann.strokes = quedan
+                item.prepareGeometryChange()
+                item.apply_model()
+                item.update()
+                cambio = True
+                if not quedan:                      # no queda nada dibujado
+                    self._quitar_borrado(item)
+            elif circle_touches_rect(centro, radio, ann.bounds()):
+                self._quitar_borrado(item)
+                cambio = True
+        if cambio:
+            self.notify_modified()
+        return cambio
+
+    def _quitar_borrado(self, item) -> None:
+        """Saca del documento una anotacion que la goma ha hecho desaparecer."""
+        self.detach_item(item)
+        try:
+            self.store.remove(item.ann)
+        except ValueError:  # pragma: no cover - defensivo
+            pass
+        if item not in self._erase_removed:
+            self._erase_removed.append(item)
+
+    def _finish_erase(self) -> None:
+        """Cierra la pasada de goma en un unico paso de deshacer."""
+        self._erasing = False
+        cambios = []
+        for ann_id, antes in self._erase_before.items():
+            item = self._items.get(ann_id)
+            if item is not None and item not in self._erase_removed:
+                cambios.append((item, antes, [list(t) for t in item.ann.strokes]))
+        for item in self._erase_removed:
+            antes = self._erase_before.get(item.ann.id)
+            if antes is not None:
+                item.ann.strokes = [list(t) for t in antes]
+        if cambios or self._erase_removed:
+            self.undo_stack.push(EraseCommand(self, cambios, self._erase_removed))
+        self._erase_before = {}
+        self._erase_removed = []
+
     # ------------------------------------------------------------------ raton
     def mousePressEvent(self, event) -> None:
+        if self._tool is Tool.ERASER and event.button() == Qt.LeftButton:
+            if self.document is None:
+                return
+            scene_pos = self.mapToScene(event.position().toPoint())
+            page = self.nearest_page(scene_pos)
+            if page is None:
+                return
+            self._erasing = True
+            self._erase_before = {}
+            self._erase_removed = []
+            self.erase_at(page.index, page.mapFromScene(scene_pos))
+            event.accept()
+            return
         kind = self._tool.kind
         if kind is None or event.button() != Qt.LeftButton or self.document is None:
             super().mousePressEvent(event)
@@ -712,6 +843,13 @@ class PdfView(QGraphicsView):
         event.accept()
 
     def mouseMoveEvent(self, event) -> None:
+        if self._erasing:
+            scene_pos = self.mapToScene(event.position().toPoint())
+            page = self.nearest_page(scene_pos)
+            if page is not None:
+                self.erase_at(page.index, page.mapFromScene(scene_pos))
+            event.accept()
+            return
         if self._draft_item is None:
             super().mouseMoveEvent(event)
             return
@@ -744,6 +882,10 @@ class PdfView(QGraphicsView):
         event.accept()
 
     def mouseReleaseEvent(self, event) -> None:
+        if self._erasing and event.button() == Qt.LeftButton:
+            self._finish_erase()
+            event.accept()
+            return
         if self._draft_item is not None and event.button() == Qt.LeftButton:
             self._finish_draft()
             event.accept()
