@@ -1,0 +1,587 @@
+"""Elementos graficos que representan las anotaciones sobre la pagina.
+
+Cada item vive dentro de un ``PageItem`` y trabaja directamente en **puntos
+PDF**, asi que no hay conversiones de zoom: lo que se dibuja es exactamente lo
+que se escribe despues en el archivo.
+"""
+
+from __future__ import annotations
+
+import math
+
+from PySide6.QtCore import QLineF, QPointF, QRectF, Qt
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QFont,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QPolygonF,
+)
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsLineItem,
+    QGraphicsPathItem,
+    QGraphicsRectItem,
+    QGraphicsTextItem,
+    QStyle,
+)
+
+from ..model import Annotation, Kind
+
+#: Tamano del tirador de redimension, en pixeles de pantalla.
+HANDLE_PX = 9.0
+MIN_SIZE = 4.0
+SELECTION_COLOR = QColor("#1565c0")
+
+_CURSORS: dict[str, Qt.CursorShape] = {
+    "tl": Qt.SizeFDiagCursor,
+    "br": Qt.SizeFDiagCursor,
+    "tr": Qt.SizeBDiagCursor,
+    "bl": Qt.SizeBDiagCursor,
+    "t": Qt.SizeVerCursor,
+    "b": Qt.SizeVerCursor,
+    "l": Qt.SizeHorCursor,
+    "r": Qt.SizeHorCursor,
+    "p1": Qt.SizeAllCursor,
+    "p2": Qt.SizeAllCursor,
+    "w": Qt.SizeHorCursor,
+}
+
+
+def qcolor(rgb: tuple[float, float, float] | None, opacity: float = 1.0) -> QColor:
+    """Convierte un color del modelo (0..1) en QColor."""
+    if rgb is None:
+        return QColor(Qt.transparent)
+    color = QColor.fromRgbF(
+        max(0.0, min(1.0, rgb[0])),
+        max(0.0, min(1.0, rgb[1])),
+        max(0.0, min(1.0, rgb[2])),
+    )
+    color.setAlphaF(max(0.0, min(1.0, opacity)))
+    return color
+
+
+def to_rgb(color: QColor) -> tuple[float, float, float]:
+    return (color.redF(), color.greenF(), color.blueF())
+
+
+class AnnotationItemMixin:
+    """Comportamiento comun: seleccion, tiradores y sincronizacion del modelo."""
+
+    ann: Annotation
+
+    def _init_common(self, ann: Annotation) -> None:
+        self.ann = ann
+        # Mientras se vuelca el modelo sobre el item, los cambios de posicion
+        # que emite Qt no deben reescribir el modelo con datos a medias.
+        self._applying = False
+        self._active_handle: str | None = None
+        self._drag_origin = QPointF()
+        self.setFlag(QGraphicsItem.ItemIsMovable, True)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, True)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
+        self.setAcceptHoverEvents(True)
+        self.setZValue(10)
+
+    # -- utilidades ------------------------------------------------------
+    def view_scale(self) -> float:
+        scene = self.scene()
+        if scene is not None:
+            views = scene.views()
+            if views:
+                return max(0.05, abs(views[0].transform().m11()))
+        return 1.0
+
+    def handle_size(self) -> float:
+        return HANDLE_PX / self.view_scale()
+
+    def handles(self) -> dict[str, QPointF]:
+        """Tiradores en coordenadas locales del item."""
+        return {}
+
+    def handle_at(self, pos: QPointF) -> str | None:
+        half = self.handle_size() / 2.0
+        for name, point in self.handles().items():
+            if QRectF(point.x() - half, point.y() - half, half * 2, half * 2).contains(pos):
+                return name
+        return None
+
+    def resize_to(self, handle: str, pos: QPointF) -> None:  # pragma: no cover - UI
+        """Aplica el arrastre de un tirador (coordenadas locales)."""
+
+    def paint_handles(self, painter: QPainter) -> None:
+        handles = self.handles()
+        if not handles:
+            return
+        size = self.handle_size()
+        pen = QPen(SELECTION_COLOR)
+        pen.setWidthF(1.2 / self.view_scale())
+        painter.setPen(pen)
+        painter.setBrush(QBrush(QColor("#ffffff")))
+        for point in handles.values():
+            painter.drawRect(
+                QRectF(point.x() - size / 2, point.y() - size / 2, size, size)
+            )
+
+    def paint_selection(self, painter: QPainter, rect: QRectF) -> None:
+        pen = QPen(SELECTION_COLOR)
+        pen.setStyle(Qt.DashLine)
+        pen.setWidthF(1.0 / self.view_scale())
+        painter.setPen(pen)
+        painter.setBrush(Qt.NoBrush)
+        painter.drawRect(rect)
+
+    # -- modelo ----------------------------------------------------------
+    def apply_model(self) -> None:
+        """Vuelca el modelo sobre el item (modelo -> pantalla)."""
+        self._applying = True
+        try:
+            self._apply_model()
+        finally:
+            self._applying = False
+
+    def sync_model(self) -> None:
+        """Vuelca el item sobre el modelo (pantalla -> modelo)."""
+        if getattr(self, "_applying", False):
+            return
+        self._sync_model()
+
+    def _apply_model(self) -> None:  # pragma: no cover - lo implementa cada item
+        """Geometria y estilo del item a partir de ``self.ann``."""
+
+    def _sync_model(self) -> None:  # pragma: no cover - lo implementa cada item
+        """Actualiza ``self.ann`` con la geometria actual del item."""
+
+    def notify_scene(self, event: str) -> None:
+        scene = self.scene()
+        handler = getattr(scene, event, None)
+        if callable(handler):
+            handler(self)
+
+    # -- eventos ---------------------------------------------------------
+    def mousePressEvent(self, event) -> None:
+        self._active_handle = None
+        if self.isSelected() and event.button() == Qt.LeftButton:
+            handle = self.handle_at(event.pos())
+            if handle:
+                self._active_handle = handle
+                self.notify_scene("begin_edit")
+                event.accept()
+                return
+        self.notify_scene("begin_edit")
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._active_handle:
+            self.prepareGeometryChange()
+            self.resize_to(self._active_handle, event.pos())
+            self.sync_model()
+            self.update()
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event) -> None:
+        if self._active_handle:
+            self._active_handle = None
+            self.sync_model()
+            self.notify_scene("end_edit")
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+        self.sync_model()
+        self.notify_scene("end_edit")
+
+    def hoverMoveEvent(self, event) -> None:
+        cursor = Qt.SizeAllCursor
+        if self.isSelected():
+            handle = self.handle_at(event.pos())
+            if handle:
+                cursor = _CURSORS.get(handle, Qt.SizeAllCursor)
+        self.setCursor(cursor)
+        super().hoverMoveEvent(event)
+
+    def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionHasChanged:
+            self.sync_model()
+        return super().itemChange(change, value)
+
+
+class RectItem(AnnotationItemMixin, QGraphicsRectItem):
+    """Cuadro o resaltado."""
+
+    def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
+        super().__init__(parent)
+        self._init_common(ann)
+        self.apply_model()
+
+    # -- modelo ----------------------------------------------------------
+    def _apply_model(self) -> None:
+        ann = self.ann
+        x0, y0, x1, y1 = ann.normalized_rect()
+        self.setPos(x0, y0)
+        self.setRect(0, 0, max(MIN_SIZE, x1 - x0), max(MIN_SIZE, y1 - y0))
+        if ann.kind is Kind.HIGHLIGHT:
+            fill = qcolor(ann.color, 0.45)
+            self.setBrush(QBrush(fill))
+            self.setPen(QPen(Qt.NoPen))
+        else:
+            pen = QPen(qcolor(ann.color))
+            pen.setWidthF(max(0.1, ann.width))
+            pen.setJoinStyle(Qt.MiterJoin)
+            self.setPen(pen)
+            self.setBrush(QBrush(qcolor(ann.fill)) if ann.fill else QBrush(Qt.NoBrush))
+        self.setOpacity(ann.opacity if ann.kind is not Kind.HIGHLIGHT else 1.0)
+
+    def _sync_model(self) -> None:
+        rect = self.rect()
+        origin = self.pos()
+        self.ann.rect = (
+            origin.x() + rect.x(),
+            origin.y() + rect.y(),
+            origin.x() + rect.x() + rect.width(),
+            origin.y() + rect.y() + rect.height(),
+        )
+
+    # -- geometria -------------------------------------------------------
+    def handles(self) -> dict[str, QPointF]:
+        r = self.rect()
+        return {
+            "tl": r.topLeft(),
+            "tr": r.topRight(),
+            "bl": r.bottomLeft(),
+            "br": r.bottomRight(),
+            "t": QPointF(r.center().x(), r.top()),
+            "b": QPointF(r.center().x(), r.bottom()),
+            "l": QPointF(r.left(), r.center().y()),
+            "r": QPointF(r.right(), r.center().y()),
+        }
+
+    def resize_to(self, handle: str, pos: QPointF) -> None:
+        r = QRectF(self.rect())
+        if "l" in handle:
+            r.setLeft(pos.x())
+        if "r" in handle:
+            r.setRight(pos.x())
+        if "t" in handle:
+            r.setTop(pos.y())
+        if "b" in handle:
+            r.setBottom(pos.y())
+        r = r.normalized()
+        if r.width() < MIN_SIZE:
+            r.setWidth(MIN_SIZE)
+        if r.height() < MIN_SIZE:
+            r.setHeight(MIN_SIZE)
+        # Se reubica el item para que el rectangulo local empiece en (0, 0).
+        self.setPos(self.pos() + r.topLeft())
+        self.setRect(0, 0, r.width(), r.height())
+
+    def boundingRect(self) -> QRectF:
+        margin = max(self.pen().widthF(), self.handle_size()) + 2.0
+        return self.rect().adjusted(-margin, -margin, margin, margin)
+
+    def shape(self) -> QPainterPath:
+        path = QPainterPath()
+        margin = self.handle_size()
+        path.addRect(self.rect().adjusted(-margin, -margin, margin, margin))
+        return path
+
+    def paint(self, painter: QPainter, option, widget=None) -> None:
+        option.state &= ~QStyle.State_Selected  # el marco por defecto sobra
+        painter.setPen(self.pen())
+        painter.setBrush(self.brush())
+        painter.drawRect(self.rect())
+        if self.isSelected():
+            self.paint_selection(painter, self.rect())
+            self.paint_handles(painter)
+
+
+class LineItem(AnnotationItemMixin, QGraphicsLineItem):
+    """Linea recta, con o sin punta de flecha."""
+
+    def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
+        super().__init__(parent)
+        self._init_common(ann)
+        self.apply_model()
+
+    def _apply_model(self) -> None:
+        ann = self.ann
+        self.setPos(0, 0)
+        self.setLine(QLineF(QPointF(*ann.p1), QPointF(*ann.p2)))
+        pen = QPen(qcolor(ann.color))
+        pen.setWidthF(max(0.1, ann.width))
+        pen.setCapStyle(Qt.RoundCap)
+        self.setPen(pen)
+        self.setOpacity(ann.opacity)
+
+    def _sync_model(self) -> None:
+        line = self.line()
+        offset = self.pos()
+        self.ann.p1 = (line.x1() + offset.x(), line.y1() + offset.y())
+        self.ann.p2 = (line.x2() + offset.x(), line.y2() + offset.y())
+
+    def handles(self) -> dict[str, QPointF]:
+        line = self.line()
+        return {"p1": line.p1(), "p2": line.p2()}
+
+    def resize_to(self, handle: str, pos: QPointF) -> None:
+        line = QLineF(self.line())
+        if handle == "p1":
+            line.setP1(pos)
+        else:
+            line.setP2(pos)
+        self.setLine(line)
+
+    def _arrow_polygon(self) -> QPolygonF:
+        line = self.line()
+        size = max(6.0, self.ann.width * 4.0)
+        angle = math.atan2(line.dy(), line.dx())
+        tip = line.p2()
+        left = QPointF(
+            tip.x() - size * math.cos(angle - math.pi / 7),
+            tip.y() - size * math.sin(angle - math.pi / 7),
+        )
+        right = QPointF(
+            tip.x() - size * math.cos(angle + math.pi / 7),
+            tip.y() - size * math.sin(angle + math.pi / 7),
+        )
+        return QPolygonF([tip, left, right])
+
+    def boundingRect(self) -> QRectF:
+        margin = max(self.pen().widthF() * 3, self.handle_size()) + 4.0
+        return QRectF(self.line().p1(), self.line().p2()).normalized().adjusted(
+            -margin, -margin, margin, margin
+        )
+
+    def shape(self) -> QPainterPath:
+        path = QPainterPath()
+        line = self.line()
+        path.moveTo(line.p1())
+        path.lineTo(line.p2())
+        stroker_width = max(self.pen().widthF(), self.handle_size())
+        pen = QPen(Qt.black, stroker_width)
+        from PySide6.QtGui import QPainterPathStroker
+
+        stroker = QPainterPathStroker(pen)
+        result = stroker.createStroke(path)
+        for point in self.handles().values():
+            size = self.handle_size()
+            result.addRect(
+                QRectF(point.x() - size / 2, point.y() - size / 2, size, size)
+            )
+        return result
+
+    def paint(self, painter: QPainter, option, widget=None) -> None:
+        option.state &= ~QStyle.State_Selected
+        painter.setPen(self.pen())
+        painter.setBrush(Qt.NoBrush)
+        painter.drawLine(self.line())
+        if self.ann.kind is Kind.ARROW:
+            painter.setPen(QPen(Qt.NoPen))
+            painter.setBrush(QBrush(qcolor(self.ann.color)))
+            painter.drawPolygon(self._arrow_polygon())
+        if self.isSelected():
+            self.paint_handles(painter)
+
+
+class InkItem(AnnotationItemMixin, QGraphicsPathItem):
+    """Trazo a mano alzada."""
+
+    def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
+        super().__init__(parent)
+        self._init_common(ann)
+        self.apply_model()
+
+    def _apply_model(self) -> None:
+        ann = self.ann
+        self.setPos(0, 0)
+        path = QPainterPath()
+        for stroke in ann.strokes:
+            if not stroke:
+                continue
+            path.moveTo(QPointF(*stroke[0]))
+            for point in stroke[1:]:
+                path.lineTo(QPointF(*point))
+        self.setPath(path)
+        pen = QPen(qcolor(ann.color))
+        pen.setWidthF(max(0.1, ann.width))
+        pen.setCapStyle(Qt.RoundCap)
+        pen.setJoinStyle(Qt.RoundJoin)
+        self.setPen(pen)
+        self.setOpacity(ann.opacity)
+
+    def append_point(self, point: QPointF, new_stroke: bool = False) -> None:
+        """Anade un punto al trazo actual mientras se dibuja."""
+        if new_stroke or not self.ann.strokes:
+            self.ann.strokes.append([])
+        self.ann.strokes[-1].append((point.x(), point.y()))
+        self.apply_model()
+
+    def _sync_model(self) -> None:
+        offset = self.pos()
+        if offset.isNull():
+            return
+        self.ann.strokes = [
+            [(x + offset.x(), y + offset.y()) for x, y in stroke]
+            for stroke in self.ann.strokes
+        ]
+        self.setPos(0, 0)
+        self.apply_model()
+
+    def paint(self, painter: QPainter, option, widget=None) -> None:
+        option.state &= ~QStyle.State_Selected
+        painter.setPen(self.pen())
+        painter.setBrush(Qt.NoBrush)
+        painter.drawPath(self.path())
+        if self.isSelected():
+            self.paint_selection(painter, self.path().boundingRect())
+
+
+class TextItem(AnnotationItemMixin, QGraphicsTextItem):
+    """Cuadro de texto editable en pantalla."""
+
+    def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
+        super().__init__(parent)
+        self._init_common(ann)
+        self.setFlag(QGraphicsItem.ItemIsFocusable, True)
+        self.document().contentsChanged.connect(self._on_text_changed)
+        self._editing = False
+        self.apply_model()
+
+    # -- modelo ----------------------------------------------------------
+    def _apply_model(self) -> None:
+        ann = self.ann
+        x0, y0, x1, y1 = ann.normalized_rect()
+        self.setPos(x0, y0)
+        font = QFont("Helvetica")
+        font.setPixelSize(max(1, int(round(ann.font_size))))
+        self.setFont(font)
+        self.setDefaultTextColor(qcolor(ann.color))
+        width = max(20.0, x1 - x0)
+        self.setTextWidth(width)
+        if self.toPlainText() != ann.text:
+            blocked = self.document().blockSignals(True)
+            self.setPlainText(ann.text)
+            self.document().blockSignals(blocked)
+        self.setOpacity(ann.opacity)
+
+    def _sync_model(self) -> None:
+        origin = self.pos()
+        rect = self.boundingRect()
+        self.ann.text = self.toPlainText()
+        self.ann.rect = (
+            origin.x(),
+            origin.y(),
+            origin.x() + max(self.textWidth(), rect.width()),
+            origin.y() + rect.height(),
+        )
+
+    def _on_text_changed(self) -> None:
+        self.prepareGeometryChange()
+        self.sync_model()
+        self.update()
+
+    # -- edicion ---------------------------------------------------------
+    def start_editing(self) -> None:
+        self._editing = True
+        self.notify_scene("begin_edit")
+        self.notify_scene("text_editing_started")
+        self.setTextInteractionFlags(Qt.TextEditorInteraction)
+        self.setFlag(QGraphicsItem.ItemIsMovable, False)
+        self.setFocus(Qt.MouseFocusReason)
+        cursor = self.textCursor()
+        cursor.select(cursor.SelectionType.Document)
+        self.setTextCursor(cursor)
+
+    def stop_editing(self) -> None:
+        if not self._editing:
+            return
+        self._editing = False
+        self.setTextInteractionFlags(Qt.NoTextInteraction)
+        self.setFlag(QGraphicsItem.ItemIsMovable, True)
+        cursor = self.textCursor()
+        cursor.clearSelection()
+        self.setTextCursor(cursor)
+        self.sync_model()
+        self.notify_scene("end_edit")
+        self.notify_scene("text_editing_finished")
+
+    def mouseDoubleClickEvent(self, event) -> None:
+        self.start_editing()
+        event.accept()
+
+    def focusOutEvent(self, event) -> None:
+        self.stop_editing()
+        super().focusOutEvent(event)
+
+    def keyPressEvent(self, event) -> None:
+        if self._editing and event.key() == Qt.Key_Escape:
+            self.stop_editing()
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+    # -- geometria -------------------------------------------------------
+    def handles(self) -> dict[str, QPointF]:
+        if self._editing:
+            return {}
+        rect = self.boundingRect()
+        return {"w": QPointF(rect.right(), rect.center().y())}
+
+    def resize_to(self, handle: str, pos: QPointF) -> None:
+        if handle == "w":
+            self.setTextWidth(max(24.0, pos.x()))
+
+    def paint(self, painter: QPainter, option, widget=None) -> None:
+        rect = self.boundingRect()
+        ann = self.ann
+        if ann.fill:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(QBrush(qcolor(ann.fill)))
+            painter.drawRect(rect)
+        if ann.width > 0:
+            pen = QPen(qcolor(ann.color))
+            pen.setWidthF(ann.width)
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(rect)
+        option.state &= ~QStyle.State_Selected
+        super().paint(painter, option, widget)
+        if self.isSelected() or self._editing:
+            self.paint_selection(painter, rect)
+            self.paint_handles(painter)
+        elif ann.width <= 0 and not ann.fill:
+            # Guia tenue para localizar el cuadro sin borde (no se imprime).
+            pen = QPen(QColor(0, 0, 0, 40))
+            pen.setStyle(Qt.DotLine)
+            pen.setWidthF(0.8 / self.view_scale())
+            painter.setPen(pen)
+            painter.setBrush(Qt.NoBrush)
+            painter.drawRect(rect)
+
+
+def create_item(ann: Annotation, parent: QGraphicsItem | None = None):
+    """Crea el item grafico adecuado para una anotacion."""
+    if ann.kind in (Kind.RECT, Kind.HIGHLIGHT):
+        return RectItem(ann, parent)
+    if ann.kind in (Kind.LINE, Kind.ARROW):
+        return LineItem(ann, parent)
+    if ann.kind is Kind.INK:
+        return InkItem(ann, parent)
+    if ann.kind is Kind.TEXT:
+        return TextItem(ann, parent)
+    raise ValueError(f"tipo de anotacion sin item grafico: {ann.kind!r}")
+
+
+__all__ = [
+    "RectItem",
+    "LineItem",
+    "InkItem",
+    "TextItem",
+    "create_item",
+    "qcolor",
+    "to_rgb",
+    "AnnotationItemMixin",
+]
