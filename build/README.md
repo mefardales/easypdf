@@ -10,9 +10,9 @@ Aqui tambien: pulsa el nombre del archivo y la descarga empieza sola:
 
 | Descarga | Para quien | Que es |
 |---|---|---|
-| [**EasyPDF-1.0.0-Setup.exe**](https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-Setup.exe) | Windows 10/11 (64 bits) | Instalador. Crea el acceso directo, registra la aplicacion en *Abrir con* y se desinstala desde *Configuracion -> Aplicaciones*. No necesita permisos de administrador: puede instalarse solo para tu usuario. |
-| [**EasyPDF-1.0.0-windows-x64-portable.zip**](https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-windows-x64-portable.zip) | Windows 10/11 (64 bits) | Version portable. Descomprime la carpeta y ejecuta `EasyPDF.exe`. No instala nada ni toca el registro: funciona desde un pendrive. |
-| [**EasyPDF-1.0.0-linux-x64.tar.xz**](https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-linux-x64.tar.xz) | Linux (x86-64) | Version portable. Descomprime y ejecuta `./EasyPDF`. |
+| [**EasyPDF-1.0.0-Setup.exe**](https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-Setup.exe) | Windows 10/11 (64 bits) | Instalador. Crea el acceso directo, registra la aplicacion en *Abrir con* y se desinstala desde *Configuracion -> Aplicaciones*. No necesita permisos de administrador: puede instalarse solo para tu usuario. |
+| [**EasyPDF-1.0.0-windows-x64-portable.zip**](https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-windows-x64-portable.zip) | Windows 10/11 (64 bits) | Version portable. Descomprime la carpeta y ejecuta `EasyPDF.exe`. No instala nada ni toca el registro: funciona desde un pendrive. |
+| [**EasyPDF-1.0.0-linux-x64.tar.xz**](https://github.com/mefardales/easypdf/releases/download/v1.0.0/EasyPDF-1.0.0-linux-x64.tar.xz) | Linux (x86-64) | Version portable. Descomprime y ejecuta `./EasyPDF`. |
 
 Comprobar el `sha256` es **opcional**: solo si quieres verificar que la descarga
 llego intacta. Junto a cada archivo hay uno:

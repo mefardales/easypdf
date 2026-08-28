@@ -15,9 +15,9 @@ python tools/build_site.py     # escribe site/index.html, site/es/index.html,
   suma los `download_count` de todos los archivos con una peticion a la API
   publica de GitHub y guarda el resultado una hora en el navegador. Para que
   haya numeros hace falta haber publicado una release: se hace con el flujo
-  *Publicar release* de la pestana Actions. Ojo: los archivos servidos como
-  `raw` del repositorio (los enlaces de `build/`) **no** llevan cuenta; solo
-  los de las releases.
+  *Publicar release* de la pestana Actions. Por eso **los botones de descarga
+  de la web apuntan a los archivos de la release** y no a los `raw` del
+  repositorio: esos ultimos no los cuenta nadie.
 - **Visitas de hoy y totales**: contador publico y sin cookies de
   [counterapi.dev](https://counterapi.dev). Se suma una vez por navegador y
   dia, no guarda nada de quien visita, y si el servicio falla el numero
