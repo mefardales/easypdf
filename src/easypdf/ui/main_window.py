@@ -153,7 +153,7 @@ class MainWindow(QMainWindow):
         self.resize(1180, 820)
 
         self.view = PdfView(self)
-        self.setCentralWidget(self.view)
+        self.setCentralWidget(self._build_view_with_rulers())
 
         self._modified = False
         self._thumb_queue: deque[int] = deque()
@@ -324,6 +324,37 @@ class MainWindow(QMainWindow):
 
         view_menu = self.menuBar().addMenu(tr("menu_view"))
         self._menu_keys[view_menu] = "menu_view"
+        self.act_rulers = QAction(tr("rulers"), self)
+        self.act_rulers.setCheckable(True)
+        self.act_rulers.setChecked(True)
+        self.act_rulers.toggled.connect(self.toggle_rulers)
+        self._action_keys[self.act_rulers] = ("rulers", None)
+        view_menu.addAction(self.act_rulers)
+
+        unidades = view_menu.addMenu(tr("ruler_unit_menu"))
+        self._menu_keys[unidades] = "ruler_unit_menu"
+        self.unit_group = QActionGroup(self)
+        self.unit_group.setExclusive(True)
+        self.unit_actions = {}
+        for codigo, clave in (("mm", "unit_mm"), ("cm", "unit_cm"),
+                              ("in", "unit_in"), ("pt", "unit_pt")):
+            act = QAction(tr(clave), self)
+            act.setCheckable(True)
+            act.setChecked(codigo == "mm")
+            act.triggered.connect(lambda checked=False, c=codigo: self.set_ruler_unit(c))
+            self.unit_group.addAction(act)
+            unidades.addAction(act)
+            self.unit_actions[codigo] = act
+            self._action_keys[act] = (clave, None)
+
+        self.act_snap = QAction(tr("snap"), self)
+        self.act_snap.setCheckable(True)
+        self.act_snap.setChecked(True)
+        self.act_snap.toggled.connect(self.view.set_snap)
+        self._action_keys[self.act_snap] = ("snap", None)
+        view_menu.addAction(self.act_snap)
+        view_menu.addSeparator()
+
         view_menu.addAction(self.act_zoom_in)
         view_menu.addAction(self.act_zoom_out)
         view_menu.addAction(self.act_zoom_reset)
@@ -616,6 +647,63 @@ class MainWindow(QMainWindow):
         self.thumb_dock = dock
         dock.visibilityChanged.connect(self.act_thumbnails.setChecked)
 
+    def _build_view_with_rulers(self):
+        """Coloca la vista con una regla arriba y otra a la izquierda."""
+        from PySide6.QtWidgets import QGridLayout, QWidget
+
+        from .rulers import RULER_SIZE, Ruler
+
+        self.ruler_h = Ruler(self.view, horizontal=True)
+        self.ruler_v = Ruler(self.view, horizontal=False)
+
+        esquina = QWidget()
+        esquina.setFixedSize(RULER_SIZE, RULER_SIZE)
+
+        caja = QWidget(self)
+        rejilla = QGridLayout(caja)
+        rejilla.setContentsMargins(0, 0, 0, 0)
+        rejilla.setSpacing(0)
+        rejilla.addWidget(esquina, 0, 0)
+        rejilla.addWidget(self.ruler_h, 0, 1)
+        rejilla.addWidget(self.ruler_v, 1, 0)
+        rejilla.addWidget(self.view, 1, 1)
+
+        # las reglas se redibujan cuando cambia lo que se ve
+        self.view.horizontalScrollBar().valueChanged.connect(self.ruler_h.update)
+        self.view.verticalScrollBar().valueChanged.connect(self.ruler_v.update)
+        self.view.zoomChanged.connect(lambda *_: self._update_rulers())
+        self.view.pageChanged.connect(lambda *_: self._update_rulers())
+        self.view.mouseMovedOnPage.connect(self._on_mouse_on_page)
+        return caja
+
+    def _update_rulers(self) -> None:
+        if hasattr(self, "ruler_h"):
+            self.ruler_h.update()
+            self.ruler_v.update()
+
+    def _on_mouse_on_page(self, viewport_pos) -> None:
+        """Mueve la marca de las reglas y ensena la medida en la barra."""
+        if not hasattr(self, "ruler_h"):
+            return
+        self.ruler_h.set_mouse(viewport_pos.x())
+        self.ruler_v.set_mouse(viewport_pos.y())
+        x = self.ruler_h.value_at(viewport_pos.x())
+        y = self.ruler_v.value_at(viewport_pos.y())
+        if x is not None and y is not None:
+            self.cursor_label.setText(
+                tr("cursor_pos", x=f"{x:.1f}", y=f"{y:.1f}", unit=self.ruler_h.unit)
+            )
+
+    def set_ruler_unit(self, unit: str) -> None:
+        self.ruler_h.set_unit(unit)
+        self.ruler_v.set_unit(unit)
+        self.settings.set_value("view/ruler_unit", unit)
+
+    def toggle_rulers(self, visible: bool) -> None:
+        self.ruler_h.setVisible(visible)
+        self.ruler_v.setVisible(visible)
+        self.settings.set_value("view/rulers", visible)
+
     def _create_bookmarks(self) -> None:
         from PySide6.QtWidgets import (
             QDockWidget, QHBoxLayout, QListWidget, QPushButton, QVBoxLayout, QWidget,
@@ -706,11 +794,13 @@ class MainWindow(QMainWindow):
         self.page_spin.valueChanged.connect(self._on_page_spin)
         self.page_label = QLabel(tr("status_of", total=0))
         self.zoom_label = QLabel("100 %")
+        self.cursor_label = QLabel("")
         self.info_label = QLabel("")
         self.lbl_page = QLabel(tr("status_page"))
         status.addPermanentWidget(self.lbl_page)
         status.addPermanentWidget(self.page_spin)
         status.addPermanentWidget(self.page_label)
+        status.addPermanentWidget(self.cursor_label)
         status.addPermanentWidget(QLabel("   "))
         status.addPermanentWidget(self.zoom_label)
         status.addWidget(self.info_label)

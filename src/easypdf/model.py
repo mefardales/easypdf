@@ -169,6 +169,29 @@ ERASER_SIZES = (6.0, 10.0, 16.0, 24.0, 36.0, 54.0, 80.0)
 ERASER_DEFAULT = 16.0
 
 
+#: A que distancia (en pixeles de pantalla) empieza a tirar el iman.
+SNAP_PIXELS = 6.0
+
+
+def snap_offset(
+    anchors: Sequence[float], candidates: Sequence[float], threshold: float
+) -> tuple[float, float | None]:
+    """Cuanto hay que desplazar para pegar algun borde a alguna guia.
+
+    ``anchors`` son los bordes y el centro de lo que se esta moviendo;
+    ``candidates``, las lineas a las que se puede alinear. Devuelve
+    ``(desplazamiento, guia usada)``, o ``(0.0, None)`` si nada esta lo
+    bastante cerca.
+    """
+    mejor_delta, mejor_guia, mejor_dist = 0.0, None, threshold
+    for ancla in anchors:
+        for guia in candidates:
+            distancia = abs(guia - ancla)
+            if distancia < mejor_dist:
+                mejor_dist, mejor_delta, mejor_guia = distancia, guia - ancla, guia
+    return (mejor_delta, mejor_guia)
+
+
 def erase_strokes(
     strokes: list[list[Point]], centre: Point, radius: float
 ) -> list[list[Point]]:

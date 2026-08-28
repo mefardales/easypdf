@@ -975,3 +975,101 @@ def test_el_panel_de_marcadores_se_traduce(ventana):
     ventana.set_language("en")
     assert ventana.bookmark_dock.windowTitle() == "Bookmarks"
     assert ventana.btn_bookmark_add.text() == "Add"
+
+
+# --------------------------------------------------------------------------
+# Reglas y alineacion
+# --------------------------------------------------------------------------
+
+def test_las_reglas_miden_desde_la_esquina_de_la_hoja(ventana, qapp):
+    from PySide6.QtCore import QPointF
+
+    from easypdf.ui.rulers import PT_PER_MM
+
+    pagina = ventana.view.current_page_item()
+    assert pagina is not None
+
+    # el cero cae en la esquina superior izquierda de la pagina
+    esquina = ventana.view.mapFromScene(pagina.scenePos())
+    assert abs(ventana.ruler_h.value_at(esquina.x())) < 0.5
+    assert abs(ventana.ruler_v.value_at(esquina.y())) < 0.5
+
+    # y 100 x 50 mm dentro de la pagina se leen como 100 x 50
+    punto = ventana.view.mapFromScene(
+        pagina.mapToScene(QPointF(100 * PT_PER_MM, 50 * PT_PER_MM))
+    )
+    assert abs(ventana.ruler_h.value_at(punto.x()) - 100) < 0.6
+    assert abs(ventana.ruler_v.value_at(punto.y()) - 50) < 0.6
+
+
+def test_las_reglas_cambian_de_unidad(ventana):
+    from PySide6.QtCore import QPointF
+
+    from easypdf.ui.rulers import PT_PER_MM
+
+    pagina = ventana.view.current_page_item()
+    punto = ventana.view.mapFromScene(pagina.mapToScene(QPointF(100 * PT_PER_MM, 0)))
+
+    ventana.set_ruler_unit("cm")
+    assert abs(ventana.ruler_h.value_at(punto.x()) - 10) < 0.1
+    ventana.set_ruler_unit("in")
+    assert abs(ventana.ruler_h.value_at(punto.x()) - 100 / 25.4) < 0.05
+    ventana.set_ruler_unit("pt")
+    assert abs(ventana.ruler_h.value_at(punto.x()) - 100 * PT_PER_MM) < 1.0
+    ventana.set_ruler_unit("mm")
+
+
+def test_al_arrastrar_se_alinea_con_otra_anotacion(ventana, qapp):
+    referencia = Annotation(kind=Kind.RECT, page=0, rect=(200.0, 200.0, 240.0, 260.0), width=2)
+    ventana.view.add_annotation(referencia)
+    movida = Annotation(kind=Kind.RECT, page=0, rect=(200.0, 400.0, 280.0, 450.0), width=2)
+    ventana.view.add_annotation(movida)
+    qapp.processEvents()
+
+    item = ventana.view._items[movida.id]
+    assert ventana.view.snap_enabled
+
+    # se suelta 3 pt pasado el borde izquierdo de la otra: el iman lo pega
+    item.setPos(item.pos().x() + 3.0, item.pos().y())
+    qapp.processEvents()
+    assert abs(movida.bounds()[0] - 200.0) < 0.01
+
+
+def test_al_arrastrar_se_alinea_con_el_centro_de_la_hoja(ventana, qapp):
+    ancho, _alto = ventana.view.document.page_size(0)
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 400.0, 180.0, 450.0), width=2)
+    ventana.view.add_annotation(caja)
+    qapp.processEvents()
+
+    item = ventana.view._items[caja.id]
+    medio = ancho / 2.0
+    objetivo = medio - (caja.bounds()[2] - caja.bounds()[0]) / 2.0
+    item.setPos(item.pos().x() + (objetivo - caja.bounds()[0]) + 2.0, item.pos().y())
+    qapp.processEvents()
+
+    centro = (caja.bounds()[0] + caja.bounds()[2]) / 2.0
+    assert abs(centro - medio) < 0.01
+
+
+def test_con_el_iman_apagado_no_se_alinea_nada(ventana, qapp):
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 400.0, 180.0, 450.0), width=2)
+    ventana.view.add_annotation(caja)
+    qapp.processEvents()
+
+    ventana.view.set_snap(False)
+    try:
+        item = ventana.view._items[caja.id]
+        antes = caja.bounds()[0]
+        item.setPos(item.pos().x() + 3.0, item.pos().y())
+        qapp.processEvents()
+        assert abs(caja.bounds()[0] - (antes + 3.0)) < 0.01
+    finally:
+        ventana.view.set_snap(True)
+
+
+def test_las_reglas_se_pueden_ocultar(ventana):
+    ventana.toggle_rulers(False)
+    assert not ventana.ruler_h.isVisible()
+    assert not ventana.ruler_v.isVisible()
+    ventana.toggle_rulers(True)
+    assert ventana.ruler_h.isVisible()

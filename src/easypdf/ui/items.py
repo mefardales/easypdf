@@ -27,7 +27,16 @@ from PySide6.QtWidgets import (
     QStyle,
 )
 
-from ..model import Align, Annotation, Font, Kind, arrow_head, arrow_line_end
+from ..model import (
+    SNAP_PIXELS,
+    Align,
+    Annotation,
+    Font,
+    Kind,
+    arrow_head,
+    arrow_line_end,
+    snap_offset,
+)
 
 #: Tamano del tirador de redimension, en pixeles de pantalla.
 HANDLE_PX = 9.0
@@ -219,9 +228,57 @@ class AnnotationItemMixin:
         super().hoverMoveEvent(event)
 
     def itemChange(self, change, value):
+        if change == QGraphicsItem.ItemPositionChange:
+            value = self._snap(value)
         if change == QGraphicsItem.ItemPositionHasChanged:
             self.sync_model()
         return super().itemChange(change, value)
+
+    # -- alineacion ------------------------------------------------------
+    def snap_candidates(self) -> tuple[list[float], list[float]]:
+        """Lineas a las que se puede alinear: la pagina y las demas anotaciones."""
+        pagina = self.parentItem()
+        if pagina is None:
+            return ([], [])
+        caja = pagina.boundingRect()
+        # bordes y centro de la hoja
+        xs = [caja.left(), caja.center().x(), caja.right()]
+        ys = [caja.top(), caja.center().y(), caja.bottom()]
+        for otro in pagina.childItems():
+            if otro is self or not isinstance(otro, AnnotationItemMixin):
+                continue
+            x0, y0, x1, y1 = otro.ann.bounds()
+            xs += [x0, (x0 + x1) / 2.0, x1]
+            ys += [y0, (y0 + y1) / 2.0, y1]
+        return (xs, ys)
+
+    def _snap(self, nueva_pos):
+        """Ajusta la posicion propuesta para que encaje con alguna guia."""
+        vista = self._view()
+        if vista is None or not getattr(vista, "snap_enabled", False):
+            return nueva_pos
+        escala = max(vista.transform().m11(), 1e-6)
+        umbral = SNAP_PIXELS / escala
+
+        # los bordes se calculan sobre el modelo, que siempre esta en
+        # coordenadas de la pagina, sea cual sea el tipo de anotacion
+        dx = nueva_pos.x() - self.pos().x()
+        dy = nueva_pos.y() - self.pos().y()
+        x0, y0, x1, y1 = self.ann.bounds()
+        x0, x1, y0, y1 = x0 + dx, x1 + dx, y0 + dy, y1 + dy
+
+        xs, ys = self.snap_candidates()
+        ajuste_x, guia_x = snap_offset([x0, (x0 + x1) / 2.0, x1], xs, umbral)
+        ajuste_y, guia_y = snap_offset([y0, (y0 + y1) / 2.0, y1], ys, umbral)
+        vista.show_guides(guia_x, guia_y, self.parentItem())
+        return QPointF(nueva_pos.x() + ajuste_x, nueva_pos.y() + ajuste_y)
+
+    def _view(self):
+        escena = self.scene()
+        if escena is None:
+            return None
+        vistas = escena.views()
+        return vistas[0] if vistas else None
 
 
 class RectItem(AnnotationItemMixin, QGraphicsRectItem):

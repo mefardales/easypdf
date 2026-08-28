@@ -194,3 +194,36 @@ def test_el_circulo_de_la_goma_detecta_lo_que_toca():
     assert not circle_touches_rect((50.0, 50.0), 3.0, caja)
     # da igual como venga dado el rectangulo
     assert circle_touches_rect((5.0, 5.0), 1.0, (10.0, 10.0, 0.0, 0.0))
+
+
+# --------------------------------------------------------------------------
+# Alineacion con guias
+# --------------------------------------------------------------------------
+
+def test_snap_offset_pega_a_la_guia_mas_cercana():
+    from easypdf.model import snap_offset
+
+    # el borde izquierdo esta a 2 de la guia 100
+    assert snap_offset([98.0, 148.0, 198.0], [0.0, 100.0, 300.0], 6.0) == (2.0, 100.0)
+
+
+def test_snap_offset_no_hace_nada_si_esta_lejos():
+    from easypdf.model import snap_offset
+
+    assert snap_offset([80.0], [100.0], 6.0) == (0.0, None)
+
+
+def test_snap_offset_elige_la_guia_mas_proxima_entre_varias():
+    from easypdf.model import snap_offset
+
+    # 97 esta a 3 de 100 y a 3 de 94: gana la primera que empata por orden
+    delta, guia = snap_offset([97.0], [100.0, 94.0], 6.0)
+    assert guia == 100.0 and delta == 3.0
+    # y si una esta claramente mas cerca, gana esa
+    assert snap_offset([97.0], [100.0, 96.0], 6.0) == (-1.0, 96.0)
+
+
+def test_snap_offset_no_mueve_lo_que_ya_esta_alineado():
+    from easypdf.model import snap_offset
+
+    assert snap_offset([100.0], [100.0], 6.0) == (0.0, 100.0)
