@@ -38,7 +38,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from .. import __app_name__, __repo_url__, __url__, __version__
+from .. import __app_name__, __url__, __version__
 from ..config import PALETTE, Settings
 from ..document import DEFAULT_PAGE_SIZE, PAGE_SIZES, PasswordRequired, PdfDocument, PdfError
 from ..i18n import LANGUAGES, language, set_language, tr
@@ -55,6 +55,23 @@ from .items import to_rgb
 from .page_view import PdfView, Tool
 
 THUMB_WIDTH = 116
+
+#: Borde gris de las miniaturas. Sin el, una pagina en blanco es invisible
+#: sobre el fondo claro del panel y parece que no se ha cargado nada.
+THUMB_BORDER = "#9a9a9a"
+
+
+def _framed(pixmap: QPixmap, fill: bool = False) -> QPixmap:
+    """Devuelve la miniatura con un borde fino para que se vea el papel."""
+    from PySide6.QtGui import QPainter, QPen
+
+    if fill:
+        pixmap.fill(QColor("#ffffff"))
+    painter = QPainter(pixmap)
+    painter.setPen(QPen(QColor(THUMB_BORDER), 1))
+    painter.drawRect(0, 0, pixmap.width() - 1, pixmap.height() - 1)
+    painter.end()
+    return pixmap
 
 
 def _swatch(color: QColor | None, size: int = 22) -> QIcon:
@@ -95,7 +112,7 @@ class AboutDialog(QDialog):
         text.setHtml(
             f"<h2 style='text-align:center;margin-bottom:0'>{__app_name__} {__version__}</h2>"
             f"<p style='text-align:center;color:#666'>{tr('about_tagline')}</p>"
-            + tr("about_html", url=__url__, repo=__repo_url__)
+            + tr("about_html", url=__url__)
         )
         layout.addWidget(text)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
@@ -235,8 +252,6 @@ class MainWindow(QMainWindow):
         self.act_about = action("about", self.show_about)
         self.act_about.setText(tr("about", app=__app_name__))
         self.act_website = action("website", lambda: QDesktopServices.openUrl(QUrl(__url__)))
-        self.act_source = action("source",
-                                 lambda: QDesktopServices.openUrl(QUrl(__repo_url__)))
 
         # Herramientas (excluyentes entre si)
         self.tool_group = QActionGroup(self)
@@ -365,7 +380,6 @@ class MainWindow(QMainWindow):
         help_menu.addSeparator()
         help_menu.addAction(self.act_help)
         help_menu.addAction(self.act_website)
-        help_menu.addAction(self.act_source)
         help_menu.addSeparator()
         help_menu.addAction(self.act_about)
 
@@ -1238,8 +1252,7 @@ class MainWindow(QMainWindow):
         document = self.view.document
         if document is None:
             return
-        placeholder = QPixmap(THUMB_WIDTH, int(THUMB_WIDTH * 1.4))
-        placeholder.fill(QColor("#ffffff"))
+        placeholder = _framed(QPixmap(THUMB_WIDTH, int(THUMB_WIDTH * 1.4)), fill=True)
         for index in range(document.page_count):
             item = QListWidgetItem(QIcon(placeholder), str(index + 1))
             item.setTextAlignment(Qt.AlignHCenter)
@@ -1272,7 +1285,7 @@ class MainWindow(QMainWindow):
             )
             item = self.thumb_list.item(index)
             if item is not None:
-                item.setIcon(QIcon(QPixmap.fromImage(image.copy())))
+                item.setIcon(QIcon(_framed(QPixmap.fromImage(image.copy()))))
         if not self._thumb_queue:
             self._thumb_timer.stop()
 
