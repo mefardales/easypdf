@@ -221,9 +221,11 @@ class MainWindow(QMainWindow):
         self.act_find_prev = action("find_prev", self.view.previous_hit,
                                     shortcut=QKeySequence.FindPrevious)
 
-        self.act_zoom_in = action("zoom_in", self.view.zoom_in, "zoom_in", QKeySequence.ZoomIn)
+        self.act_zoom_in = action("zoom_in", lambda: self.zoom_or_eraser(1),
+                                  "zoom_in", QKeySequence.ZoomIn)
         self.act_zoom_in.setShortcuts([QKeySequence.ZoomIn, QKeySequence("Ctrl++")])
-        self.act_zoom_out = action("zoom_out", self.view.zoom_out, "zoom_out", QKeySequence.ZoomOut)
+        self.act_zoom_out = action("zoom_out", lambda: self.zoom_or_eraser(-1),
+                                   "zoom_out", QKeySequence.ZoomOut)
         self.act_zoom_reset = action("zoom_reset", self.view.reset_zoom, shortcut="Ctrl+0")
         self.act_fit_width = action("fit_width", self.view.fit_width, "fit_width",
                                     shortcut="Ctrl+1")
@@ -274,6 +276,7 @@ class MainWindow(QMainWindow):
             Tool.INK: ("tool_ink", "ink", "D"),
             Tool.TABLE: ("tool_table", "table", "A"),
             Tool.IMAGE: ("tool_image", "image", "I"),
+            Tool.ERASER: ("tool_eraser", "eraser", "E"),
         }
         for tool, (clave, icon_name, key) in self.tool_keys.items():
             act = QAction(icons.icon(icon_name), tr(clave), self)
@@ -634,6 +637,7 @@ class MainWindow(QMainWindow):
     def _connect_view(self) -> None:
         self.view.pageChanged.connect(self._on_page_changed)
         self.view.zoomChanged.connect(self._on_zoom_changed)
+        self.view.eraserSizeChanged.connect(self._on_eraser_size)
         self.view.modified.connect(self._on_modified)
         self.view.toolFinished.connect(
             lambda: self.tool_actions[Tool.SELECT].setChecked(True)
@@ -859,6 +863,20 @@ class MainWindow(QMainWindow):
             return
         self.view.delete_page(actual)
         self._after_page_change(min(actual, self.view.page_count - 1))
+
+    def zoom_or_eraser(self, delta: int) -> None:
+        """Ctrl+ y Ctrl-: cambian la goma si esta activa, si no el zoom.
+
+        Con la goma en la mano lo que se quiere ajustar es su tamano, igual
+        que en cualquier programa de dibujo.
+        """
+        if self.view.tool is Tool.ERASER:
+            self.view.step_eraser_size(delta)
+            return
+        self.view.zoom_in() if delta > 0 else self.view.zoom_out()
+
+    def _on_eraser_size(self, size: float) -> None:
+        self.statusBar().showMessage(tr("eraser_size", size=round(size)), 4000)
 
     def rotate_current_page(self, delta: int) -> None:
         if self.view.has_document():
