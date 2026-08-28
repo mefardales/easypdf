@@ -66,7 +66,7 @@ Tambien estan todos en la carpeta [`build/`](build/) y en la
 | | |
 |---|---|
 | **Leer** | Desplazamiento continuo, miniaturas de paginas, zoom, ajustar al ancho o a la pagina, busqueda de texto (`Ctrl+F`), documentos protegidos con contrasena. |
-| **Anotar** | Cuadros, resaltado, lineas, flechas, cuadros de texto y dibujo a mano alzada. Se mueven, se redimensionan, se cambian de color y se borran. Deshacer y rehacer ilimitados. |
+| **Anotar** | Cuadros, resaltado, lineas, flechas, cuadros de texto, dibujo a mano alzada y **tablas** con celdas editables. Tipo de letra sans, serif o monoespaciada, negrita, cursiva y alineacion. Se mueven, se redimensionan, se cambian de color y se borran. Deshacer y rehacer ilimitados. |
 | **Imprimir** | Dialogo de impresion del sistema, vista previa, rango de paginas. Lo que se imprime incluye las anotaciones. |
 | **Guardar** | Las anotaciones se escriben como **anotaciones PDF estandar**: se ven igual en Adobe Reader, Edge o Firefox, y el contenido original del documento no se toca. |
 
@@ -89,7 +89,8 @@ Todo con una interfaz en espanol, sin cuentas, sin publicidad y sin conexion a i
 | Zoom | `Ctrl+rueda`, `Ctrl++`, `Ctrl+-`, `Ctrl+0` |
 | Ajustar al ancho / a la pagina | `Ctrl+1` / `Ctrl+2` |
 | Ir a la pagina | `Ctrl+G` |
-| Herramientas | `S` seleccionar, `H` mover, `R` cuadro, `M` resaltar, `L` linea, `F` flecha, `T` texto, `D` dibujo |
+| Herramientas | `S` seleccionar, `H` mover, `R` cuadro, `M` resaltar, `L` linea, `F` flecha, `T` texto, `D` dibujo, `A` tabla |
+| Negrita / Cursiva | `Ctrl+B` / `Ctrl+I` |
 | Cancelar / volver a seleccionar | `Esc` |
 | Borrar lo seleccionado | `Supr` |
 
@@ -202,7 +203,8 @@ del archivo tal y como se abrio y, al guardar, les anade las anotaciones actuale
 | Cuadro | `Square` |
 | Resaltado | `Highlight` |
 | Linea y flecha | `Line` (la flecha con punta cerrada) |
-| Texto | `FreeText` (fuente Helvetica) |
+| Texto | `FreeText` (Helvetica, Times o Courier; negrita y cursiva en texto enriquecido) |
+| Tabla | `Ink` con la rejilla + un `FreeText` por celda con texto |
 | Dibujo libre | `Ink` |
 
 Como se parte siempre del archivo original, guardar dos veces no duplica nada y las

@@ -18,6 +18,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QColorDialog,
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QDoubleSpinBox,
@@ -40,6 +41,7 @@ from PySide6.QtWidgets import (
 from .. import __app_name__, __repo_url__, __url__, __version__
 from ..config import PALETTE, Settings
 from ..document import PasswordRequired, PdfDocument, PdfError
+from ..model import Align, Font
 from ..printing import print_document, print_preview
 from . import icons
 from .items import to_rgb
@@ -126,24 +128,31 @@ class HelpDialog(QDialog):
             <h3>Anotar</h3>
             <ul>
               <li>Elige una herramienta en la barra: cuadro, resaltado, linea, flecha,
-                  texto o dibujo a mano alzada.</li>
+                  texto, dibujo a mano alzada o tabla.</li>
               <li>Arrastra sobre la pagina para crear la anotacion.</li>
               <li>Manten <b>Mayus</b> para cuadrados perfectos o lineas a 45 grados.</li>
               <li>Con la herramienta <b>Seleccionar</b> puedes mover, redimensionar
                   (tiradores azules) y borrar con <b>Supr</b>.</li>
               <li>Doble clic sobre un cuadro de texto para escribir dentro.</li>
+              <li>En las tablas, doble clic en una celda para escribir y <b>Tab</b> para
+                  pasar a la siguiente. El numero de filas y columnas se elige en la
+                  barra antes de dibujarla.</li>
+              <li>El texto admite tipo de letra (sans, serif o monoespaciada),
+                  <b>negrita</b> (Ctrl+B), <i>cursiva</i> (Ctrl+I) y alineacion.</li>
               <li><b>Ctrl+Z</b> y <b>Ctrl+Y</b> deshacen y rehacen.</li>
             </ul>
             <h3>Moverse por el documento</h3>
             <ul>
               <li><b>Ctrl+rueda</b> hace zoom; <b>Ctrl+0</b> vuelve al 100%.</li>
-              <li><b>Ctrl+F</b> busca texto; <b>F3</b> salta al siguiente resultado.</li>
+              <li><b>Ctrl+F</b> busca texto; <b>F3</b> salta al siguiente resultado.
+                  <b>Esc</b> o el boton de cerrar quitan el resaltado amarillo.</li>
               <li>La barra lateral de miniaturas permite saltar de pagina.</li>
               <li><b>Esc</b> vuelve siempre a la herramienta Seleccionar.</li>
             </ul>
             <h3>Como se guardan las anotaciones</h3>
             <p>El programa escribe anotaciones PDF estandar (cuadro, linea, texto libre,
-            resaltado y tinta), asi que se ven igual en Adobe Reader, Edge o Firefox.
+            resaltado, tinta y poligono), asi que se ven igual en Adobe Reader, Edge o
+            Firefox. Las tablas se guardan como su rejilla mas el texto de cada celda.
             El contenido original del documento no se modifica.</p>
             """
         )
@@ -271,6 +280,7 @@ class MainWindow(QMainWindow):
             (Tool.ARROW, "&Flecha", "arrow", "F"),
             (Tool.TEXT, "&Texto", "text", "T"),
             (Tool.INK, "&Dibujo libre", "ink", "D"),
+            (Tool.TABLE, "Ta&bla", "table", "A"),
         ]
         for tool, label, icon_name, key in tools:
             act = QAction(icons.icon(icon_name), label, self)
@@ -406,6 +416,61 @@ class MainWindow(QMainWindow):
         tools.addWidget(self.font_spin)
 
         tools.addSeparator()
+
+        self.font_combo = QComboBox(self)
+        for familia in (Font.SANS, Font.SERIF, Font.MONO):
+            self.font_combo.addItem(familia.label, familia.value)
+        self.font_combo.setToolTip("Tipo de letra")
+        self.font_combo.currentIndexChanged.connect(self._set_font_family)
+        tools.addWidget(self.font_combo)
+
+        self.act_bold = QAction(icons.icon("bold"), "Negrita", self)
+        self.act_bold.setCheckable(True)
+        self.act_bold.setShortcut(QKeySequence.Bold)
+        self.act_bold.setToolTip("Negrita (Ctrl+B)")
+        self.act_bold.triggered.connect(self._set_bold)
+        tools.addAction(self.act_bold)
+
+        self.act_italic = QAction(icons.icon("italic"), "Cursiva", self)
+        self.act_italic.setCheckable(True)
+        self.act_italic.setShortcut(QKeySequence.Italic)
+        self.act_italic.setToolTip("Cursiva (Ctrl+I)")
+        self.act_italic.triggered.connect(self._set_italic)
+        tools.addAction(self.act_italic)
+
+        self.align_group = QActionGroup(self)
+        self.align_group.setExclusive(True)
+        self.align_actions = {}
+        for alineacion, nombre in (
+            (Align.LEFT, "align_left"),
+            (Align.CENTER, "align_center"),
+            (Align.RIGHT, "align_right"),
+        ):
+            act = QAction(icons.icon(nombre), f"Alinear a la {alineacion.label.lower()}", self)
+            act.setCheckable(True)
+            act.triggered.connect(lambda checked=False, a=alineacion: self._set_align(a))
+            self.align_group.addAction(act)
+            self.align_actions[alineacion] = act
+            tools.addAction(act)
+        self.align_actions[Align.LEFT].setChecked(True)
+
+        tools.addSeparator()
+        tools.addWidget(QLabel(" Tabla "))
+        self.rows_spin = QSpinBox(self)
+        self.rows_spin.setRange(1, 50)
+        self.rows_spin.setPrefix("filas ")
+        self.rows_spin.setToolTip("Filas de la tabla")
+        self.rows_spin.valueChanged.connect(self._set_rows)
+        tools.addWidget(self.rows_spin)
+
+        self.cols_spin = QSpinBox(self)
+        self.cols_spin.setRange(1, 30)
+        self.cols_spin.setPrefix("col. ")
+        self.cols_spin.setToolTip("Columnas de la tabla")
+        self.cols_spin.valueChanged.connect(self._set_cols)
+        tools.addWidget(self.cols_spin)
+
+        tools.addSeparator()
         tools.addAction(self.act_delete)
         self.addToolBar(tools)
         self.toolbar_tools = tools
@@ -426,10 +491,12 @@ class MainWindow(QMainWindow):
         bar.addAction(self.act_find_next)
         self.search_label = QLabel("  ")
         bar.addWidget(self.search_label)
-        close_action = QAction("Cerrar", self)
+        close_action = QAction("Cerrar y quitar el resaltado", self)
         close_action.setShortcut(QKeySequence("Esc"))
-        close_action.triggered.connect(lambda: bar.setVisible(False))
+        close_action.triggered.connect(self.close_search)
         bar.addAction(close_action)
+        self.act_close_search = close_action
+        self.search_edit.textChanged.connect(self._on_search_text_changed)
         self.addToolBar(Qt.TopToolBarArea, bar)
         self.insertToolBarBreak(bar)
         bar.setVisible(False)
@@ -536,12 +603,28 @@ class MainWindow(QMainWindow):
         self.view.style_defaults["width"] = self.settings.tool_width()
         self.view.style_defaults["opacity"] = self.settings.tool_opacity()
         self.view.style_defaults["font_size"] = self.settings.tool_font_size()
+        self.view.style_defaults["font"] = Font(self.settings.tool_font())
+        self.view.style_defaults["bold"] = self.settings.tool_bold()
+        self.view.style_defaults["italic"] = self.settings.tool_italic()
+        self.view.style_defaults["align"] = Align(self.settings.tool_align())
+        self.view.style_defaults["rows"] = self.settings.table_rows()
+        self.view.style_defaults["cols"] = self.settings.table_cols()
         self.color_button.setIcon(_swatch(color))
         self.fill_button.setIcon(_swatch(fill))
+        self.font_combo.blockSignals(True)
+        self.font_combo.setCurrentIndex(
+            max(0, self.font_combo.findData(self.settings.tool_font()))
+        )
+        self.font_combo.blockSignals(False)
+        self.act_bold.setChecked(self.settings.tool_bold())
+        self.act_italic.setChecked(self.settings.tool_italic())
+        self.align_actions[Align(self.settings.tool_align())].setChecked(True)
         for widget, value in (
             (self.width_spin, self.settings.tool_width()),
             (self.opacity_spin, int(round(self.settings.tool_opacity() * 100))),
             (self.font_spin, self.settings.tool_font_size()),
+            (self.rows_spin, self.settings.table_rows()),
+            (self.cols_spin, self.settings.table_cols()),
         ):
             widget.blockSignals(True)
             widget.setValue(value)
@@ -582,6 +665,37 @@ class MainWindow(QMainWindow):
         self.settings.set_tool_font_size(value)
         self.view.apply_style_to_selection(font_size=float(value))
 
+    def _set_font_family(self, index: int) -> None:
+        familia = Font(self.font_combo.itemData(index) or Font.SANS.value)
+        self.view.style_defaults["font"] = familia
+        self.settings.set_tool_font(familia.value)
+        self.view.apply_style_to_selection(font=familia)
+
+    def _set_bold(self, checked: bool) -> None:
+        self.view.style_defaults["bold"] = bool(checked)
+        self.settings.set_tool_bold(checked)
+        self.view.apply_style_to_selection(bold=bool(checked))
+
+    def _set_italic(self, checked: bool) -> None:
+        self.view.style_defaults["italic"] = bool(checked)
+        self.settings.set_tool_italic(checked)
+        self.view.apply_style_to_selection(italic=bool(checked))
+
+    def _set_align(self, alineacion: Align) -> None:
+        self.view.style_defaults["align"] = alineacion
+        self.settings.set_tool_align(int(alineacion))
+        self.view.apply_style_to_selection(align=alineacion)
+
+    def _set_rows(self, value: int) -> None:
+        self.view.style_defaults["rows"] = int(value)
+        self.settings.set_table_rows(value)
+        self.view.apply_style_to_selection(rows=int(value))
+
+    def _set_cols(self, value: int) -> None:
+        self.view.style_defaults["cols"] = int(value)
+        self.settings.set_table_cols(value)
+        self.view.apply_style_to_selection(cols=int(value))
+
     def select_tool(self, tool: Tool) -> None:
         self.view.set_tool(tool)
         self.tool_actions[tool].setChecked(True)
@@ -592,6 +706,13 @@ class MainWindow(QMainWindow):
         elif tool is Tool.TEXT:
             self.statusBar().showMessage(
                 "Arrastra para crear el cuadro y escribe; Esc para terminar", 5000
+            )
+        elif tool is Tool.TABLE:
+            self.statusBar().showMessage(
+                f"Arrastra para crear una tabla de {self.rows_spin.value()} x "
+                f"{self.cols_spin.value()}; doble clic en una celda para escribir, "
+                "Tab pasa a la siguiente",
+                6000,
             )
 
     # ------------------------------------------------------------------ archivos
@@ -802,6 +923,18 @@ class MainWindow(QMainWindow):
         self.toolbar_search.setVisible(True)
         self.search_edit.setFocus()
         self.search_edit.selectAll()
+
+    def close_search(self) -> None:
+        """Cierra la barra y quita el resaltado amarillo de los resultados."""
+        self.view.clear_search()
+        self.search_label.setText("  ")
+        self.toolbar_search.setVisible(False)
+        self.view.setFocus()
+
+    def _on_search_text_changed(self, texto: str) -> None:
+        if not texto.strip():
+            self.view.clear_search()
+            self.search_label.setText("  ")
 
     def run_search(self) -> None:
         document = self.view.document

@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
     QStyle,
 )
 
-from ..model import Annotation, Kind, arrow_head, arrow_line_end
+from ..model import Align, Annotation, Font, Kind, arrow_head, arrow_line_end
 
 #: Tamano del tirador de redimension, en pixeles de pantalla.
 HANDLE_PX = 9.0
@@ -45,6 +45,22 @@ _CURSORS: dict[str, Qt.CursorShape] = {
     "p1": Qt.SizeAllCursor,
     "p2": Qt.SizeAllCursor,
     "w": Qt.SizeHorCursor,
+}
+
+
+def annotation_font(ann: Annotation) -> QFont:
+    """QFont equivalente al estilo guardado en la anotacion."""
+    font = QFont(Font(ann.font).qt_family)
+    font.setPixelSize(max(1, int(round(ann.font_size))))
+    font.setBold(bool(ann.bold))
+    font.setItalic(bool(ann.italic))
+    return font
+
+
+ALIGN_FLAGS = {
+    Align.LEFT: Qt.AlignLeft,
+    Align.CENTER: Qt.AlignHCenter,
+    Align.RIGHT: Qt.AlignRight,
 }
 
 
@@ -454,10 +470,11 @@ class TextItem(AnnotationItemMixin, QGraphicsTextItem):
         ann = self.ann
         x0, y0, x1, y1 = ann.normalized_rect()
         self.setPos(x0, y0)
-        font = QFont("Helvetica")
-        font.setPixelSize(max(1, int(round(ann.font_size))))
-        self.setFont(font)
+        self.setFont(annotation_font(ann))
         self.setDefaultTextColor(qcolor(ann.color))
+        opciones = self.document().defaultTextOption()
+        opciones.setAlignment(ALIGN_FLAGS.get(Align(ann.align), Qt.AlignLeft))
+        self.document().setDefaultTextOption(opciones)
         width = max(20.0, x1 - x0)
         self.setTextWidth(width)
         if self.toPlainText() != ann.text:
@@ -561,6 +578,210 @@ class TextItem(AnnotationItemMixin, QGraphicsTextItem):
             painter.drawRect(rect)
 
 
+class TableItem(AnnotationItemMixin, QGraphicsRectItem):
+    """Tabla: rejilla de filas y columnas con texto en las celdas."""
+
+    def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
+        super().__init__(parent)
+        self._init_common(ann)
+        self._editor: QGraphicsTextItem | None = None
+        self._editing_cell = -1
+        self.apply_model()
+
+    # -- modelo ----------------------------------------------------------
+    def _apply_model(self) -> None:
+        ann = self.ann
+        x0, y0, x1, y1 = ann.normalized_rect()
+        self.setPos(x0, y0)
+        self.setRect(0, 0, max(MIN_SIZE, x1 - x0), max(MIN_SIZE, y1 - y0))
+        pen = QPen(qcolor(ann.color))
+        pen.setWidthF(max(0.1, ann.width))
+        pen.setJoinStyle(Qt.MiterJoin)
+        self.setPen(pen)
+        self.setBrush(QBrush(qcolor(ann.fill)) if ann.fill else QBrush(Qt.NoBrush))
+        self.setOpacity(ann.opacity)
+
+    def _sync_model(self) -> None:
+        rect = self.rect()
+        origin = self.pos()
+        self.ann.rect = (
+            origin.x() + rect.x(),
+            origin.y() + rect.y(),
+            origin.x() + rect.x() + rect.width(),
+            origin.y() + rect.y() + rect.height(),
+        )
+
+    # -- geometria -------------------------------------------------------
+    def handles(self) -> dict[str, QPointF]:
+        r = self.rect()
+        return {
+            "tl": r.topLeft(), "tr": r.topRight(),
+            "bl": r.bottomLeft(), "br": r.bottomRight(),
+            "t": QPointF(r.center().x(), r.top()),
+            "b": QPointF(r.center().x(), r.bottom()),
+            "l": QPointF(r.left(), r.center().y()),
+            "r": QPointF(r.right(), r.center().y()),
+        }
+
+    def resize_to(self, handle: str, pos: QPointF) -> None:
+        r = QRectF(self.rect())
+        if "l" in handle:
+            r.setLeft(pos.x())
+        if "r" in handle:
+            r.setRight(pos.x())
+        if "t" in handle:
+            r.setTop(pos.y())
+        if "b" in handle:
+            r.setBottom(pos.y())
+        r = r.normalized()
+        minimo = MIN_SIZE * max(1, self.ann.cols)
+        if r.width() < minimo:
+            r.setWidth(minimo)
+        minimo = MIN_SIZE * max(1, self.ann.rows)
+        if r.height() < minimo:
+            r.setHeight(minimo)
+        self.setPos(self.pos() + r.topLeft())
+        self.setRect(0, 0, r.width(), r.height())
+        self.finish_editing()
+
+    def boundingRect(self) -> QRectF:
+        margen = max(self.pen().widthF(), self.handle_size()) + 2.0
+        return self.rect().adjusted(-margen, -margen, margen, margen)
+
+    def shape(self) -> QPainterPath:
+        path = QPainterPath()
+        margen = self.handle_size()
+        path.addRect(self.rect().adjusted(-margen, -margen, margen, margen))
+        return path
+
+    # -- celdas ----------------------------------------------------------
+    def local_cell_rects(self) -> list[QRectF]:
+        """Rectangulos de las celdas en coordenadas del propio item."""
+        r = self.rect()
+        filas, columnas = max(1, self.ann.rows), max(1, self.ann.cols)
+        alto = r.height() / filas
+        ancho = r.width() / columnas
+        return [
+            QRectF(c * ancho, f * alto, ancho, alto)
+            for f in range(filas)
+            for c in range(columnas)
+        ]
+
+    def cell_at(self, pos: QPointF) -> int:
+        for indice, celda in enumerate(self.local_cell_rects()):
+            if celda.contains(pos):
+                return indice
+        return -1
+
+    def edit_cell(self, indice: int) -> None:
+        """Abre un editor de texto encima de la celda indicada."""
+        celdas = self.local_cell_rects()
+        if not (0 <= indice < len(celdas)):
+            return
+        self.finish_editing()
+        self.notify_scene("begin_edit")
+        self.notify_scene("text_editing_started")
+        textos = self.ann.normalized_cells()
+        editor = QGraphicsTextItem(self)
+        editor.setPlainText(textos[indice])
+        editor.setFont(annotation_font(self.ann))
+        editor.setDefaultTextColor(qcolor(self.ann.color))
+        celda = celdas[indice]
+        editor.setTextWidth(max(10.0, celda.width() - 4))
+        editor.setPos(celda.topLeft() + QPointF(2, 2))
+        editor.setTextInteractionFlags(Qt.TextEditorInteraction)
+        editor.setZValue(self.zValue() + 1)
+        editor.setFlag(QGraphicsItem.ItemIsFocusable, True)
+        editor.setFocus(Qt.MouseFocusReason)
+        cursor = editor.textCursor()
+        cursor.select(cursor.SelectionType.Document)
+        editor.setTextCursor(cursor)
+        self._editor = editor
+        self._editing_cell = indice
+        self.update()
+
+    def finish_editing(self) -> None:
+        """Guarda lo escrito y cierra el editor."""
+        editor, indice = self._editor, self._editing_cell
+        self._editor, self._editing_cell = None, -1
+        if editor is None:
+            return
+        textos = self.ann.normalized_cells()
+        textos[indice] = editor.toPlainText()
+        self.ann.cells = textos
+        editor.setParentItem(None)
+        if editor.scene() is not None:
+            editor.scene().removeItem(editor)
+        self.update()
+        self.notify_scene("end_edit")
+        self.notify_scene("text_editing_finished")
+
+    @property
+    def is_editing(self) -> bool:
+        return self._editor is not None
+
+    # -- eventos ---------------------------------------------------------
+    def mouseDoubleClickEvent(self, event) -> None:
+        indice = self.cell_at(event.pos())
+        if indice >= 0:
+            self.edit_cell(indice)
+            event.accept()
+            return
+        super().mouseDoubleClickEvent(event)
+
+    def keyPressEvent(self, event) -> None:
+        if self.is_editing and event.key() in (Qt.Key_Escape, Qt.Key_Tab):
+            siguiente = self._editing_cell + 1
+            self.finish_editing()
+            if event.key() == Qt.Key_Tab and siguiente < self.ann.cell_count():
+                self.edit_cell(siguiente)
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+    def focusOutEvent(self, event) -> None:
+        self.finish_editing()
+        super().focusOutEvent(event)
+
+    # -- pintado ---------------------------------------------------------
+    def paint(self, painter: QPainter, option, widget=None) -> None:
+        option.state &= ~QStyle.State_Selected
+        rect = self.rect()
+        if self.ann.fill:
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(self.brush())
+            painter.drawRect(rect)
+
+        painter.setPen(self.pen())
+        painter.setBrush(Qt.NoBrush)
+        filas, columnas = max(1, self.ann.rows), max(1, self.ann.cols)
+        painter.drawRect(rect)
+        for f in range(1, filas):
+            y = rect.top() + rect.height() * f / filas
+            painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y))
+        for c in range(1, columnas):
+            x = rect.left() + rect.width() * c / columnas
+            painter.drawLine(QPointF(x, rect.top()), QPointF(x, rect.bottom()))
+
+        painter.setFont(annotation_font(self.ann))
+        painter.setPen(QPen(qcolor(self.ann.color)))
+        bandera = ALIGN_FLAGS.get(Align(self.ann.align), Qt.AlignLeft)
+        for indice, (texto, celda) in enumerate(
+            zip(self.ann.normalized_cells(), self.local_cell_rects())
+        ):
+            if not texto or indice == self._editing_cell:
+                continue
+            painter.drawText(
+                celda.adjusted(2.5, 2.5, -2.5, -2.5),
+                int(bandera | Qt.AlignTop | Qt.TextWordWrap),
+                texto,
+            )
+
+        if self.isSelected():
+            self.paint_selection(painter, rect)
+            self.paint_handles(painter)
+
+
 def create_item(ann: Annotation, parent: QGraphicsItem | None = None):
     """Crea el item grafico adecuado para una anotacion."""
     if ann.kind in (Kind.RECT, Kind.HIGHLIGHT):
@@ -571,11 +792,15 @@ def create_item(ann: Annotation, parent: QGraphicsItem | None = None):
         return InkItem(ann, parent)
     if ann.kind is Kind.TEXT:
         return TextItem(ann, parent)
+    if ann.kind is Kind.TABLE:
+        return TableItem(ann, parent)
     raise ValueError(f"tipo de anotacion sin item grafico: {ann.kind!r}")
 
 
 __all__ = [
     "RectItem",
+    "TableItem",
+    "annotation_font",
     "LineItem",
     "InkItem",
     "TextItem",

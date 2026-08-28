@@ -1,3 +1,5 @@
+import pytest
+
 """Pruebas del modelo de anotaciones."""
 
 from easypdf.model import Annotation, AnnotationStore, Kind
@@ -57,3 +59,33 @@ def test_store_agrega_y_elimina():
 def test_kind_tiene_etiqueta_en_espanol():
     assert Kind.RECT.label == "Cuadro"
     assert Kind.INK.label == "Dibujo"
+
+
+def test_tabla_reparte_las_celdas():
+    tabla = Annotation(kind=Kind.TABLE, page=0, rect=(10, 20, 110, 80), rows=2, cols=4)
+    celdas = tabla.cell_rects()
+    assert len(celdas) == 8
+    assert celdas[0] == (10, 20, 35, 50)
+    assert celdas[-1] == (85, 50, 110, 80)
+    # el borde mas las separaciones interiores
+    assert len(tabla.grid_lines()) == (2 + 1) + (4 + 1)
+
+
+def test_tabla_ajusta_los_textos_al_numero_de_celdas():
+    tabla = Annotation(kind=Kind.TABLE, page=0, rows=2, cols=2, cells=["a", "b", "c", "d", "e"])
+    assert tabla.normalized_cells() == ["a", "b", "c", "d"]
+    tabla.cells = ["a"]
+    assert tabla.normalized_cells() == ["a", "", "", ""]
+
+
+def test_la_punta_de_flecha_crece_con_el_grosor_pero_no_pasa_de_la_linea():
+    from easypdf.model import arrow_head
+
+    base_fina, punta, izquierda, derecha = arrow_head((0, 0), (100, 0), 1.0)
+    largo_fino = punta[0] - base_fina[0]
+    base_gruesa, punta, _, _ = arrow_head((0, 0), (100, 0), 6.0)
+    assert (punta[0] - base_gruesa[0]) > largo_fino
+    assert abs(izquierda[1] - derecha[1]) == pytest.approx(largo_fino, rel=0.05)
+    # en una linea muy corta la punta no puede ser mas larga que la linea
+    base_corta, punta_corta, _, _ = arrow_head((0, 0), (6, 0), 6.0)
+    assert base_corta[0] >= 0.0
