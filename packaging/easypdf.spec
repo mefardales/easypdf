@@ -15,6 +15,7 @@ import sys
 ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))
 SRC = os.path.join(ROOT, "src")
 ICON = os.path.join(ROOT, "assets", "easypdf.ico")
+PNG = os.path.join(ROOT, "assets", "easypdf.png")
 VERSION_FILE = os.path.join(SPECPATH, "version_info.txt")
 
 # Modulos de Qt y otras dependencias que EasyPDF no usa: fuera del paquete.
@@ -47,7 +48,7 @@ a = Analysis(
     [os.path.join(SRC, "easypdf", "__main__.py")],
     pathex=[SRC],
     binaries=[],
-    datas=[(ICON, "assets")],
+    datas=[(path, "assets") for path in (ICON, PNG) if os.path.exists(path)],
     hiddenimports=["easypdf", "easypdf.app", "easypdf.ui.main_window"],
     hookspath=[],
     hooksconfig={},
