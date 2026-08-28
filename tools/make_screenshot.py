@@ -18,21 +18,20 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
 PARRAFOS = [
-    "Durante el ultimo trimestre se han revisado los procedimientos internos de",
-    "atencion al cliente y se ha reducido el tiempo medio de respuesta en un 34%.",
-    "El equipo ha incorporado dos personas nuevas y ha completado la formacion",
-    "prevista en el plan anual.",
+    "Over the last quarter we reviewed the internal customer support procedures",
+    "and cut the average response time by 34%. The team welcomed two new people",
+    "and completed the training planned for the year.",
     "",
-    "Las incidencias criticas han bajado de 18 a 5, y ninguna de ellas ha superado",
-    "las cuatro horas de resolucion. El coste por expediente se mantiene estable.",
+    "Critical incidents dropped from 18 to 5, and none of them took longer than",
+    "four hours to resolve. Cost per case remains stable.",
     "",
-    "Propuestas para el proximo trimestre:",
-    "   1. Ampliar el horario de soporte telefonico hasta las 20:00.",
-    "   2. Publicar la guia de preguntas frecuentes en el portal interno.",
-    "   3. Revisar el contrato de mantenimiento antes del 30 de junio.",
+    "Proposals for the next quarter:",
+    "   1. Extend phone support until 20:00.",
+    "   2. Publish the FAQ on the internal portal.",
+    "   3. Review the maintenance contract before 30 June.",
     "",
-    "Se adjunta el detalle de indicadores en el anexo de la ultima pagina, junto",
-    "con la comparativa de los tres trimestres anteriores.",
+    "The indicator breakdown is attached in the appendix on the last page,",
+    "together with the comparison against the three previous quarters.",
 ]
 
 
@@ -42,10 +41,10 @@ def build_sample_pdf(path: str, pages: int = 4) -> None:
     doc = pymupdf.open()
     for number in range(pages):
         page = doc.new_page()
-        page.insert_text((72, 90), "Informe trimestral de actividad", fontsize=20, fontname="hebo")
+        page.insert_text((72, 90), "Quarterly activity report", fontsize=20, fontname="hebo")
         page.insert_text(
             (72, 115),
-            f"Departamento de operaciones  -  Pagina {number + 1} de {pages}",
+            f"Operations department  -  Page {number + 1} of {pages}",
             fontsize=10,
             color=(0.4, 0.4, 0.4),
         )
@@ -66,6 +65,7 @@ def main() -> int:
     from PySide6.QtTest import QTest
     from PySide6.QtWidgets import QApplication
 
+    from easypdf.i18n import set_language
     from easypdf.model import Annotation, Kind
     from easypdf.ui.main_window import MainWindow
     from easypdf.ui.page_view import Tool
@@ -76,6 +76,10 @@ def main() -> int:
 
         app = QApplication.instance() or QApplication([])
         window = MainWindow()
+        # Despues de crear la ventana: su __init__ aplica el idioma guardado en
+        # los ajustes del usuario, que aqui no interesa.
+        set_language("en")
+        window.retranslate()
         window.resize(1280, 860)
         window.thumb_dock.setVisible(True)   # la captura siempre lo muestra
         window.show()
@@ -93,15 +97,15 @@ def main() -> int:
             Annotation(kind=Kind.ARROW, page=0, p1=(430, 470), p2=(400, 408),
                        color=(0.08, 0.40, 0.75), width=2.0),
             Annotation(kind=Kind.TEXT, page=0, rect=(300, 478, 520, 520),
-                       text="Revisar este dato\ncon el equipo", font_size=12,
+                       text="Double-check this\nwith the team", font_size=12,
                        color=(0.08, 0.40, 0.75), width=1.0),
             Annotation(kind=Kind.INK, page=0,
                        strokes=[[(80, 430), (120, 455), (160, 425), (200, 460), (240, 430)]],
                        color=(0.18, 0.49, 0.20), width=2.5),
             Annotation(kind=Kind.TABLE, page=0, rect=(72, 540, 520, 620), rows=3, cols=3,
-                       cells=["Trimestre", "Incidencias", "Coste",
-                              "Anterior", "18", "4.200 EUR",
-                              "Actual", "5", "3.950 EUR"],
+                       cells=["Quarter", "Incidents", "Cost",
+                              "Previous", "18", "4,200 EUR",
+                              "Current", "5", "3,950 EUR"],
                        color=(0.15, 0.15, 0.18), width=0.8, font_size=9),
         ]
         for ann in anotaciones:
@@ -110,8 +114,7 @@ def main() -> int:
         window.select_tool(Tool.TABLE)
         window._update_actions()
         window.statusBar().showMessage(
-            "Herramienta: Tabla  -  arrastra sobre la pagina; doble clic en una celda "
-            "para escribir"
+            "Tool: Table  -  drag on the page; double click a cell to type"
         )
         QTest.qWait(800)
         app.processEvents()

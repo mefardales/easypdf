@@ -72,7 +72,8 @@ Tambien estan todos en la carpeta [`build/`](build/) y en la
 | **Imprimir** | Dialogo de impresion del sistema, vista previa, rango de paginas. Lo que se imprime incluye las anotaciones. |
 | **Guardar** | Las anotaciones se escriben como **anotaciones PDF estandar**: se ven igual en Adobe Reader, Edge o Firefox, y el contenido original del documento no se toca. |
 
-Todo con una interfaz en espanol, sin cuentas, sin publicidad y sin conexion a internet.
+Interfaz en **espanol e ingles** (se cambia desde *Ayuda -> Idioma*, y arranca en el
+idioma del sistema), sin cuentas, sin publicidad y sin conexion a internet.
 
 ## Capturas
 
@@ -226,6 +227,7 @@ impreso, incluso en paginas giradas.
 src/easypdf/
   model.py          Modelo de anotaciones (Python puro, sin Qt ni PDF)
   templates.py      Plantillas reutilizables (JSON)
+  i18n.py           Textos de la interfaz en espanol e ingles
   document.py       Apertura, render, busqueda y guardado (PyMuPDF)
   annotations.py    Modelo -> anotaciones PDF reales
   printing.py       Impresion y vista previa
@@ -266,7 +268,7 @@ Las contribuciones son bienvenidas: lee [CONTRIBUTING.md](CONTRIBUTING.md).
 - [ ] Resaltado ajustado a las lineas de texto seleccionadas
 - [x] Sellos y firma con imagen
 - [ ] Unir varios PDF en uno
-- [ ] Interfaz en ingles
+- [x] Interfaz en ingles
 
 ## Licencia
 

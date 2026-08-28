@@ -10,6 +10,7 @@ from PySide6.QtTest import QTest  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from easypdf import __app_name__  # noqa: E402
+from easypdf.i18n import set_language, tr  # noqa: E402
 from easypdf.model import (
     Annotation,  # noqa: E402
     Kind,  # noqa: E402
@@ -21,6 +22,7 @@ from easypdf.ui.page_view import Tool  # noqa: E402
 
 @pytest.fixture()
 def ventana(qapp, sample_pdf):
+    set_language("en")          # las pruebas no dependen del idioma del sistema
     window = MainWindow()
     window.resize(1100, 820)
     window.show()
@@ -44,7 +46,7 @@ def _arrastrar(window, desde, hasta, modificador=Qt.NoModifier):
 
 def test_abrir_documento_configura_la_ventana(ventana):
     assert ventana.view.page_count == 3
-    assert ventana.page_label.text() == "de 3"
+    assert ventana.page_label.text() == tr("status_of", total=3)
     assert "muestra.pdf" in ventana.windowTitle()
     assert ventana.act_print.isEnabled()
 
@@ -152,7 +154,7 @@ def test_buscar_texto(ventana):
     ventana.search_edit.setText("EasyPDF")
     ventana.run_search()
     assert ventana.view.hit_count == 3
-    assert "1 de 3" in ventana.search_label.text()
+    assert tr("search_of", current=1, total=3).strip() in ventana.search_label.text()
     ventana.view.next_hit()
     assert ventana.view.hit_index == 1
     ventana.view.previous_hit()
@@ -521,3 +523,22 @@ def test_documento_nuevo_desde_una_plantilla(ventana, tmp_path):
     assert [round(v) for v in ventana.view.document.page_size(1)] == [842, 595]
     assert ventana.view.annotation_count() == 1
     assert ventana.view.annotations()[0].page == 1
+
+
+def test_cambiar_el_idioma_de_la_interfaz(ventana):
+    """La ventana se retraduce entera sin reiniciar."""
+    set_language("en")
+    ventana.retranslate()
+    assert ventana.act_save.text() == "&Save"
+    assert [a.text() for a in ventana.menuBar().actions()][:2] == ["&File", "&Edit"]
+
+    ventana.set_language("es")
+    assert ventana.act_save.text() == "&Guardar"
+    assert [a.text() for a in ventana.menuBar().actions()][:2] == ["&Archivo", "&Editar"]
+    assert ventana.tool_actions[Tool.TABLE].text() == "Ta&bla"
+    assert ventana.language_actions["es"].isChecked()
+    assert ventana.settings.language() == "es"
+
+    ventana.set_language("en")
+    assert ventana.act_save.text() == "&Save"
+    assert ventana.tool_actions[Tool.TABLE].text() == "Ta&ble"

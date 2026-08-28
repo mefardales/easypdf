@@ -146,6 +146,18 @@ class Settings:
     def set_table_cols(self, value: int) -> None:
         self._s.setValue("tools/table_cols", int(value))
 
+    def language(self) -> str:
+        """Idioma de la interfaz. Por defecto, el del sistema si lo tenemos."""
+        from PySide6.QtCore import QLocale
+
+        from .i18n import system_language
+
+        guardado = self._s.value("ui/language")
+        return str(guardado) if guardado else system_language(QLocale.system().name())
+
+    def set_language(self, code: str) -> None:
+        self._s.setValue("ui/language", code)
+
     # -- ventana ---------------------------------------------------------
     def window_geometry(self) -> bytes | None:
         return self._s.value("window/geometry")
