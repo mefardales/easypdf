@@ -58,6 +58,7 @@ class Tool(str, Enum):
     TEXT = "text"
     INK = "ink"
     TABLE = "table"
+    IMAGE = "image"
 
     @property
     def kind(self) -> Kind | None:
@@ -69,6 +70,7 @@ class Tool(str, Enum):
             Tool.TEXT: Kind.TEXT,
             Tool.INK: Kind.INK,
             Tool.TABLE: Kind.TABLE,
+            Tool.IMAGE: Kind.IMAGE,
         }
         return mapping.get(self)
 
@@ -209,6 +211,7 @@ class PdfView(QGraphicsView):
             "align": Align.LEFT,
             "rows": 3,
             "cols": 3,
+            "image": None,      # (nombre, bytes) de la imagen elegida
         }
 
         self._render_timer = QTimer(self)
@@ -494,6 +497,9 @@ class PdfView(QGraphicsView):
             rows=int(style["rows"]),
             cols=int(style["cols"]),
         )
+        if kind is Kind.IMAGE:
+            imagen = style.get("image") or ("", b"")
+            ann.image_name, ann.image_data = imagen[0], imagen[1]
         if kind in (Kind.LINE, Kind.ARROW):
             ann.p1 = (point.x(), point.y())
             ann.p2 = (point.x(), point.y())
@@ -517,6 +523,20 @@ class PdfView(QGraphicsView):
             self._scene.addItem(item)
         item.setVisible(True)
         self._items[ann.id] = item
+
+    def place_image(self, name: str, data: bytes, page: int, point: QPointF):
+        """Coloca una imagen en la pagina indicada (coordenadas de la pagina)."""
+        ann = Annotation(kind=Kind.IMAGE, page=page, image_name=name, image_data=data)
+        ann.rect = (point.x(), point.y(), point.x(), point.y())
+        item = create_item(ann, self._page_items[page])
+        proporcion = getattr(item, "aspect", 1.0) or 1.0
+        ancho = min(self._page_items[page].boundingRect().width() * 0.4, 260.0)
+        ann.rect = (point.x(), point.y(), point.x() + ancho, point.y() + ancho / proporcion)
+        item.apply_model()
+        self._items[ann.id] = item
+        self.undo_stack.push(AddAnnotationCommand(self, ann, item))
+        item.setSelected(True)
+        return item
 
     def add_annotation(self, ann: Annotation, undoable: bool = True):
         """Anade al documento una anotacion ya definida y devuelve su item.
@@ -548,6 +568,15 @@ class PdfView(QGraphicsView):
         if item is None:
             return
         ann = item.ann
+        if ann.kind is Kind.IMAGE:
+            x0, y0, x1, y1 = ann.normalized_rect()
+            if (x1 - x0) < 20 or (y1 - y0) < 20:
+                # Un clic sencillo coloca la imagen a un tamano comodo.
+                proporcion = getattr(item, "aspect", 1.0) or 1.0
+                pagina = self._page_items[ann.page].boundingRect()
+                ancho = min(pagina.width() * 0.4, 260.0)
+                ann.rect = (x0, y0, x0 + ancho, y0 + ancho / proporcion)
+            item.apply_model()
         if ann.kind is Kind.TABLE:
             x0, y0, x1, y1 = ann.normalized_rect()
             if (x1 - x0) < 40 or (y1 - y0) < 24:
@@ -607,7 +636,14 @@ class PdfView(QGraphicsView):
         else:
             x0, y0 = self._draft_origin.x(), self._draft_origin.y()
             x1, y1 = local.x(), local.y()
-            if event.modifiers() & Qt.ShiftModifier:
+            if ann.kind is Kind.IMAGE:
+                # La imagen conserva su proporcion mientras se coloca.
+                proporcion = getattr(self._draft_item, "aspect", 1.0) or 1.0
+                ancho = abs(x1 - x0)
+                alto = ancho / proporcion
+                x1 = x0 + ancho * (1 if x1 >= x0 else -1)
+                y1 = y0 + alto * (1 if y1 >= y0 else -1)
+            elif event.modifiers() & Qt.ShiftModifier:
                 side = max(abs(x1 - x0), abs(y1 - y0))
                 x1 = x0 + side * (1 if x1 >= x0 else -1)
                 y1 = y0 + side * (1 if y1 >= y0 else -1)

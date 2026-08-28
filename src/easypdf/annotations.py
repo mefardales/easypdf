@@ -227,7 +227,25 @@ def add_annotation(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
     if ann.kind is Kind.TABLE:
         return _add_table(page, ann)
 
+    if ann.kind is Kind.IMAGE:
+        return _add_image(page, ann)
+
     raise ValueError(f"tipo de anotacion desconocido: {ann.kind!r}")
+
+
+def _add_image(page: pymupdf.Page, ann: Annotation) -> None:
+    """Coloca una imagen encima de la pagina.
+
+    El PDF no tiene una anotacion de imagen que todos los lectores dibujen
+    igual, asi que la imagen se inserta en el contenido de la pagina: se ve y
+    se imprime en cualquier programa. Como al guardar siempre se parte del
+    archivo original, volver a guardar no la duplica.
+    """
+    if not ann.image_data:
+        raise ValueError("la imagen no tiene datos")
+    rect = _rect(ann, page)
+    page.insert_image(rect, stream=ann.image_data, keep_proportion=False, overlay=True)
+    return None
 
 
 def _add_table(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
