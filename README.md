@@ -11,6 +11,10 @@
 </p>
 
 <p align="center">
+  <b><a href="https://mefardales.github.io/easypdf/">mefardales.github.io/easypdf</a></b>
+</p>
+
+<p align="center">
   <a href="LICENSE"><img alt="Licencia AGPL v3" src="https://img.shields.io/badge/licencia-AGPL--3.0-blue.svg"></a>
   <img alt="Python 3.9+" src="https://img.shields.io/badge/python-3.9%2B-3776ab.svg">
   <img alt="Windows, Linux, macOS" src="https://img.shields.io/badge/plataformas-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg">
@@ -19,6 +23,10 @@
 ---
 
 ## Descargar (un solo clic)
+
+La forma mas comoda es la pagina web del proyecto:
+**[mefardales.github.io/easypdf](https://mefardales.github.io/easypdf/)**.
+Tambien puedes descargar desde aqui mismo:
 
 ### Windows 10 u 11
 
@@ -224,6 +232,7 @@ src/easypdf/
     icons.py        Iconos dibujados por codigo
 packaging/          PyInstaller + Inno Setup + guiones de compilacion
 build/              Ejecutables publicados (Windows y Linux)
+site/               Pagina web de descargas (GitHub Pages)
 tools/make_icon.py  Genera assets/easypdf.ico
 tests/              48 pruebas (modelo, PDF, interfaz e impresion)
 ```

@@ -3,7 +3,10 @@
 Esta carpeta contiene los programas ya compilados, listos para usar. **No hace
 falta tener Python instalado.**
 
-Pulsa el nombre del archivo y la descarga empieza sola:
+La forma mas comoda de descargar es la web del proyecto:
+**[mefardales.github.io/easypdf](https://mefardales.github.io/easypdf/)**.
+
+Aqui tambien: pulsa el nombre del archivo y la descarga empieza sola:
 
 | Descarga | Para quien | Que es |
 |---|---|---|
