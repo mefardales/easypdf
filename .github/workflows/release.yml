@@ -1,0 +1,60 @@
+name: Publicar release
+
+# Crea la etiqueta y la release de GitHub con los archivos que ya estan en
+# build/. Ademas de dar una pagina de descargas ordenada, GitHub cuenta cuantas
+# veces se baja cada archivo, y ese numero es el que muestra la web.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version a publicar (sin la v)"
+        type: string
+        default: "1.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    name: Crear la release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar que estan los binarios
+        run: |
+          set -e
+          ls -lh build/
+          for patron in "build/EasyPDF-${{ inputs.version }}-Setup.exe" \
+                        "build/EasyPDF-${{ inputs.version }}-windows-x64-portable.zip" \
+                        "build/EasyPDF-${{ inputs.version }}-linux-x64.tar.xz"; do
+            [ -f "$patron" ] || { echo "Falta $patron"; exit 1; }
+          done
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: easypdf.surf ${{ inputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## Descargas
+
+            | Archivo | Para |
+            |---|---|
+            | `EasyPDF-${{ inputs.version }}-Setup.exe` | Windows 10 y 11 - instalador, sin permisos de administrador |
+            | `EasyPDF-${{ inputs.version }}-windows-x64-portable.zip` | Windows - portable, no instala nada |
+            | `EasyPDF-${{ inputs.version }}-linux-x64.tar.xz` | Linux 64 bits - portable |
+
+            Tambien en **https://easypdf.surf**
+
+            Los archivos `.sha256` sirven para comprobar que la descarga llego intacta.
+          files: |
+            build/EasyPDF-${{ inputs.version }}-Setup.exe
+            build/EasyPDF-${{ inputs.version }}-windows-x64-portable.zip
+            build/EasyPDF-${{ inputs.version }}-linux-x64.tar.xz
+            build/*.sha256

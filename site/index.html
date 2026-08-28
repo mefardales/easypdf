@@ -6,7 +6,7 @@
 <title>easypdf.surf - Lector de PDF gratis con anotaciones y tablas</title>
 <meta name="description" content="Abre, lee, anota e imprime PDF. Escribe encima, resalta, dibuja tablas y coloca imagenes. Gratis, sin cuentas y sin publicidad. Para Windows y Linux.">
 <meta name="keywords" content="lector pdf gratis, anotar pdf, editar pdf, rellenar pdf, pdf windows">
-<meta name="theme-color" content="#e5121a">
+<meta name="theme-color" content="#0a0a0b">
 <link rel="canonical" href="https://easypdf.surf/">
 <link rel="alternate" hreflang="es" href="https://easypdf.surf/">
 <link rel="alternate" hreflang="en" href="https://easypdf.surf/en/">
@@ -28,222 +28,392 @@
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Es gratis del todo?", "acceptedAnswer": {"@type": "Answer", "text": "Si. No hay version de pago, ni suscripcion, ni limite de documentos."}}, {"@type": "Question", "name": "Tengo que registrarme?", "acceptedAnswer": {"@type": "Answer", "text": "No. Se abre y se usa, sin cuenta ni correo electronico."}}, {"@type": "Question", "name": "Lleva publicidad?", "acceptedAnswer": {"@type": "Answer", "text": "Ninguna. Y tampoco instala cosas raras de propina."}}, {"@type": "Question", "name": "Funciona sin internet?", "acceptedAnswer": {"@type": "Answer", "text": "Si. Solo hace falta conexion para descargarlo la primera vez."}}, {"@type": "Question", "name": "Mis documentos se suben a algun sitio?", "acceptedAnswer": {"@type": "Answer", "text": "No. Todo ocurre en tu ordenador."}}, {"@type": "Question", "name": "Y si no me gusta?", "acceptedAnswer": {"@type": "Answer", "text": "Se desinstala como cualquier otro programa, desde Configuracion."}}]}</script>
 <style>
   :root{
-    --bg:#ffffff; --bg-soft:#f7f8fa; --line:#e5e8ec; --card:#ffffff;
-    --fg:#0f1419; --muted:#5d6773; --accent:#e5121a; --accent-fg:#ffffff;
-    --shadow:0 1px 2px rgba(15,20,25,.06), 0 12px 32px rgba(15,20,25,.07);
-    --radius:14px;
+    --bg:#08090b; --panel:#0f1116; --panel-2:#12151b; --line:#1e222b;
+    --fg:#f4f6f8; --muted:#8b93a1; --accent:#ff3b30; --accent-2:#ff8a3d;
+    --accent-fg:#0b0c0e; --paper:#e9edf3; --radius:16px;
   }
-  html[data-theme="dark"]{
-    --bg:#0d1117; --bg-soft:#131923; --line:#242c38; --card:#141b25;
-    --fg:#e9eef5; --muted:#98a3b3; --accent:#ff4d4d; --accent-fg:#12161c;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.35);
+  html[data-theme="light"]{
+    --bg:#ffffff; --panel:#fbfbfd; --panel-2:#f4f5f8; --line:#e6e8ee;
+    --fg:#0b0d12; --muted:#61697a; --accent:#e5121a; --accent-2:#ff6a1a;
+    --accent-fg:#ffffff; --paper:#ffffff;
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
   body{
-    margin:0; background:var(--bg); color:var(--fg);
-    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
-    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    margin:0;background:var(--bg);color:var(--fg);overflow-x:hidden;
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
   }
-  a{color:inherit}
-  .wrap{max-width:1020px;margin:0 auto;padding:0 22px}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .skip{position:absolute;left:-9999px}
-  .skip:focus{left:12px;top:12px;background:var(--accent);color:var(--accent-fg);padding:8px 14px;border-radius:8px;z-index:9}
+  .skip:focus{left:14px;top:14px;background:var(--accent);color:var(--accent-fg);padding:9px 14px;border-radius:8px;z-index:9}
 
-  header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);
-    backdrop-filter:saturate(180%) blur(10px);border-bottom:1px solid var(--line)}
-  .bar{display:flex;align-items:center;gap:14px;height:60px}
-  .brand{display:flex;align-items:center;gap:9px;text-decoration:none;font-weight:700;letter-spacing:-.3px}
-  .brand img{width:26px;height:26px}
-  nav{margin-left:auto;display:flex;align-items:center;gap:6px}
-  nav a.link{color:var(--muted);text-decoration:none;font-size:14.5px;padding:8px 10px;border-radius:8px}
-  nav a.link:hover{color:var(--fg);background:var(--bg-soft)}
-  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);
-    color:var(--muted);font-size:13px;padding:6px 10px;border-radius:999px;text-decoration:none;cursor:pointer}
-  .chip:hover{color:var(--fg);border-color:var(--muted)}
-  @media (max-width:640px){ nav a.link{display:none} }
+  /* ---------- fondo ---------- */
+  .glow{position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(680px 420px at 50% -80px, color-mix(in srgb,var(--accent) 26%,transparent), transparent 70%),
+      radial-gradient(520px 380px at 88% 8%, color-mix(in srgb,var(--accent-2) 14%,transparent), transparent 70%);
+    opacity:.55}
+  .grid-bg{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px;
+    -webkit-mask-image:radial-gradient(760px 460px at 50% 0,#000,transparent 75%);
+    mask-image:radial-gradient(760px 460px at 50% 0,#000,transparent 75%)}
+  header,main,footer{position:relative;z-index:1}
 
-  .hero{padding:70px 0 10px;text-align:center}
-  .eyebrow{display:inline-block;font-size:13px;color:var(--muted);border:1px solid var(--line);
-    background:var(--bg-soft);padding:5px 12px;border-radius:999px;margin-bottom:22px}
-  h1{font-size:clamp(34px,5.6vw,54px);line-height:1.08;letter-spacing:-1.6px;margin:0 0 16px}
-  .sub{font-size:clamp(17px,2.2vw,19.5px);color:var(--muted);max-width:660px;margin:0 auto 32px}
-  .btn{display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:var(--accent);
-    color:var(--accent-fg);text-decoration:none;font-weight:700;font-size:17.5px;padding:15px 30px;
-    border-radius:12px;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 35%,transparent);
-    transition:transform .15s ease, filter .15s ease}
-  .btn:hover{transform:translateY(-1px);filter:brightness(1.06)}
-  .btn small{font-weight:500;font-size:12.5px;opacity:.92}
-  .second{display:block;margin-top:14px;font-size:14.5px;color:var(--muted)}
-  .trust{margin-top:26px;font-size:13.5px;color:var(--muted)}
+  /* ---------- cabecera ---------- */
+  header{position:sticky;top:0;z-index:6;border-bottom:1px solid transparent;transition:.2s}
+  header.stuck{border-color:var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);
+    backdrop-filter:saturate(180%) blur(12px)}
+  .bar{display:flex;align-items:center;gap:10px;height:62px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.3px}
+  .brand img{width:24px;height:24px}
+  nav{margin-left:auto;display:flex;align-items:center;gap:4px}
+  nav .nl{color:var(--muted);font-size:14.5px;padding:8px 11px;border-radius:9px}
+  nav .nl:hover{color:var(--fg);background:var(--panel-2)}
+  .icon-btn{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;
+    border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;font-size:14px}
+  .icon-btn:hover{color:var(--fg);border-color:var(--muted)}
+  .nav-cta{background:var(--fg);color:var(--bg);font-weight:600;font-size:14px;
+    padding:9px 15px;border-radius:10px;margin-left:6px}
+  .nav-cta:hover{opacity:.88}
+  @media (max-width:760px){ nav .nl{display:none} }
 
-  .shot{margin:46px 0 10px}
-  .shot img{width:100%;display:block;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  /* ---------- portada ---------- */
+  .hero{padding:76px 0 0;text-align:center}
+  .badge{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);
+    background:var(--panel);padding:6px 14px 6px 8px;border-radius:999px;font-size:13px;color:var(--muted)}
+  .badge b{color:var(--fg);background:color-mix(in srgb,var(--accent) 16%,transparent);
+    border:1px solid color-mix(in srgb,var(--accent) 34%,transparent);
+    padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600}
+  h1{font-size:clamp(38px,7.2vw,74px);line-height:1.02;letter-spacing:-2.6px;
+    font-weight:760;margin:26px auto 20px;max-width:15ch}
+  h1 em{font-style:normal;background:linear-gradient(100deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{font-size:clamp(16.5px,2.1vw,19px);color:var(--muted);max-width:600px;margin:0 auto 34px}
+  .actions{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:var(--accent-fg);
+    font-weight:680;font-size:16.5px;padding:15px 26px;border-radius:12px;
+    box-shadow:0 8px 30px color-mix(in srgb,var(--accent) 34%,transparent);
+    transition:transform .16s,filter .16s}
+  .btn:hover{transform:translateY(-2px);filter:brightness(1.07)}
+  .btn-2{background:var(--panel);color:var(--fg);border:1px solid var(--line);
+    font-weight:560;font-size:15.5px;padding:14px 20px;border-radius:12px}
+  .btn-2:hover{border-color:var(--muted)}
+  .hint{margin:16px 0 0;font-size:13.5px;color:var(--muted)}
+  .trust{display:flex;gap:22px;justify-content:center;flex-wrap:wrap;margin:34px 0 0}
+  .trust span{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .trust span+span::before{content:"/";margin-right:22px;opacity:.45}
 
-  section{padding:64px 0}
-  h2{font-size:clamp(24px,3.2vw,30px);letter-spacing:-.7px;margin:0 0 8px}
-  .lead{color:var(--muted);margin:0 0 30px}
-  .soft{background:var(--bg-soft);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  /* ---------- captura ---------- */
+  .shot{margin:58px auto 0;max-width:1000px;border:1px solid var(--line);border-radius:14px;
+    background:var(--panel);overflow:hidden;
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.7),0 0 0 1px color-mix(in srgb,var(--fg) 5%,transparent)}
+  .chrome{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);
+    background:var(--panel-2)}
+  .chrome i{width:10px;height:10px;border-radius:50%;background:var(--line);display:block}
+  .chrome b{margin-left:10px;font-weight:500;font-size:12.5px;color:var(--muted)}
+  .shot img{display:block;width:100%}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:16px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
-  .card svg{width:22px;height:22px;fill:none;stroke:var(--accent);stroke-width:1.8;
-    stroke-linecap:round;stroke-linejoin:round;margin-bottom:12px}
-  .card h3{margin:0 0 6px;font-size:16.5px}
+  /* ---------- secciones ---------- */
+  section{padding:96px 0}
+  .head{max-width:640px;margin-bottom:38px}
+  h2{font-size:clamp(26px,3.6vw,38px);letter-spacing:-1.2px;line-height:1.12;margin:12px 0 10px;font-weight:720}
+  .lead{color:var(--muted);margin:0;font-size:16.5px}
+
+  .bento{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+  .card{grid-column:span 2;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:24px 24px 0;overflow:hidden;display:flex;flex-direction:column;min-height:250px;
+    transition:border-color .18s,transform .18s}
+  .card:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));transform:translateY(-2px)}
+  .card.wide{grid-column:span 3}
+  .card h3{margin:0 0 8px;font-size:17.5px;letter-spacing:-.3px}
   .card p{margin:0;color:var(--muted);font-size:14.8px}
+  .card-vis{margin-top:auto;padding-top:20px}
+  .v{width:100%;height:auto;display:block;border-radius:10px 10px 0 0}
+  .v-paper{fill:var(--paper);stroke:var(--line)}
+  .v-ghost{fill:none;stroke:var(--line);stroke-width:1.5}
+  .v-ghost2{fill:var(--panel-2);stroke:var(--line)}
+  .v-grid{fill:none;stroke:var(--line);stroke-width:1.5}
+  .v-grid-line{fill:none;stroke:var(--line);stroke-width:1.2}
+  .v-line{fill:var(--muted);opacity:.45}
+  .v-line-stroke{stroke:var(--muted);opacity:.35;stroke-width:2;stroke-linecap:round}
+  .v-mark{fill:var(--accent);opacity:.85}
+  .v-box{fill:none;stroke:var(--accent);stroke-width:2}
+  .v-arrow{stroke:var(--accent-2);stroke-width:2.4;fill:none;stroke-linecap:round}
+  .v-arrow-head{fill:var(--accent-2)}
+  .v-plus{stroke:var(--accent);stroke-width:2.4;stroke-linecap:round}
+  .v-dot{fill:var(--accent)}
+  @media (max-width:900px){
+    .bento{grid-template-columns:repeat(2,1fr)}
+    .card,.card.wide{grid-column:span 2}
+  }
+  @media (max-width:560px){
+    .bento{grid-template-columns:1fr}
+    .card,.card.wide{grid-column:span 1}
+  }
 
-  ol.steps{list-style:none;padding:0;margin:0;display:grid;gap:14px}
-  ol.steps li{display:flex;gap:14px;align-items:flex-start}
-  .step{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-fg);
-    display:grid;place-items:center;font-size:14px;font-weight:700}
-  ol.steps p{margin:2px 0 0;color:var(--muted);font-size:15px}
-
-  .note{margin-top:26px;border:1px solid var(--line);border-left:3px solid #f0a500;background:var(--card);
-    border-radius:10px;padding:16px 18px;font-size:14.8px;color:var(--muted)}
+  ol.steps{list-style:none;padding:0;margin:0;display:grid;gap:14px;
+    grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  ol.steps li{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .num{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;
+    color:var(--accent);letter-spacing:.1em}
+  ol.steps b{display:block;margin:10px 0 6px;font-size:16.5px}
+  ol.steps p{margin:0;color:var(--muted);font-size:14.8px}
+  .note{margin-top:22px;border:1px solid var(--line);border-left:2px solid var(--accent-2);
+    background:var(--panel);border-radius:12px;padding:16px 18px;font-size:14.6px;color:var(--muted)}
   .note b{color:var(--fg)}
 
-  .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--card);
-    border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:10px;
-    text-decoration:none;transition:border-color .15s ease, transform .15s ease}
-  .row:hover{border-color:var(--accent);transform:translateY(-1px)}
-  .row-main{flex:1;min-width:220px;display:flex;flex-direction:column}
-  .row-main span{color:var(--muted);font-size:14.3px}
-  .row-size{color:var(--muted);font-size:14px;white-space:nowrap}
-  .row-cta{color:var(--accent);font-weight:600;font-size:14.5px;white-space:nowrap}
+  .dl{display:grid;grid-template-columns:1.1fr 2fr auto auto;align-items:center;gap:16px;
+    background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px 20px;
+    margin-bottom:10px;transition:border-color .16s,transform .16s}
+  .dl:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));transform:translateY(-1px)}
+  .dl-os{font-weight:640;font-size:16px}
+  .dl-note{color:var(--muted);font-size:14.4px}
+  .dl-size{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px;color:var(--muted)}
+  .dl-go{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;
+    border:1px solid var(--line);color:var(--accent);font-size:14px}
+  @media (max-width:640px){
+    .dl{grid-template-columns:1fr auto}
+    .dl-note{grid-column:1/-1;order:3}
+  }
 
-  details{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px}
-  details summary{cursor:pointer;font-weight:600;list-style:none}
+  details{border-bottom:1px solid var(--line);padding:18px 2px}
+  details summary{cursor:pointer;font-weight:600;font-size:16px;list-style:none;display:flex;justify-content:space-between;gap:16px}
   details summary::-webkit-details-marker{display:none}
-  details summary::after{content:"+";float:right;color:var(--muted)}
-  details[open] summary::after{content:"\2212"}
-  details p{margin:10px 0 0;color:var(--muted);font-size:15px}
+  details summary::after{content:"+";color:var(--muted);font-weight:400}
+  details[open] summary::after{content:"3"}
+  details p{margin:12px 0 0;color:var(--muted);font-size:15.2px;max-width:70ch}
 
-  footer{border-top:1px solid var(--line);padding:34px 0 54px;color:var(--muted);font-size:14.3px}
-  footer p{margin:6px 0}
-  footer a{color:var(--muted)}
+  footer{border-top:1px solid var(--line);padding:40px 0 60px;color:var(--muted);font-size:14.2px}
+  .foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  footer a:hover{color:var(--fg)}
+
+  .reveal{opacity:0;transform:translateY(14px)}
+  .reveal.in{opacity:1;transform:none;transition:opacity .5s ease,transform .5s ease}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
 </style>
 </head>
 <body>
+<div class="glow"></div><div class="grid-bg"></div>
 <a class="skip" href="#main">Ir al contenido</a>
 
-<header>
+<header id="top">
   <div class="wrap bar">
     <a class="brand" href="./">
-      <img src="easypdf.png" alt="" width="26" height="26">
-      easypdf.surf
+      <img src="easypdf.png" alt="" width="24" height="24"> easypdf.surf
     </a>
     <nav>
-      <a class="link" href="#downloads">Descargas</a>
-      <a class="link" href="#how">Como funciona</a>
-      <a class="link" href="#faq">Preguntas</a>
-      <a class="chip" href="https://easypdf.surf/en/" hreflang="en"
-         lang="en">EN</a>
-      <button class="chip" id="theme" type="button" aria-label="Cambiar entre claro y oscuro"
-              title="Cambiar entre claro y oscuro"><span id="theme-icon">&#9788;</span></button>
+      <a class="nl" href="#features">Como funciona</a>
+      <a class="nl" href="#downloads">Descargas</a>
+      <a class="nl" href="#faq">Preguntas</a>
+      <a class="icon-btn" href="https://easypdf.surf/en/" hreflang="en"
+         lang="en" title="EN">EN</a>
+      <button class="icon-btn" id="theme" type="button"
+              aria-label="Cambiar entre claro y oscuro" title="Cambiar entre claro y oscuro">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+          <g id="i-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/></g>
+          <g id="i-moon" style="display:none"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></g>
+        </svg>
+      </button>
+      <a class="nav-cta" href="#downloads">Descargar</a>
     </nav>
   </div>
 </header>
 
 <main id="main">
 <div class="wrap hero">
-  <span class="eyebrow">Software libre - sin cuentas, sin anuncios</span>
-  <h1>Lee, anota e imprime tus PDF</h1>
+  <span class="badge"><b>v1.0.0</b> libre y gratis, sin cuentas</span>
+  <h1>Escribe <em>encima</em> de tus PDF</h1>
   <p class="sub">Escribe encima del documento, resalta lo importante, anade tablas, flechas e imagenes, y guarda o imprime el resultado. Como Adobe Reader, pero mucho mas simple.</p>
-  <a class="btn" id="cta" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-Setup.exe">
-    <span id="cta-text">Descargar para Windows</span>
-    <small id="cta-note">Instalador - 42 MB - Windows 10 y 11</small>
-  </a>
-  <a class="second" href="#downloads">Ver todas las descargas</a>
-  <p class="trust">Gratis de verdad - Funciona sin internet - Tus documentos no salen de tu ordenador</p>
-  <div class="shot">
-    <img src="captura.png" width="1280" height="860" alt="Ventana de easypdf.surf con un informe anotado: resaltado, recuadro, flecha, nota y tabla">
+  <div class="actions">
+    <a class="btn" id="cta" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-Setup.exe">
+      <span aria-hidden="true">&#8595;</span><span id="cta-text">Descargar para Windows</span>
+    </a>
+    <a class="btn-2" href="#downloads">Otras descargas</a>
   </div>
+  <p class="hint" id="cta-note">Instalador de 42 MB - Windows 10 y 11 - sin permisos de administrador</p>
+  <div class="trust"><span>Gratis de verdad</span><span>Funciona sin internet</span><span>Tus documentos no salen de tu ordenador</span></div>
+
+  <figure class="shot reveal" style="margin-bottom:0">
+    <div class="chrome"><i></i><i></i><i></i><b>easypdf.surf</b></div>
+    <img src="captura.png" width="1280" height="860" alt="Ventana de easypdf.surf con un informe anotado: resaltado, recuadro, flecha, nota y tabla">
+  </figure>
 </div>
 
-<section class="wrap">
-  <h2>Todo lo que necesitas, nada mas</h2>
-  <p class="lead">Sin menus interminables ni funciones que nunca usaras.</p>
-  <div class="grid">
+<section class="wrap" id="features">
+  <div class="head reveal">
+    <span class="mono">Funciones</span>
+    <h2>Lo que de verdad hace falta</h2>
+    <p class="lead">Seis cosas bien hechas, en vez de doscientas escondidas en menus.</p>
+  </div>
+  <div class="bento reveal">
       <article class="card">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5A1.5 1.5 0 0 1 4.5 4H9a3 3 0 0 1 3 3v11a2.5 2.5 0 0 0-2.5-2H4.5A1.5 1.5 0 0 1 3 14.5Z"/><path d="M21 5.5A1.5 1.5 0 0 0 19.5 4H15a3 3 0 0 0-3 3v11a2.5 2.5 0 0 1 2.5-2h5A1.5 1.5 0 0 0 21 14.5Z"/></svg>
-        <h3>Leer comodo</h3>
-        <p>Pasa paginas, acerca la letra pequena y busca cualquier palabra del documento.</p>
+        <div class="card-txt">
+          <h3>Leer comodo</h3>
+          <p>Pasa paginas, acerca la letra pequena y busca cualquier palabra del documento.</p>
+        </div>
+        <div class="card-vis">
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="18" y="14" width="46" height="102" rx="5" class="v-ghost2"/>
+  <rect x="26" y="22" width="30" height="26" rx="3" class="v-paper"/>
+  <rect x="26" y="54" width="30" height="26" rx="3" class="v-paper"/>
+  <rect x="26" y="86" width="30" height="26" rx="3" class="v-paper"/>
+  <rect x="78" y="14" width="164" height="102" rx="6" class="v-paper"/>
+  <rect x="94" y="34" width="86" height="9" rx="4" class="v-mark"/>
+  <rect x="94" y="54" width="128" height="7" rx="3" class="v-line"/>
+  <rect x="94" y="70" width="112" height="7" rx="3" class="v-line"/>
+  <circle cx="196" cy="92" r="13" class="v-grid-line"/>
+  <path d="M206 102l12 12" class="v-arrow"/>
+</svg></div>
+      </article>
+      <article class="card wide">
+        <div class="card-txt">
+          <h3>Escribir encima</h3>
+          <p>Recuadra, subraya con marcador, anade flechas, notas de texto o dibuja a mano.</p>
+        </div>
+        <div class="card-vis">
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="8" y="8" width="244" height="114" rx="8" class="v-paper"/>
+  <rect x="26" y="30" width="120" height="9" rx="4" class="v-mark"/>
+  <rect x="26" y="50" width="170" height="7" rx="3" class="v-line"/>
+  <rect x="26" y="66" width="140" height="7" rx="3" class="v-line"/>
+  <rect x="22" y="84" width="130" height="26" rx="5" class="v-box"/>
+  <path d="M232 44 L176 92" class="v-arrow"/>
+  <path d="M172 96 l16 -3 -4 -12 z" class="v-arrow-head"/>
+</svg></div>
+      </article>
+      <article class="card wide">
+        <div class="card-txt">
+          <h3>Tablas e imagenes</h3>
+          <p>Coloca tablas con celdas que se escriben, y anade fotos, firmas o logotipos.</p>
+        </div>
+        <div class="card-vis">
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="18" y="18" width="224" height="94" rx="6" class="v-grid"/>
+  <path d="M18 48h224M18 80h224M92 18v94M166 18v94" class="v-grid-line"/>
+  <rect x="30" y="28" width="44" height="8" rx="4" class="v-mark"/>
+  <rect x="104" y="28" width="40" height="8" rx="4" class="v-mark"/>
+  <rect x="178" y="28" width="34" height="8" rx="4" class="v-mark"/>
+  <rect x="30" y="60" width="38" height="7" rx="3" class="v-line"/>
+  <rect x="104" y="60" width="22" height="7" rx="3" class="v-line"/>
+  <rect x="178" y="60" width="30" height="7" rx="3" class="v-line"/>
+  <rect x="30" y="92" width="30" height="7" rx="3" class="v-line"/>
+  <rect x="104" y="92" width="26" height="7" rx="3" class="v-line"/>
+  <rect x="178" y="92" width="24" height="7" rx="3" class="v-line"/>
+</svg></div>
       </article>
       <article class="card">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-        <h3>Escribir encima</h3>
-        <p>Recuadra, subraya con marcador, anade flechas, notas de texto o dibuja a mano.</p>
+        <div class="card-txt">
+          <h3>Imprimir</h3>
+          <p>Con vista previa y seleccion de paginas. Lo que anotas es lo que sale en papel.</p>
+        </div>
+        <div class="card-vis">
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="88" y="12" width="84" height="30" rx="4" class="v-paper"/>
+  <rect x="66" y="42" width="128" height="42" rx="6" class="v-grid"/>
+  <circle cx="176" cy="56" r="4" class="v-dot"/>
+  <rect x="88" y="76" width="84" height="42" rx="4" class="v-paper"/>
+  <rect x="100" y="88" width="52" height="6" rx="3" class="v-line"/>
+  <rect x="100" y="100" width="40" height="6" rx="3" class="v-mark"/>
+</svg></div>
       </article>
       <article class="card">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/></svg>
-        <h3>Tablas e imagenes</h3>
-        <p>Coloca tablas con celdas que se escriben, y anade fotos, firmas o logotipos.</p>
+        <div class="card-txt">
+          <h3>Crear documentos</h3>
+          <p>Empieza con una hoja en blanco, anade las paginas que quieras y guarda el PDF.</p>
+        </div>
+        <div class="card-vis">
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="24" y="20" width="66" height="90" rx="6" class="v-paper"/>
+  <rect x="98" y="20" width="66" height="90" rx="6" class="v-paper"/>
+  <rect x="172" y="20" width="66" height="90" rx="6" class="v-ghost" stroke-dasharray="5 4"/>
+  <path d="M205 52v26M192 65h26" class="v-plus"/>
+</svg></div>
       </article>
       <article class="card">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>
-        <h3>Imprimir</h3>
-        <p>Con vista previa y seleccion de paginas. Lo que anotas es lo que sale en papel.</p>
-      </article>
-      <article class="card">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg>
-        <h3>Crear documentos</h3>
-        <p>Empieza con una hoja en blanco, anade las paginas que quieras y guarda el PDF.</p>
-      </article>
-      <article class="card">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        <h3>Plantillas</h3>
-        <p>Guarda tu membrete o tu tabla y vuelve a usarlos en otro documento con un clic.</p>
+        <div class="card-txt">
+          <h3>Plantillas</h3>
+          <p>Guarda tu membrete o tu tabla y vuelve a usarlos en otro documento con un clic.</p>
+        </div>
+        <div class="card-vis">
+<svg viewBox="0 0 260 130" class="v" aria-hidden="true">
+  <rect x="46" y="10" width="150" height="106" rx="8" class="v-ghost"/>
+  <rect x="58" y="16" width="150" height="106" rx="8" class="v-ghost2"/>
+  <rect x="70" y="22" width="150" height="106" rx="8" class="v-paper"/>
+  <rect x="86" y="40" width="72" height="9" rx="4" class="v-mark"/>
+  <rect x="86" y="60" width="110" height="7" rx="3" class="v-line"/>
+  <rect x="86" y="76" width="92" height="7" rx="3" class="v-line"/>
+</svg></div>
       </article>
   </div>
 </section>
 
-<section class="soft" id="how">
-  <div class="wrap">
+<section class="wrap" id="how">
+  <div class="head reveal">
+    <span class="mono">En un minuto</span>
     <h2>Empezar cuesta un minuto</h2>
-    <p class="lead"></p>
-    <ol class="steps">
-      <li>
-        <span class="step">1</span>
-        <div><b>Descarga</b><p>Pulsa el boton y guarda el archivo.</p></div>
-      </li>
-      <li>
-        <span class="step">2</span>
-        <div><b>Instala</b><p>Doble clic y siguiente, siguiente. No hace falta ser administrador.</p></div>
-      </li>
-      <li>
-        <span class="step">3</span>
-        <div><b>Abre tu PDF</b><p>Arrastralo a la ventana y empieza a escribir encima.</p></div>
-      </li>
-    </ol>
-    <div class="note"><b>Si Windows avisa de que el editor es desconocido</b>. Pulsa <b>Mas informacion</b> y luego <b>Ejecutar de todas formas</b>. Ese aviso sale con todos los programas pequenos que no han pagado un certificado; no significa que el archivo tenga nada malo.</div>
   </div>
+  <ol class="steps reveal">
+      <li>
+        <span class="num">01</span>
+        <b>Descarga</b>
+        <p>Pulsa el boton y guarda el archivo.</p>
+      </li>
+      <li>
+        <span class="num">02</span>
+        <b>Instala</b>
+        <p>Doble clic y siguiente, siguiente. No hace falta ser administrador.</p>
+      </li>
+      <li>
+        <span class="num">03</span>
+        <b>Abre tu PDF</b>
+        <p>Arrastralo a la ventana y empieza a escribir encima.</p>
+      </li>
+  </ol>
+  <div class="note reveal"><b>Si Windows avisa de que el editor es desconocido</b>. Pulsa <b>Mas informacion</b> y luego <b>Ejecutar de todas formas</b>. Ese aviso sale con todos los programas pequenos que no han pagado un certificado; no significa que el archivo tenga nada malo.</div>
 </section>
 
 <section class="wrap" id="downloads">
-  <h2>Descargas</h2>
-  <p class="lead">Version 1.0.0. No hace falta instalar nada mas.</p>
-      <a class="row" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-Setup.exe">
-        <span class="row-main"><b>Para Windows</b><span>La opcion normal. Se instala como cualquier programa.</span></span>
-        <span class="row-size">42 MB</span>
-        <span class="row-cta">Descargar &rarr;</span>
+  <div class="head reveal">
+    <span class="mono">Descargas</span>
+    <h2>Descargas</h2>
+    <p class="lead">Version 1.0.0. No hace falta instalar nada mas.</p>
+  </div>
+  <div class="reveal">
+      <a class="dl" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-Setup.exe">
+        <span class="dl-os">Para Windows</span>
+        <span class="dl-note">La opcion normal. Se instala como cualquier programa.</span>
+        <span class="dl-size">42 MB</span>
+        <span class="dl-go" aria-hidden="true">&darr;</span>
       </a>
-      <a class="row" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-windows-x64-portable.zip">
-        <span class="row-main"><b>Windows sin instalar</b><span>No instala nada. Puedes llevarlo en un pendrive.</span></span>
-        <span class="row-size">60 MB</span>
-        <span class="row-cta">Descargar &rarr;</span>
+      <a class="dl" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-windows-x64-portable.zip">
+        <span class="dl-os">Windows sin instalar</span>
+        <span class="dl-note">No instala nada. Puedes llevarlo en un pendrive.</span>
+        <span class="dl-size">60 MB</span>
+        <span class="dl-go" aria-hidden="true">&darr;</span>
       </a>
-      <a class="row" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-linux-x64.tar.xz">
-        <span class="row-main"><b>Para Linux</b><span>Se descomprime y se abre. Para 64 bits.</span></span>
-        <span class="row-size">62 MB</span>
-        <span class="row-cta">Descargar &rarr;</span>
+      <a class="dl" href="https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-linux-x64.tar.xz">
+        <span class="dl-os">Para Linux</span>
+        <span class="dl-note">Se descomprime y se abre. Para 64 bits.</span>
+        <span class="dl-size">62 MB</span>
+        <span class="dl-go" aria-hidden="true">&darr;</span>
       </a>
-  <p class="lead" style="margin-top:18px">Por ahora no hay version para Mac.</p>
+  </div>
+  <p class="lead" style="margin-top:16px;font-size:14.5px">Por ahora no hay version para Mac.</p>
 </section>
 
-<section class="soft" id="faq">
-  <div class="wrap">
+<section class="wrap" id="faq">
+  <div class="head reveal">
+    <span class="mono">FAQ</span>
     <h2>Preguntas rapidas</h2>
-    <p class="lead"></p>
+  </div>
+  <div class="reveal">
       <details>
         <summary>Es gratis del todo?</summary>
         <p>Si. No hay version de pago, ni suscripcion, ni limite de documentos.</p>
@@ -273,42 +443,60 @@
 </main>
 
 <footer>
-  <div class="wrap">
-    <p><b>easypdf.surf 1.0.0</b> - gratis y libre para todo el mundo.</p>
-    <p>Algo no funciona o se te ocurre una mejora? <a href="https://github.com/mefardales/easypdf/issues">Cuentanoslo aqui</a>.</p>
-    <p><a href="https://github.com/mefardales/easypdf">Ver el codigo y la licencia</a> - Se ofrece tal cual, sin garantias.</p>
+  <div class="wrap foot">
+    <div>
+      <p><b style="color:var(--fg)">easypdf.surf 1.0.0</b> &middot; gratis y libre para todo el mundo.</p>
+      <p>Se ofrece tal cual, sin garantias.</p>
+    </div>
+    <div>
+      <p><a href="https://github.com/mefardales/easypdf">Ver el codigo y la licencia</a></p>
+      <p><a href="https://github.com/mefardales/easypdf/issues">Cuentanoslo aqui</a></p>
+      <p><a href="https://easypdf.surf/en/" hreflang="en">Espanol</a></p>
+    </div>
   </div>
 </footer>
 
 <script>
 (function () {
-  // Tema: el del sistema por defecto, y se recuerda si se cambia a mano.
-  var raiz = document.documentElement, icono = document.getElementById("theme-icon");
+  var raiz = document.documentElement, boton = document.getElementById("theme");
   function pintar(modo) {
     raiz.setAttribute("data-theme", modo);
-    icono.innerHTML = modo === "dark" ? "&#9789;" : "&#9788;";
+    boton.innerHTML = modo === "dark" ? "☼" : "☽";
   }
   var guardado = null;
   try { guardado = localStorage.getItem("tema"); } catch (e) {}
-  pintar(guardado || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
-  document.getElementById("theme").addEventListener("click", function () {
+  pintar(guardado || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
+  boton.addEventListener("click", function () {
     var nuevo = raiz.getAttribute("data-theme") === "dark" ? "light" : "dark";
     pintar(nuevo);
     try { localStorage.setItem("tema", nuevo); } catch (e) {}
   });
 
-  // El boton principal se adapta al sistema de quien visita la pagina.
-  var ua = navigator.userAgent || "", plataforma =
+  var cabecera = document.getElementById("top");
+  addEventListener("scroll", function () {
+    cabecera.classList.toggle("stuck", scrollY > 8);
+  }, {passive:true});
+
+  var ua = navigator.userAgent || "", plat =
       (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
-  var boton = document.getElementById("cta"),
-      texto = document.getElementById("cta-text"),
-      nota = document.getElementById("cta-note");
-  if (/Linux/i.test(plataforma + ua) && !/Android/i.test(ua)) {
-    boton.href = "https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-linux-x64.tar.xz";
+  var texto = document.getElementById("cta-text"), nota = document.getElementById("cta-note");
+  if (/Linux/i.test(plat + ua) && !/Android/i.test(ua)) {
+    document.getElementById("cta").href = "https://github.com/mefardales/easypdf/raw/main/build/EasyPDF-1.0.0-linux-x64.tar.xz";
     texto.textContent = "Descargar para Linux";
-    nota.textContent = "62 MB - x86-64";
-  } else if (/Mac/i.test(plataforma + ua)) {
+    nota.textContent = "Portable - 62 MB - Linux 64 bits";
+  } else if (/Mac/i.test(plat + ua)) {
     nota.textContent = "Por ahora no hay version para Mac.";
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add("in"); obs.unobserve(e.target); }
+      });
+    }, {rootMargin:"0px 0px -8% 0px"});
+    document.querySelectorAll(".reveal").forEach(function (el) { obs.observe(el); });
+  } else {
+    document.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("in"); });
   }
 })();
 </script>
