@@ -6,15 +6,15 @@
     <lastmod>2026-08-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/en/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/"/>
   </url>
   <url>
-    <loc>https://easypdf.surf/en/</loc>
+    <loc>https://easypdf.surf/es/</loc>
     <lastmod>2026-08-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/en/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/"/>
   </url>
 </urlset>

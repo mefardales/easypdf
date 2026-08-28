@@ -39,7 +39,7 @@ services:
         value: public, max-age=600
 
     routes:
-      # /en (sin barra) lleva a la version en ingles
+      # /es (sin barra) lleva a la version en espanol
       - type: redirect
-        source: /en
-        destination: /en/
+        source: /es
+        destination: /es/

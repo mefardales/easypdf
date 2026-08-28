@@ -1,13 +1,32 @@
 # Publicar la web de easypdf.surf
 
 La web vive en `site/` y son archivos estaticos: no hay servidor ni base de
-datos. Las dos paginas (espanol e ingles) se generan con un guion para que no
-se descuadren entre ellas:
+datos. La pagina principal esta en **ingles** (`/`) y la version en espanol
+cuelga de `/es/`; las dos se generan del mismo guion para que no se descuadren:
 
 ```bash
-python tools/build_site.py     # escribe site/index.html, site/en/index.html,
+python tools/build_site.py     # escribe site/index.html, site/es/index.html,
                                # robots.txt y sitemap.xml
 ```
+
+## Los numeros de la portada
+
+- **Descargas**: las cuenta GitHub en los archivos de cada *release*. La pagina
+  suma los `download_count` de todos los archivos con una peticion a la API
+  publica de GitHub y guarda el resultado una hora en el navegador. Para que
+  haya numeros hace falta haber publicado una release: se hace con el flujo
+  *Publicar release* de la pestana Actions. Ojo: los archivos servidos como
+  `raw` del repositorio (los enlaces de `build/`) **no** llevan cuenta; solo
+  los de las releases.
+- **Visitas de hoy y totales**: contador publico y sin cookies de
+  [counterapi.dev](https://counterapi.dev). Se suma una vez por navegador y
+  dia, no guarda nada de quien visita, y si el servicio falla el numero
+  simplemente no aparece (nunca se ensena una cifra inventada).
+
+Si algun dia quieres analitica de verdad (paginas mas vistas, referencias, de
+que pais llegan), cambia `VISITS_API` en `tools/build_site.py` por
+[GoatCounter](https://www.goatcounter.com) o [Plausible](https://plausible.io):
+ambos son sin cookies y tienen plan gratuito para proyectos abiertos.
 
 ## Render (opcion oficial)
 
@@ -39,8 +58,9 @@ el dominio lo gestiona Render.
 Lo que ya trae la pagina:
 
 - Un titulo y una descripcion distintos por idioma, con las palabras que la
-  gente busca de verdad ("lector de PDF gratis", "anotar PDF").
-- `canonical` y `hreflang` (es, en y `x-default`) en las dos paginas.
+  gente busca de verdad ("free pdf reader", "lector de PDF gratis", "anotar PDF").
+- `canonical` y `hreflang` (en, es y `x-default` apuntando al ingles) en las dos
+  paginas.
 - Datos estructurados JSON-LD: `SoftwareApplication` (con precio 0) y
   `FAQPage` con las preguntas frecuentes.
 - Etiquetas Open Graph y Twitter Card con la captura, para que se vea bien al

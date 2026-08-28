@@ -239,7 +239,7 @@ src/easypdf/
     icons.py        Iconos dibujados por codigo
 packaging/          PyInstaller + Inno Setup + guiones de compilacion
 build/              Ejecutables publicados (Windows y Linux)
-site/               Pagina web (espanol e ingles, se genera con tools/build_site.py)
+site/               Pagina web (ingles en /, espanol en /es/; tools/build_site.py)
 render.yaml         Despliegue de la web en Render
 tools/make_icon.py  Genera assets/easypdf.ico
 tests/              93 pruebas (modelo, PDF, plantillas, interfaz e impresion)
