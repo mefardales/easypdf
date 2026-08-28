@@ -239,7 +239,8 @@ src/easypdf/
     icons.py        Iconos dibujados por codigo
 packaging/          PyInstaller + Inno Setup + guiones de compilacion
 build/              Ejecutables publicados (Windows y Linux)
-site/               Pagina web de descargas (GitHub Pages)
+site/               Pagina web (espanol e ingles, se genera con tools/build_site.py)
+render.yaml         Despliegue de la web en Render
 tools/make_icon.py  Genera assets/easypdf.ico
 tests/              93 pruebas (modelo, PDF, plantillas, interfaz e impresion)
 ```
@@ -251,6 +252,10 @@ pip install -r requirements-dev.txt
 pytest -q          # pruebas (la interfaz se prueba en modo offscreen)
 ruff check src tests tools
 ```
+
+Para tocar la web: `python tools/build_site.py` regenera las dos paginas, el
+`robots.txt` y el `sitemap.xml`. Como se publica esta en
+[docs/DESPLIEGUE-WEB.md](docs/DESPLIEGUE-WEB.md).
 
 Las contribuciones son bienvenidas: lee [CONTRIBUTING.md](CONTRIBUTING.md).
 

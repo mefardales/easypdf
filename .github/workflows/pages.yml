@@ -1,7 +1,7 @@
 name: Publicar la web
 
-# Copia site/ a la rama gh-pages, que es lo que sirve GitHub Pages en
-# https://easypdf.surf (el dominio propio va en site/CNAME)
+# Copia site/ a la rama gh-pages: un espejo de la web en github.io.
+# La web oficial (easypdf.surf) se despliega en Render con render.yaml.
 #
 # Se usa una rama en vez de las acciones oficiales de Pages porque activar
 # Pages por API necesita permisos de administrador que el token de Actions
@@ -33,6 +33,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Regenerar las paginas
+        run: python tools/build_site.py
+
       - name: Copiar site/ a gh-pages
         run: |
           set -euo pipefail
@@ -56,4 +63,4 @@ jobs:
           fi
           git commit -m "Actualizar la web desde ${GITHUB_SHA::7}"
           git push origin gh-pages
-          echo "Publicado en https://easypdf.surf"
+          echo "Espejo publicado en https://mefardales.github.io/easypdf/"
