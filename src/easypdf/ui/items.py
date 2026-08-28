@@ -446,6 +446,12 @@ class InkItem(AnnotationItemMixin, QGraphicsPathItem):
             [(x + offset.x(), y + offset.y()) for x, y in stroke] for stroke in base
         ]
 
+    def boundingRect(self) -> QRectF:
+        # El recuadro de seleccion se dibuja justo sobre el borde del trazo, asi
+        # que hay que declarar tambien ese margen o deja rastro al arrastrar.
+        margin = self.pen().widthF() / 2.0 + 2.0 / self.view_scale()
+        return self.path().boundingRect().adjusted(-margin, -margin, margin, margin)
+
     def paint(self, painter: QPainter, option, widget=None) -> None:
         option.state &= ~QStyle.State_Selected
         painter.setPen(self.pen())
@@ -484,9 +490,30 @@ class TextItem(AnnotationItemMixin, QGraphicsTextItem):
             self.document().blockSignals(blocked)
         self.setOpacity(ann.opacity)
 
+    def content_rect(self) -> QRectF:
+        """Rectangulo del cuadro de texto, sin el margen de seleccion."""
+        return QGraphicsTextItem.boundingRect(self)
+
+    def boundingRect(self) -> QRectF:
+        """Area a repintar: el cuadro mas el borde y los tiradores.
+
+        QGraphicsTextItem solo declara el rectangulo del texto, pero el tirador
+        de anchura se dibuja centrado en el lado derecho y sobresale la mitad.
+        Sin este margen, al arrastrar el cuadro esa mitad no se borraba y
+        quedaba un rastro azul detras.
+        """
+        margin = max(self.ann.width, self.handle_size()) + 2.0
+        return self.content_rect().adjusted(-margin, -margin, margin, margin)
+
+    def shape(self) -> QPainterPath:
+        path = QPainterPath()
+        margin = self.handle_size()
+        path.addRect(self.content_rect().adjusted(-margin, -margin, margin, margin))
+        return path
+
     def _sync_model(self) -> None:
         origin = self.pos()
-        rect = self.boundingRect()
+        rect = self.content_rect()
         self.ann.text = self.toPlainText()
         self.ann.rect = (
             origin.x(),
@@ -544,7 +571,7 @@ class TextItem(AnnotationItemMixin, QGraphicsTextItem):
     def handles(self) -> dict[str, QPointF]:
         if self._editing:
             return {}
-        rect = self.boundingRect()
+        rect = self.content_rect()
         return {"w": QPointF(rect.right(), rect.center().y())}
 
     def resize_to(self, handle: str, pos: QPointF) -> None:
@@ -552,7 +579,7 @@ class TextItem(AnnotationItemMixin, QGraphicsTextItem):
             self.setTextWidth(max(24.0, pos.x()))
 
     def paint(self, painter: QPainter, option, widget=None) -> None:
-        rect = self.boundingRect()
+        rect = self.content_rect()
         ann = self.ann
         if ann.fill:
             painter.setPen(Qt.NoPen)
