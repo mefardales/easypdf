@@ -17,6 +17,7 @@ jobs:
   build:
     name: EasyPDF portable para Linux
     runs-on: ubuntu-22.04   # glibc antigua = compatible con mas distribuciones
+    timeout-minutes: 40
 
     steps:
       - uses: actions/checkout@v4
