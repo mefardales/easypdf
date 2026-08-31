@@ -727,6 +727,49 @@ class PdfView(QGraphicsView):
         self.undo_stack.endMacro()
         return len(colocadas)
 
+    #: Margen minimo al soltar un grupo de anotaciones, en puntos PDF.
+    DROP_MARGIN = 24.0
+
+    def insert_annotations(self, annotations, label: str | None = None) -> int:
+        """Suelta un grupo de anotaciones donde este mirando el usuario.
+
+        Se usa para las piezas de formulario: llegan colocadas unas respecto a
+        otras y aqui se mueven en bloque al centro de lo que se ve, sin que se
+        salgan del papel. Todo el grupo es un solo paso de deshacer.
+        """
+        if self.document is None:
+            return 0
+        piezas = [ann.copy() for ann in annotations]
+        if not piezas:
+            return 0
+        for ann in piezas:
+            ann.id = Annotation(kind=ann.kind, page=0).id   # identidad nueva
+
+        pagina = self.current_page
+        item = self._page_items[pagina]
+        limites = [ann.bounds() for ann in piezas]
+        x0 = min(min(b[0], b[2]) for b in limites)
+        y0 = min(min(b[1], b[3]) for b in limites)
+        ancho = max(max(b[0], b[2]) for b in limites) - x0
+        alto = max(max(b[1], b[3]) for b in limites) - y0
+
+        centro = item.mapFromScene(self.mapToScene(self.viewport().rect().center()))
+        hoja = item.boundingRect()
+        margen = self.DROP_MARGIN
+        destino_x = min(max(margen, centro.x() - ancho / 2),
+                        max(margen, hoja.width() - ancho - margen))
+        destino_y = min(max(margen, centro.y() - alto / 2),
+                        max(margen, hoja.height() - alto - margen))
+
+        self._scene.clearSelection()
+        self.undo_stack.beginMacro(label or tr("cmd_paste", count=len(piezas)))
+        for ann in piezas:
+            ann.page = pagina
+            move_annotation(ann, destino_x - x0, destino_y - y0)
+            self.add_annotation(ann).setSelected(True)
+        self.undo_stack.endMacro()
+        return len(piezas)
+
     def add_annotation(self, ann: Annotation, undoable: bool = True):
         """Anade al documento una anotacion ya definida y devuelve su item.
 
@@ -995,7 +1038,11 @@ class PdfView(QGraphicsView):
             return
         item.sync_model()
         self._items[item.ann.id] = item
-        self.undo_stack.push(AddAnnotationCommand(self, item.ann, item))
+        # Se apunta como "borrar con la goma" y no como "anadir dibujo":
+        # por dentro es un trazo, pero el usuario ha borrado.
+        self.undo_stack.push(
+            AddAnnotationCommand(self, item.ann, item, tr("cmd_erase"))
+        )
 
     # ------------------------------------------------------------------ raton
     def mousePressEvent(self, event) -> None:

@@ -25,9 +25,18 @@ TEXTS: dict[str, dict[str, str]] = {
             "You may use, copy, modify and redistribute it under that licence. "
             "The source code is available from the website.</p>"
             "<p><a href='{url}'>easypdf.surf</a></p>"
-            "<p>Built with <a href='https://pymupdf.readthedocs.io'>PyMuPDF</a> (AGPL) and "
-            "<a href='https://doc.qt.io/qtforpython/'>PySide6</a> (LGPL).</p>"
-            "<p style='color:#666'>This program comes with no warranty.</p>"
+        ),
+        "about_licences": "Licences",
+        "licences_title": "Licences",
+        "licences_html": (
+            "<p><b>easypdf.surf</b> is released under the "
+            "<a href='https://www.gnu.org/licenses/agpl-3.0.html'>GNU AGPL v3 or later</a>. "
+            "It comes with no warranty, to the extent permitted by law.</p>"
+            "<p>It is built with these libraries, each under its own licence:</p><ul>"
+            "<li><a href='https://pymupdf.readthedocs.io'>PyMuPDF</a> - GNU AGPL v3</li>"
+            "<li><a href='https://doc.qt.io/qtforpython/'>PySide6</a> (Qt for Python) - "
+            "GNU LGPL v3. You may replace it with your own build of the library.</li>"
+            "</ul>"
         ),
         "help_title": "Quick guide",
         "help_html": (
@@ -63,6 +72,12 @@ TEXTS: dict[str, dict[str, str]] = {
             "the close button clears the yellow highlight.</li>"
             "<li>The thumbnails sidebar jumps between pages.</li>"
             "<li><b>Esc</b> always goes back to the Select tool.</li></ul>"
+            "<h3>Form pieces</h3>"
+            "<p>The <b>Elements</b> tab in the side panel has ready-made pieces for "
+            "building forms: fields with a line to write on, tick boxes, signature "
+            "lines, headings and tables. Double click one and it drops on the page you "
+            "are on. They are ordinary annotations, so you edit and move them like "
+            "anything else, and once the sheet is done you can save it as a template.</p>"
             "<h3>Templates</h3>"
             "<p>Under <b>Document -&gt; Templates</b> you can save what you have built "
             "(letterheads, tables, stamps, logos) and reuse it: create a new document from a "
@@ -237,6 +252,29 @@ TEXTS: dict[str, dict[str, str]] = {
         "cat_form": "Forms",
         "cat_other": "Other",
         "notes_show_done": "Show the ones already read",
+        "elements_tab": "Elements",
+        "el_insert": "Insert",
+        "el_hint": "Double click a piece to drop it on the page you are on.",
+        "elcat_field": "Fields",
+        "elcat_choice": "Tick boxes",
+        "elcat_signature": "Signatures",
+        "elcat_layout": "Layout",
+        "el_text_field": "Field with a line",
+        "el_long_field": "Field, three lines",
+        "el_date_field": "Date field",
+        "el_boxed_field": "Field with a box",
+        "el_checkbox": "Tick box",
+        "el_checklist": "List of tick boxes",
+        "el_yes_no": "Yes / No",
+        "el_signature": "Signature line",
+        "el_two_signatures": "Two signatures",
+        "el_place_date": "Place and date",
+        "el_heading": "Heading with a rule",
+        "el_separator": "Separator line",
+        "el_table": "Table with headers",
+        "el_note_box": "Notes box",
+        "status_element_added": "{name} added",
+        "cmd_element": "Insert {name}",
         "note_entry": "p. {page}  -  {text}",
         "note_empty": "(empty note)",
         "update_check": "Check for &updates",
@@ -348,6 +386,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "status_new": "New document. Add pages from the Document menu and save with Ctrl+S",
         "status_image_placed": "Image placed: {name}",
         "status_no_selection": "No annotation is selected",
+        "status_pick_select": "Nothing is selected. Press Esc to go back to the Select tool, then click what you want.",
         "status_copied": "{count} copied",
         "status_cut": "{count} cut",
         "status_pasted": "{count} pasted",
@@ -393,9 +432,19 @@ TEXTS: dict[str, dict[str, str]] = {
             "Puedes usarlo, copiarlo, modificarlo y redistribuirlo respetando esa licencia. "
             "El codigo fuente esta disponible en la pagina web.</p>"
             "<p><a href='{url}'>easypdf.surf</a></p>"
-            "<p>Construido con <a href='https://pymupdf.readthedocs.io'>PyMuPDF</a> (AGPL) y "
-            "<a href='https://doc.qt.io/qtforpython/'>PySide6</a> (LGPL).</p>"
-            "<p style='color:#666'>Este programa se distribuye sin ninguna garantia.</p>"
+        ),
+        "about_licences": "Licencias",
+        "licences_title": "Licencias",
+        "licences_html": (
+            "<p><b>easypdf.surf</b> se publica bajo la "
+            "<a href='https://www.gnu.org/licenses/agpl-3.0.html'>GNU AGPL v3 o posterior</a>. "
+            "Se distribuye sin ninguna garantia, hasta donde permite la ley.</p>"
+            "<p>Esta construido con estas bibliotecas, cada una con su licencia:</p><ul>"
+            "<li><a href='https://pymupdf.readthedocs.io'>PyMuPDF</a> - GNU AGPL v3</li>"
+            "<li><a href='https://doc.qt.io/qtforpython/'>PySide6</a> (Qt for Python) - "
+            "GNU LGPL v3. Puedes sustituirla por tu propia compilacion de la "
+            "biblioteca.</li>"
+            "</ul>"
         ),
         "help_title": "Guia rapida",
         "help_html": (
@@ -431,6 +480,12 @@ TEXTS: dict[str, dict[str, str]] = {
             "o el boton de cerrar quitan el resaltado amarillo.</li>"
             "<li>La barra lateral de miniaturas permite saltar de pagina.</li>"
             "<li><b>Esc</b> vuelve siempre a la herramienta Seleccionar.</li></ul>"
+            "<h3>Piezas de formulario</h3>"
+            "<p>La pestana <b>Elementos</b> del panel lateral trae piezas ya hechas para "
+            "montar formularios: campos con su raya para escribir, casillas, lineas de "
+            "firma, titulos y tablas. Doble clic en una y cae en la pagina que estas "
+            "viendo. Son anotaciones normales, asi que se editan y se mueven como todo "
+            "lo demas, y cuando la hoja esta lista se puede guardar como plantilla.</p>"
             "<h3>Plantillas</h3>"
             "<p>En <b>Documento -&gt; Plantillas</b> puedes guardar lo que hayas montado "
             "(membretes, tablas, sellos, logotipos) y reutilizarlo: crear un documento nuevo a "
@@ -601,6 +656,29 @@ TEXTS: dict[str, dict[str, str]] = {
         "cat_form": "Formularios",
         "cat_other": "Otras",
         "notes_show_done": "Ver tambien las leidas",
+        "elements_tab": "Elementos",
+        "el_insert": "Insertar",
+        "el_hint": "Doble clic en una pieza para soltarla en la pagina que estas viendo.",
+        "elcat_field": "Campos",
+        "elcat_choice": "Casillas",
+        "elcat_signature": "Firmas",
+        "elcat_layout": "Estructura",
+        "el_text_field": "Campo con raya",
+        "el_long_field": "Campo de tres rayas",
+        "el_date_field": "Campo de fecha",
+        "el_boxed_field": "Campo con recuadro",
+        "el_checkbox": "Casilla",
+        "el_checklist": "Lista de casillas",
+        "el_yes_no": "Si / No",
+        "el_signature": "Linea de firma",
+        "el_two_signatures": "Dos firmas",
+        "el_place_date": "Lugar y fecha",
+        "el_heading": "Titulo con raya",
+        "el_separator": "Linea separadora",
+        "el_table": "Tabla con cabeceras",
+        "el_note_box": "Recuadro de notas",
+        "status_element_added": "{name} anadido",
+        "cmd_element": "Insertar {name}",
         "note_entry": "p. {page}  -  {text}",
         "note_empty": "(nota vacia)",
         "update_check": "Buscar &actualizaciones",
@@ -715,6 +793,7 @@ TEXTS: dict[str, dict[str, str]] = {
         ),
         "status_image_placed": "Imagen colocada: {name}",
         "status_no_selection": "No hay ninguna anotacion seleccionada",
+        "status_pick_select": "No hay nada seleccionado. Pulsa Esc para volver a Seleccionar y pincha lo que quieras.",
         "status_copied": "{count} copiadas",
         "status_cut": "{count} cortadas",
         "status_pasted": "{count} pegadas",

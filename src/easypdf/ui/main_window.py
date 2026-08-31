@@ -121,6 +121,31 @@ class AboutDialog(QDialog):
         )
         layout.addWidget(text)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        # PySide6 es LGPL y pide avisar de que se usa y bajo que licencia. Va
+        # en su propia ventana para no llenar el "acerca de" de letra pequena,
+        # pero sigue estando a un clic.
+        licencias = buttons.addButton(
+            tr("about_licences"), QDialogButtonBox.ButtonRole.ActionRole
+        )
+        licencias.clicked.connect(lambda: LicencesDialog(self).exec())
+        buttons.rejected.connect(self.reject)
+        buttons.accepted.connect(self.accept)
+        layout.addWidget(buttons)
+
+
+class LicencesDialog(QDialog):
+    """Licencia del programa y de las bibliotecas que usa."""
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(tr("licences_title"))
+        self.resize(520, 340)
+        layout = QVBoxLayout(self)
+        text = QTextBrowser()
+        text.setOpenExternalLinks(True)
+        text.setHtml(tr("licences_html"))
+        layout.addWidget(text)
+        buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject)
         buttons.accepted.connect(self.accept)
         layout.addWidget(buttons)
@@ -175,6 +200,7 @@ class MainWindow(QMainWindow):
         self._create_status_bar()
         self._connect_view()
         self._restore_settings()
+        self.refresh_elements()
         self.refresh_templates()
         self._setup_updates()
         self._load_style_defaults()
@@ -870,10 +896,33 @@ class MainWindow(QMainWindow):
         fila2.addWidget(self.btn_tpl_del)
         col_tpl.addLayout(fila2)
 
+        # --- pestana de elementos de formulario ---
+        caja_el = QWidget(self)
+        col_el = QVBoxLayout(caja_el)
+        col_el.setContentsMargins(4, 4, 4, 4)
+        self.el_tree = QTreeWidget(caja_el)
+        self.el_tree.setHeaderHidden(True)
+        self.el_tree.itemDoubleClicked.connect(lambda *_: self.insert_selected_element())
+        self.el_tree.currentItemChanged.connect(lambda *_: self._update_element_buttons())
+        col_el.addWidget(self.el_tree)
+        self.el_hint = QLabel(tr("el_hint"), caja_el)
+        self.el_hint.setWordWrap(True)
+        self.el_hint.setStyleSheet("color:#666")
+        col_el.addWidget(self.el_hint)
+        self.btn_el_insert = QPushButton(tr("el_insert"), caja_el)
+        self.btn_el_insert.clicked.connect(self.insert_selected_element)
+        col_el.addWidget(self.btn_el_insert)
+
         self.side_tabs = QTabWidget(self)
         self.side_tabs.addTab(caja, tr("bookmarks_dock"))
         self.side_tabs.addTab(caja_notas, tr("notes_tab"))
+        self.side_tabs.addTab(caja_el, tr("elements_tab"))
         self.side_tabs.addTab(caja_tpl, tr("templates_tab"))
+
+        # Sin un minimo, Qt le daba al panel lo que sobraba de las miniaturas
+        # (unos 190 px): el arbol de plantillas ensenaba tres filas y el boton
+        # de guardar quedaba pegado al borde.
+        self.side_tabs.setMinimumHeight(300)
 
         dock = QDockWidget(tr("side_dock"), self)
         dock.setObjectName("dock_bookmarks")
@@ -936,6 +985,63 @@ class MainWindow(QMainWindow):
         self.refresh_notes()
         self.refresh_templates()
         self.view.notify_modified()
+
+    def refresh_elements(self) -> None:
+        """Rellena el catalogo de piezas, agrupado por tipo."""
+        from PySide6.QtWidgets import QTreeWidgetItem
+
+        from ..elements import CATEGORIES as EL_CATEGORIES
+        from ..elements import element_infos
+
+        if not hasattr(self, "el_tree"):
+            return
+        recordado = self._elemento_elegido()
+        self.el_tree.clear()
+        por_grupo: dict[str, list] = {c: [] for c in EL_CATEGORIES}
+        for info in element_infos():
+            por_grupo.setdefault(info.category, []).append(info)
+        for grupo in EL_CATEGORIES:
+            piezas = por_grupo.get(grupo) or []
+            if not piezas:
+                continue
+            raiz = QTreeWidgetItem([tr(f"elcat_{grupo}")])
+            raiz.setFlags(Qt.ItemIsEnabled)
+            self.el_tree.addTopLevelItem(raiz)
+            for info in piezas:
+                hijo = QTreeWidgetItem([info.name])
+                hijo.setData(0, Qt.UserRole, info.key)
+                raiz.addChild(hijo)
+            raiz.setExpanded(True)
+            if recordado is not None:
+                for i in range(raiz.childCount()):
+                    if raiz.child(i).data(0, Qt.UserRole) == recordado:
+                        self.el_tree.setCurrentItem(raiz.child(i))
+        self._update_element_buttons()
+
+    def _elemento_elegido(self) -> str | None:
+        item = self.el_tree.currentItem() if hasattr(self, "el_tree") else None
+        return item.data(0, Qt.UserRole) if item is not None else None
+
+    def _update_element_buttons(self) -> None:
+        if not hasattr(self, "btn_el_insert"):
+            return
+        self.btn_el_insert.setEnabled(
+            self._elemento_elegido() is not None and self.view.has_document()
+        )
+
+    def insert_selected_element(self) -> bool:
+        """Suelta la pieza elegida en la pagina que se esta viendo."""
+        from ..elements import build
+
+        clave = self._elemento_elegido()
+        if clave is None or not self.view.has_document():
+            return False
+        piezas = build(clave, 0.0, 0.0)
+        nombre = tr(f"el_{clave}")
+        if not self.view.insert_annotations(piezas, tr("cmd_element", name=nombre)):
+            return False
+        self.statusBar().showMessage(tr("status_element_added", name=nombre), 4000)
+        return True
 
     def refresh_templates(self) -> None:
         """Rehace el arbol del panel: primero las de serie, luego las tuyas."""
@@ -1173,6 +1279,13 @@ class MainWindow(QMainWindow):
         state = self.settings.window_state()
         if state:
             self.restoreState(state)
+        else:
+            # Primer arranque: la columna izquierda se reparte a medias entre
+            # las miniaturas y el panel. Si el usuario la ha movido alguna vez,
+            # manda lo que dejo guardado.
+            self.resizeDocks(
+                [self.thumb_dock, self.bookmark_dock], [55, 45], Qt.Vertical
+            )
         visible = self.settings.show_thumbnails()
         self.thumb_dock.setVisible(visible)
         self.act_thumbnails.setChecked(visible)
@@ -1635,15 +1748,24 @@ class MainWindow(QMainWindow):
         for menu, clave in self._menu_keys.items():
             menu.setTitle(tr(clave))
         if hasattr(self, "side_tabs"):
-            self.side_tabs.setTabText(0, tr("bookmarks_dock"))
-            self.side_tabs.setTabText(1, tr("notes_tab"))
-            self.side_tabs.setTabText(2, tr("templates_tab"))
+            # Por indice de la pestana no: al anadir "Elementos" en medio,
+            # el numero fijo acababa poniendole el nombre de otra.
+            for widget, clave in ((self.bookmark_list, "bookmarks_dock"),
+                                  (self.notes_list, "notes_tab"),
+                                  (self.el_tree, "elements_tab"),
+                                  (self.tpl_tree, "templates_tab")):
+                indice = self.side_tabs.indexOf(widget.parentWidget())
+                if indice >= 0:
+                    self.side_tabs.setTabText(indice, tr(clave))
             for boton, clave in ((self.btn_tpl_use, "tpl_use"),
                                  (self.btn_tpl_new, "tpl_new"),
                                  (self.btn_tpl_save, "tpl_save"),
                                  (self.btn_tpl_del, "tpl_delete")):
                 boton.setText(tr(clave))
             self.refresh_templates()
+            self.btn_el_insert.setText(tr("el_insert"))
+            self.el_hint.setText(tr("el_hint"))
+            self.refresh_elements()
             self.btn_notes_show.setText(tr("notes_show_done"))
             self.refresh_notes()
         if hasattr(self, "bookmark_dock"):
@@ -2088,23 +2210,35 @@ class MainWindow(QMainWindow):
         self.thumb_dock.setVisible(checked)
         self.settings.set_show_thumbnails(checked)
 
+    def _sin_seleccion(self) -> None:
+        """Explica por que no pasa nada, en vez de quedarse callado.
+
+        Con una herramienta de dibujo activa el clic pinta en lugar de
+        seleccionar, asi que no hay nada que borrar ni que copiar. Antes DEL
+        no hacia absolutamente nada y no habia forma de saber por que.
+        """
+        clave = "status_no_selection" if self.view.tool is Tool.SELECT else "status_pick_select"
+        self.statusBar().showMessage(tr(clave), 4000)
+
     def delete_selection(self) -> None:
-        if not self.view.delete_selected():
-            self.statusBar().showMessage(tr("status_no_selection"), 3000)
+        if self.view.delete_selected():
+            self.statusBar().clearMessage()   # no dejar colgado el aviso anterior
+        else:
+            self._sin_seleccion()
 
     def copy_selection(self) -> None:
         cuantas = self.view.copy_selected()
         if cuantas:
             self.statusBar().showMessage(tr("status_copied", count=cuantas), 3000)
         else:
-            self.statusBar().showMessage(tr("status_no_selection"), 3000)
+            self._sin_seleccion()
 
     def cut_selection(self) -> None:
         cuantas = self.view.cut_selected()
         if cuantas:
             self.statusBar().showMessage(tr("status_cut", count=cuantas), 3000)
         else:
-            self.statusBar().showMessage(tr("status_no_selection"), 3000)
+            self._sin_seleccion()
 
     def paste_clipboard(self) -> None:
         cuantas = self.view.paste_clipboard()
@@ -2162,14 +2296,17 @@ class MainWindow(QMainWindow):
         for act in self.tool_group.actions():
             act.setEnabled(has_doc)
         editando = self.view.is_editing_text
-        hay_seleccion = bool(self.view.selected_items())
-        self.act_delete.setEnabled(hay_seleccion and not editando)
+        # Estas tres van activas aunque no haya nada seleccionado: si se
+        # desactivan, el atajo no llega a dispararse y DEL o Ctrl+C no hacen
+        # nada ni dicen nada. Prefieren avisar en la barra de estado.
+        self.act_delete.setEnabled(has_doc and not editando)
         # Mientras se escribe dentro de un texto, copiar y pegar son los del
         # editor: si las acciones siguieran activas robarian el atajo y no se
         # podria copiar una palabra.
-        self.act_copy.setEnabled(hay_seleccion and not editando)
-        self.act_cut.setEnabled(hay_seleccion and not editando)
+        self.act_copy.setEnabled(has_doc and not editando)
+        self.act_cut.setEnabled(has_doc and not editando)
         self.act_paste.setEnabled(has_doc and not editando)
+        self._update_element_buttons()
         self.act_page_delete.setEnabled(has_doc and self.view.page_count > 1)
         self.act_select_all.setEnabled(has_doc and not editando)
         count = self.view.annotation_count()
@@ -2344,4 +2481,4 @@ class MainWindow(QMainWindow):
         HelpDialog(self).exec()
 
 
-__all__ = ["MainWindow", "AboutDialog", "HelpDialog"]
+__all__ = ["MainWindow", "AboutDialog", "HelpDialog", "LicencesDialog"]

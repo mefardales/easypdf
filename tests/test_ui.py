@@ -1749,3 +1749,232 @@ def test_una_anotacion_tampoco_se_pinta_fuera_de_la_hoja(ventana, qapp):
     )
     qapp.processEvents()
     assert _claros_fuera_de_la_pagina(ventana) == 0
+
+
+# -- DEL y el aviso de que no hay nada seleccionado -----------------------
+def test_del_avisa_en_vez_de_no_hacer_nada_con_otra_herramienta(ventana, qapp):
+    """Con la goma activa no se puede seleccionar, y DEL se quedaba mudo."""
+    ventana.select_tool(Tool.ERASER)
+    _pasar_la_goma(ventana, [(120, 150), (200, 150)])
+    qapp.processEvents()
+    ventana._update_actions()
+
+    # La accion tiene que seguir activa: si se desactiva, el atajo ni se
+    # dispara y el usuario no se entera de nada.
+    assert ventana.act_delete.isEnabled()
+    ventana.statusBar().clearMessage()
+    ventana.delete_selection()
+    assert ventana.statusBar().currentMessage() == tr("status_pick_select")
+
+
+def test_con_seleccionar_activo_el_aviso_es_el_de_siempre(ventana, qapp):
+    ventana.select_tool(Tool.SELECT)
+    ventana.view.scene().clearSelection()
+    qapp.processEvents()
+    ventana.statusBar().clearMessage()
+    ventana.delete_selection()
+    assert ventana.statusBar().currentMessage() == tr("status_no_selection")
+
+
+def test_tras_la_goma_se_puede_volver_a_seleccionar_y_borrar(ventana, qapp):
+    """El camino completo del que se quejaba el usuario, de punta a punta."""
+    from PySide6.QtCore import QPointF
+
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 300.0, 200.0))
+    ventana.view.add_annotation(caja)
+    ventana.select_tool(Tool.ERASER)
+    _pasar_la_goma(ventana, [(120, 150), (280, 150)])
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == 2
+
+    QTest.keyClick(ventana.view.viewport(), Qt.Key_Escape)
+    qapp.processEvents()
+    assert ventana.view.tool is Tool.SELECT
+
+    pagina = ventana.view._page_items[0]
+    punto = ventana.view.mapFromScene(pagina.mapToScene(QPointF(200.0, 150.0)))
+    QTest.mouseClick(ventana.view.viewport(), Qt.LeftButton, Qt.NoModifier, punto)
+    qapp.processEvents()
+    assert ventana.view.selected_items()
+    ventana._update_actions()
+    QTest.keyClick(ventana, Qt.Key_Delete)
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == 1
+
+
+# -- el acerca de y las licencias ----------------------------------------
+def test_el_acerca_de_no_lleva_la_letra_pequena_de_las_bibliotecas():
+    """Se pidio quitarla de ahi; sigue estando, pero en su propia ventana."""
+    texto = tr("about_html", url="https://easypdf.surf")
+    assert "PySide6" not in texto
+    assert "PyMuPDF" not in texto
+    assert "warranty" not in texto.lower()
+
+
+def test_las_licencias_siguen_estando_a_un_clic(ventana, qapp):
+    """PySide6 es LGPL: hay que avisar de que se usa y bajo que licencia."""
+    from easypdf.ui.main_window import AboutDialog, LicencesDialog
+
+    licencias = tr("licences_html")
+    assert "PySide6" in licencias and "LGPL" in licencias
+    assert "PyMuPDF" in licencias and "AGPL" in licencias
+
+    dialogo = AboutDialog(ventana)
+    try:
+        from PySide6.QtWidgets import QPushButton
+
+        botones = [b.text() for b in dialogo.findChildren(QPushButton)]
+        assert tr("about_licences") in botones
+    finally:
+        dialogo.deleteLater()
+
+    ventana_licencias = LicencesDialog(ventana)
+    try:
+        assert ventana_licencias.windowTitle() == tr("licences_title")
+    finally:
+        ventana_licencias.deleteLater()
+
+
+# -- el panel de plantillas ----------------------------------------------
+def test_el_panel_lateral_cabe_para_el_arbol_de_plantillas(ventana, qapp):
+    """Con 190 px el arbol ensenaba tres filas y el boton de guardar no se veia."""
+    qapp.processEvents()
+    assert ventana.side_tabs.minimumHeight() >= 300
+    assert ventana.bookmark_dock.height() >= 300
+
+
+def test_el_panel_de_plantillas_tiene_su_boton_de_guardar(ventana, qapp):
+    ventana.side_tabs.setCurrentIndex(2)
+    qapp.processEvents()
+    ventana._update_template_buttons()
+    assert ventana.btn_tpl_save.text() == tr("tpl_save")
+    assert ventana.btn_tpl_save.isEnabled()      # hay documento abierto
+
+
+def test_una_plantilla_nueva_se_guarda_en_la_carpeta_templates(ventana, tmp_path, monkeypatch):
+    """Lo guardado tiene que acabar en Templates, no en cualquier sitio."""
+    import os
+
+    from easypdf.templates import list_templates
+
+    monkeypatch.setattr(type(ventana), "templates_dir",
+                        lambda self: str(tmp_path / "AppData" / "Templates"))
+    ventana.view.add_annotation(
+        Annotation(kind=Kind.RECT, page=0, rect=(60.0, 60.0, 500.0, 120.0))
+    )
+    monkeypatch.setattr("easypdf.ui.main_window.QInputDialog.getText",
+                        staticmethod(lambda *a, **k: ("Mi membrete", True)))
+    monkeypatch.setattr("easypdf.ui.main_window.QInputDialog.getItem",
+                        staticmethod(lambda *a, **k: (tr("cat_letterhead"), True)))
+
+    assert ventana.save_as_template()
+    carpeta = ventana.templates_dir()
+    assert os.path.basename(carpeta) == "Templates"
+    archivos = os.listdir(carpeta)
+    assert archivos == ["Mi membrete.easypdf-template.json"]
+    guardadas = list_templates(carpeta)
+    assert [(i.name, i.category) for i in guardadas] == [("Mi membrete", "letterhead")]
+
+
+def test_deshacer_la_goma_dice_que_fue_la_goma(ventana, qapp):
+    """En el menu de deshacer ponia 'Anadir dibujo': por dentro es tinta,
+    pero lo que hizo el usuario fue borrar."""
+    ventana.select_tool(Tool.ERASER)
+    _pasar_la_goma(ventana, [(120, 150), (200, 150)])
+    qapp.processEvents()
+    assert ventana.view.undo_stack.undoText() == tr("cmd_erase")
+
+
+# -- piezas de formulario -------------------------------------------------
+def _elegir_elemento(ventana, clave):
+    """Selecciona una pieza del arbol por su clave."""
+    for i in range(ventana.el_tree.topLevelItemCount()):
+        raiz = ventana.el_tree.topLevelItem(i)
+        for j in range(raiz.childCount()):
+            if raiz.child(j).data(0, Qt.UserRole) == clave:
+                ventana.el_tree.setCurrentItem(raiz.child(j))
+                return raiz.child(j)
+    raise AssertionError(f"no esta la pieza {clave}")
+
+
+def test_el_panel_tiene_pestana_de_elementos(ventana, qapp):
+    """Lo que se pidio: una lista de piezas para montar formularios."""
+    from easypdf.elements import ELEMENTS
+
+    titulos = [ventana.side_tabs.tabText(i) for i in range(ventana.side_tabs.count())]
+    assert tr("elements_tab") in titulos
+
+    claves = set()
+    for i in range(ventana.el_tree.topLevelItemCount()):
+        raiz = ventana.el_tree.topLevelItem(i)
+        for j in range(raiz.childCount()):
+            claves.add(raiz.child(j).data(0, Qt.UserRole))
+    assert claves == set(ELEMENTS)
+
+
+def test_insertar_una_pieza_la_pone_en_la_pagina_que_se_ve(ventana, qapp):
+    ventana.view.go_to_page(1)
+    qapp.processEvents()
+    _elegir_elemento(ventana, "checklist")
+    ventana._update_element_buttons()
+    assert ventana.btn_el_insert.isEnabled()
+
+    antes = ventana.view.annotation_count()
+    assert ventana.insert_selected_element()
+    qapp.processEvents()
+    nuevas = list(ventana.view.annotations())[antes:]
+    assert len(nuevas) == 8                       # 4 casillas con su etiqueta
+    assert {a.page for a in nuevas} == {1}        # en la pagina que se esta viendo
+    assert len(ventana.view.selected_items()) == 8
+
+
+def test_la_pieza_cae_dentro_del_papel(ventana, qapp):
+    _elegir_elemento(ventana, "table")
+    antes = ventana.view.annotation_count()
+    ventana.insert_selected_element()
+    qapp.processEvents()
+    hoja = ventana.view._page_items[ventana.view.current_page].boundingRect()
+    for ann in list(ventana.view.annotations())[antes:]:
+        x0, y0, x1, y1 = ann.bounds()
+        assert x0 >= 0 and y0 >= 0
+        assert x1 <= hoja.width() and y1 <= hoja.height()
+
+
+def test_una_pieza_entera_se_deshace_de_una_vez(ventana, qapp):
+    _elegir_elemento(ventana, "checklist")
+    antes = ventana.view.annotation_count()
+    ventana.insert_selected_element()
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == antes + 8
+
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == antes
+
+
+def test_sin_documento_no_se_puede_insertar(ventana, qapp):
+    ventana.close_document()
+    qapp.processEvents()
+    _elegir_elemento(ventana, "checkbox")
+    ventana._update_element_buttons()
+    assert not ventana.btn_el_insert.isEnabled()
+    assert not ventana.insert_selected_element()
+
+
+def test_las_pestanas_del_panel_no_se_confunden_al_cambiar_de_idioma(ventana, qapp):
+    """Se nombraban por indice, y al meter Elementos en medio se cruzaban."""
+    from easypdf.i18n import set_language
+
+    try:
+        set_language("es")
+        ventana.retranslate()
+        qapp.processEvents()
+        titulos = [ventana.side_tabs.tabText(i) for i in range(ventana.side_tabs.count())]
+        assert titulos[ventana.side_tabs.indexOf(ventana.el_tree.parentWidget())] \
+            == tr("elements_tab")
+        assert titulos[ventana.side_tabs.indexOf(ventana.tpl_tree.parentWidget())] \
+            == tr("templates_tab")
+    finally:
+        set_language("en")
+        ventana.retranslate()
+        qapp.processEvents()
