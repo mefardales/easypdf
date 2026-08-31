@@ -308,6 +308,8 @@ class MainWindow(QMainWindow):
                                      shortcut="F11", checkable=True)
         self.act_thumbnails = action("thumbnails", self.toggle_thumbnails,
                                      shortcut="F9", checkable=True)
+        self.act_side_panel = action("side_panel", self.toggle_side_panel,
+                                     shortcut="F10", checkable=True)
 
         self.act_page_add = action("page_add", self.add_page_end, shortcut="Ctrl+Shift+N")
         self.act_page_insert = action("page_insert", self.insert_page_here)
@@ -446,6 +448,7 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.act_goto)
         view_menu.addSeparator()
         view_menu.addAction(self.act_thumbnails)
+        view_menu.addAction(self.act_side_panel)
         view_menu.addAction(self.act_fullscreen)
 
         doc_menu = self.menuBar().addMenu(tr("menu_document"))
@@ -930,6 +933,7 @@ class MainWindow(QMainWindow):
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
         self.bookmark_dock = dock
+        dock.visibilityChanged.connect(self.act_side_panel.setChecked)
 
     def refresh_bookmarks(self) -> None:
         """Rehace la lista con los marcadores del documento abierto."""
@@ -1262,6 +1266,9 @@ class MainWindow(QMainWindow):
             lambda: self.tool_actions[Tool.SELECT].setChecked(True)
         )
         self.view.selectionChanged.connect(self._update_actions)
+        self.view.erased.connect(
+            lambda: self.statusBar().showMessage(tr("status_erased"), 5000)
+        )
         self.view.textEditing.connect(self._on_text_editing)
         self.view.undo_stack.cleanChanged.connect(lambda clean: self._update_title())
 
@@ -1289,6 +1296,9 @@ class MainWindow(QMainWindow):
         visible = self.settings.show_thumbnails()
         self.thumb_dock.setVisible(visible)
         self.act_thumbnails.setChecked(visible)
+        lateral = self.settings.value("view/side_panel", True, type_=bool)
+        self.bookmark_dock.setVisible(bool(lateral))
+        self.act_side_panel.setChecked(bool(lateral))
 
     def _load_style_defaults(self) -> None:
         color = QColor(self.settings.tool_color())
@@ -2209,6 +2219,11 @@ class MainWindow(QMainWindow):
     def toggle_thumbnails(self, checked: bool) -> None:
         self.thumb_dock.setVisible(checked)
         self.settings.set_show_thumbnails(checked)
+
+    def toggle_side_panel(self, checked: bool) -> None:
+        """Ensena o esconde el panel de marcadores, notas y elementos."""
+        self.bookmark_dock.setVisible(checked)
+        self.settings.set_value("view/side_panel", bool(checked))
 
     def _sin_seleccion(self) -> None:
         """Explica por que no pasa nada, en vez de quedarse callado.

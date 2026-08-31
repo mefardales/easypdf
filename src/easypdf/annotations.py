@@ -12,7 +12,7 @@ from collections.abc import Iterable
 
 import pymupdf
 
-from .model import Align, Annotation, Font, Kind, arrow_head
+from .model import Align, Annotation, Font, Kind, arrow_head, stroke_boxes
 
 #: Nombre que se guarda en el campo /T de la anotacion.
 AUTHOR = "easypdf.surf"
@@ -302,10 +302,55 @@ def _add_table(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
     return rejilla
 
 
+def apply_erasures(doc: pymupdf.Document, erasures: Iterable[Annotation]) -> int:
+    """Quita de verdad lo que hay debajo de las pasadas de goma.
+
+    Pintar encima no basta: el texto tapado se sigue pudiendo seleccionar y
+    copiar de un PDF, asi que quien borra un dato confidencial se cree a salvo
+    y no lo esta. Aqui se usa la redaccion del PDF, que elimina el contenido de
+    esa zona del archivo. Es definitivo: una vez guardado no se recupera.
+
+    Devuelve cuantas paginas se han tocado.
+    """
+    por_pagina: dict[int, list[Annotation]] = {}
+    for ann in erasures:
+        if ann.kind is not Kind.ERASE or ann.is_empty():
+            continue
+        if 0 <= ann.page < doc.page_count:
+            por_pagina.setdefault(ann.page, []).append(ann)
+
+    for indice, pasadas in por_pagina.items():
+        page = doc[indice]
+        for ann in pasadas:
+            relleno = _color(ann.color)
+            for caja in stroke_boxes(ann.strokes, ann.width):
+                rect = pymupdf.Rect(*caja) & page.rect
+                if rect.is_empty:
+                    continue
+                page.add_redact_annot(rect, fill=relleno)
+        page.apply_redactions(
+            # De una imagen se borran solo los pixeles que toca la goma: quitar
+            # la foto entera por pasarle por encima una esquina no es borrar,
+            # es otra cosa.
+            images=pymupdf.PDF_REDACT_IMAGE_PIXELS,
+            # Un dibujo vectorial (rayas, recuadros del propio PDF) se va si
+            # queda cubierto del todo.
+            graphics=pymupdf.PDF_REDACT_LINE_ART_REMOVE_IF_COVERED,
+            text=pymupdf.PDF_REDACT_TEXT_REMOVE,
+        )
+    return len(por_pagina)
+
+
 def apply_annotations(doc: pymupdf.Document, annotations: Iterable[Annotation]) -> int:
     """Escribe todas las anotaciones en el documento. Devuelve cuantas se anadieron."""
+    lista = list(annotations)
+    # Primero se borra y despues se dibuja: lo que el usuario haya puesto
+    # encima de una zona borrada tiene que sobrevivir.
+    apply_erasures(doc, lista)
     count = 0
-    for ann in annotations:
+    for ann in lista:
+        if ann.kind is Kind.ERASE:
+            continue          # ya ha hecho su trabajo al borrar
         if ann.is_empty():
             continue
         if not (0 <= ann.page < doc.page_count):

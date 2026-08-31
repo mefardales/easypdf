@@ -36,6 +36,9 @@ class Kind(str, Enum):
     TABLE = "table"
     IMAGE = "image"
     NOTE = "note"
+    #: Pasada de goma. Se guarda como los trazos de tinta, pero al guardar el
+    #: archivo no se dibuja: se usa para quitar de verdad lo que hay debajo.
+    ERASE = "erase"
 
     @property
     def label(self) -> str:
@@ -46,6 +49,7 @@ class Kind(str, Enum):
             Kind.ARROW: "Flecha",
             Kind.TEXT: "Texto",
             Kind.INK: "Dibujo",
+            Kind.ERASE: "Borrado",
             Kind.TABLE: "Tabla",
             Kind.IMAGE: "Imagen",
             Kind.NOTE: "Nota",
@@ -180,6 +184,52 @@ def move_annotation(ann: Annotation, dx: float, dy: float) -> None:
     ann.strokes = [[(x + dx, y + dy) for x, y in stroke] for stroke in ann.strokes]
 
 
+def _puntos_del_trazo(stroke, paso: float):
+    """Recorre un trazo dando puntos cada ``paso``, no solo los vertices.
+
+    Un arrastre rapido deja los puntos muy separados: sin rellenar los huecos,
+    la goma pasaria por encima de algo sin darse cuenta.
+    """
+    if not stroke:
+        return
+    yield stroke[0]
+    for (x0, y0), (x1, y1) in zip(stroke, stroke[1:]):
+        dx, dy = x1 - x0, y1 - y0
+        largo = (dx * dx + dy * dy) ** 0.5
+        trozos = int(largo / paso)
+        for i in range(1, trozos + 1):
+            f = i / (trozos + 1)
+            yield (x0 + dx * f, y0 + dy * f)
+        yield (x1, y1)
+
+
+def stroke_touches(strokes, width: float, rect: Rect) -> bool:
+    """True si un trazo de grosor ``width`` pasa por encima de ``rect``."""
+    radio = max(0.5, float(width) / 2.0)
+    x0, y0, x1, y1 = rect
+    izq, der = min(x0, x1) - radio, max(x0, x1) + radio
+    arriba, abajo = min(y0, y1) - radio, max(y0, y1) + radio
+    for stroke in strokes:
+        for x, y in _puntos_del_trazo(stroke, radio):
+            if izq <= x <= der and arriba <= y <= abajo:
+                return True
+    return False
+
+
+def stroke_boxes(strokes, width: float) -> list[Rect]:
+    """Rectangulos que cubre un trazo, para poder borrar debajo de el."""
+    radio = max(0.5, float(width) / 2.0)
+    cajas: list[Rect] = []
+    for stroke in strokes:
+        for (x0, y0), (x1, y1) in zip(stroke, stroke[1:]):
+            cajas.append((min(x0, x1) - radio, min(y0, y1) - radio,
+                          max(x0, x1) + radio, max(y0, y1) + radio))
+        if len(stroke) == 1:            # un toque suelto tambien borra
+            x, y = stroke[0]
+            cajas.append((x - radio, y - radio, x + radio, y + radio))
+    return cajas
+
+
 #: Tamanos de la goma, en puntos PDF. Ctrl+ y Ctrl- recorren esta lista.
 ERASER_SIZES = (6.0, 10.0, 16.0, 24.0, 36.0, 54.0, 80.0)
 ERASER_DEFAULT = 16.0
@@ -262,7 +312,7 @@ class Annotation:
         if self.kind in (Kind.LINE, Kind.ARROW):
             (x0, y0), (x1, y1) = self.p1, self.p2
             return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
-        if self.kind is Kind.INK:
+        if self.kind in (Kind.INK, Kind.ERASE):
             pts = [p for stroke in self.strokes for p in stroke]
             if not pts:
                 return (0.0, 0.0, 0.0, 0.0)
@@ -317,7 +367,7 @@ class Annotation:
 
     def is_empty(self) -> bool:
         """True si la anotacion no tiene tamano util y deberia descartarse."""
-        if self.kind is Kind.INK:
+        if self.kind in (Kind.INK, Kind.ERASE):
             return not any(len(s) >= 2 for s in self.strokes)
         if self.kind in (Kind.LINE, Kind.ARROW):
             dx = self.p2[0] - self.p1[0]

@@ -1143,7 +1143,7 @@ def create_item(ann: Annotation, parent: QGraphicsItem | None = None):
         return RectItem(ann, parent)
     if ann.kind in (Kind.LINE, Kind.ARROW):
         return LineItem(ann, parent)
-    if ann.kind is Kind.INK:
+    if ann.kind in (Kind.INK, Kind.ERASE):
         return InkItem(ann, parent)
     if ann.kind is Kind.TEXT:
         return TextItem(ann, parent)

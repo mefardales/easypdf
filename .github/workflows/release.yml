@@ -10,7 +10,7 @@ on:
       version:
         description: "Version a publicar (sin la v)"
         type: string
-        default: "1.5.4"
+        default: "1.6.0"
 
 permissions:
   contents: write
@@ -56,38 +56,30 @@ jobs:
           prerelease: false
           generate_release_notes: false
           body: |
-            ## Novedades de la 1.5.4
+            ## Novedades de la 1.6.0
 
-            **Una tabla dejaba el programa a medio gas**
+            **La goma ahora borra de verdad**
 
-            Al insertar una tabla se abre sola su primera celda para escribir.
-            El editor de la celda es hijo de la tabla, asi que cuando se
-            pinchaba en otra parte el que perdia el foco era el editor y la
-            tabla no se enteraba: se quedaba en modo edicion para siempre. Y
-            en modo edicion los atajos se le ceden al editor de texto, para
-            poder copiar una palabra, con lo que **DEL, Ctrl+C y Ctrl+V
-            dejaban de funcionar en todo el documento** hasta que alguien
-            pulsaba Esc sin saber por que.
+            Antes solo pintaba encima. Eso enganaba: el texto tapado de blanco
+            se sigue pudiendo seleccionar y copiar de un PDF, asi que quien
+            borraba un dato confidencial se creia a salvo sin estarlo.
+            Comprobado: se tapaba "SALARIO: 45.000 EUR", se guardaba, y al
+            abrir el archivo el texto seguia ahi entero.
 
-            - Al pinchar fuera, la celda se cierra y guarda lo escrito.
-            - Se puede borrar una tabla con DEL, y copiarla y pegarla.
-            - Mientras se escribe dentro de una celda los atajos siguen siendo
-              los del editor, que es lo correcto.
+            - La goma se lleva por delante las anotaciones por las que pasa.
+            - Al guardar, quita tambien el contenido original que tape: el
+              texto desaparece del archivo y ya no se puede seleccionar ni
+              copiar. De una imagen se borran solo los pixeles que toca, no la
+              foto entera.
+            - Hasta que se guarda, `Ctrl+Z` lo devuelve todo, y una pasada
+              entera es un solo paso de deshacer. Una vez guardado no hay
+              vuelta atras, y la barra de estado lo avisa.
 
-            **El programa reventaba al cerrarse despues de copiar**
-            - Copiar dejaba las anotaciones en el portapapeles con un tipo MIME
-              propio. Ese paquete se lo queda Qt, pero el envoltorio de Python
-              cree que tambien es suyo, y los dos lo borraban: fallo de
-              segmentacion al salir. Ahora va como texto, con su marca dentro,
-              que es igual de seguro (un texto de otro programa no se cuela
-              como anotaciones) y no tiene ese problema. Estaba desde la 1.5.1.
-
-            **Tab entre celdas**
-            - La ayuda lo promete desde siempre y no ocurria nunca: el
-              tabulador se lo quedaba primero el widget para pasar el foco al
-              siguiente control y despues la escena para pasarlo al siguiente
-              elemento, y no llegaba a la tabla. Ahora Tab pasa a la celda
-              siguiente y Shift+Tab a la anterior.
+            **Ensenar y esconder el panel lateral**
+            - En **Ver** hay una opcion para el panel de marcadores, notas,
+              elementos y plantillas (F10). Se podia cerrar con su aspa y
+              luego no habia forma de recuperarlo. Se recuerda de una sesion
+              a otra, como el de miniaturas.
 
             ## Descargas
 

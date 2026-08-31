@@ -199,3 +199,72 @@ def test_una_imagen_sin_datos_se_ignora(documento):
     ann = Annotation(kind=Kind.IMAGE, page=0, rect=(50, 50, 250, 170))
     assert ann.is_empty()
     assert apply_annotations(doc, [ann]) == 0
+
+
+# -- la goma borra de verdad ---------------------------------------------
+def test_la_goma_quita_el_texto_del_archivo_no_lo_tapa():
+    """Pintar de blanco no vale: el texto tapado se seguia pudiendo copiar.
+
+    Quien borra un dato confidencial de un PDF se cree a salvo; si lo unico
+    que hay encima es pintura, cualquiera lo selecciona y lo lee.
+    """
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((72, 120), "SALARIO: 45.000 EUR", fontsize=18)
+    page.insert_text((72, 300), "Esto se queda", fontsize=18)
+    datos = doc.tobytes()
+    doc.close()
+
+    doc = pymupdf.open("pdf", datos)
+    goma = Annotation(kind=Kind.ERASE, page=0, color=(1.0, 1.0, 1.0), width=30.0,
+                      strokes=[[(60.0, 112.0), (330.0, 112.0)]])
+    apply_annotations(doc, [goma])
+    salida = doc.tobytes(garbage=3, deflate=True)
+    doc.close()
+
+    leido = pymupdf.open("pdf", salida)
+    texto = leido[0].get_text()
+    leido.close()
+    assert "SALARIO" not in texto
+    assert "Esto se queda" in texto
+
+
+def test_la_pasada_de_goma_no_se_escribe_como_dibujo():
+    """La goma hace su trabajo borrando; no se guarda como una raya blanca."""
+    doc = pymupdf.open()
+    doc.new_page().insert_text((72, 120), "algo", fontsize=14)
+    datos = doc.tobytes()
+    doc.close()
+
+    doc = pymupdf.open("pdf", datos)
+    goma = Annotation(kind=Kind.ERASE, page=0, color=(1.0, 1.0, 1.0), width=20.0,
+                      strokes=[[(60.0, 115.0), (200.0, 115.0)]])
+    escritas = apply_annotations(doc, [goma])
+    assert escritas == 0
+    assert not list(doc[0].annots())
+    doc.close()
+
+
+def test_lo_dibujado_despues_de_borrar_sobrevive():
+    """Se borra primero y se dibuja despues: si no, la goma se lo llevaria."""
+    doc = pymupdf.open()
+    doc.new_page().insert_text((72, 120), "fuera", fontsize=14)
+    datos = doc.tobytes()
+    doc.close()
+
+    doc = pymupdf.open("pdf", datos)
+    goma = Annotation(kind=Kind.ERASE, page=0, color=(1.0, 1.0, 1.0), width=30.0,
+                      strokes=[[(60.0, 115.0), (240.0, 115.0)]])
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(60.0, 100.0, 240.0, 140.0))
+    assert apply_annotations(doc, [goma, caja]) == 1
+    assert len(list(doc[0].annots())) == 1        # la caja, encima de lo borrado
+    doc.close()
+
+
+def test_una_goma_vacia_no_toca_nada():
+    doc = pymupdf.open()
+    doc.new_page().insert_text((72, 120), "intacto", fontsize=14)
+    goma = Annotation(kind=Kind.ERASE, page=0, strokes=[])
+    apply_annotations(doc, [goma])
+    assert "intacto" in doc[0].get_text()
+    doc.close()

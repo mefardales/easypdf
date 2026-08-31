@@ -831,7 +831,7 @@ def _pasar_la_goma(ventana, puntos, pagina=0):
 
     vista = ventana.view
     ann = Annotation(
-        kind=Kind.INK, page=pagina, color=tuple(vista.eraser_color),
+        kind=Kind.ERASE, page=pagina, color=tuple(vista.eraser_color),
         width=vista.eraser_size, opacity=1.0,
     )
     vista._erase_item = create_item(ann, vista._page_items[pagina])
@@ -842,22 +842,38 @@ def _pasar_la_goma(ventana, puntos, pagina=0):
     return ann
 
 
-def test_la_goma_pinta_encima_en_vez_de_quitar_anotaciones(ventana, qapp):
-    """La goma tapa el documento, no borra lo que ya hay puesto."""
+def test_la_goma_se_lleva_lo_que_hay_debajo(ventana, qapp):
+    """Borra de verdad: lo que pisa desaparece, lo de al lado se queda."""
     caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0), width=2)
+    lejos = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 500.0, 200.0, 560.0), width=2)
     ventana.view.add_annotation(caja)
+    ventana.view.add_annotation(lejos)
     qapp.processEvents()
-    total = len(ventana.view.store)
 
     ventana.select_tool(Tool.ERASER)
     trazo = _pasar_la_goma(ventana, [(120, 120), (140, 130), (160, 140)])
     qapp.processEvents()
 
-    # la caja sigue ahi, y ademas hay un trazo nuevo que la tapa
+    assert caja not in list(ventana.view.store)
+    assert lejos in list(ventana.view.store)
+    assert trazo.kind is Kind.ERASE
+
+
+def test_una_pasada_de_goma_se_deshace_entera(ventana, qapp):
+    """La pasada y lo que se llevo por delante son un solo paso de deshacer."""
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0), width=2)
+    ventana.view.add_annotation(caja)
+    qapp.processEvents()
+
+    ventana.select_tool(Tool.ERASER)
+    _pasar_la_goma(ventana, [(120, 120), (160, 140)])
+    qapp.processEvents()
+    assert caja not in list(ventana.view.store)
+
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
     assert caja in list(ventana.view.store)
-    assert len(ventana.view.store) == total + 1
-    assert trazo.kind is Kind.INK
-    assert trazo.opacity == 1.0
+    assert not [a for a in ventana.view.annotations() if a.kind is Kind.ERASE]
 
 
 def test_la_goma_tapa_en_blanco_por_defecto(ventana, qapp):
@@ -1785,7 +1801,8 @@ def test_tras_la_goma_se_puede_volver_a_seleccionar_y_borrar(ventana, qapp):
     ventana.select_tool(Tool.ERASER)
     _pasar_la_goma(ventana, [(120, 150), (280, 150)])
     qapp.processEvents()
-    assert ventana.view.annotation_count() == 2
+    # la goma se llevo la caja y dejo su propia pasada
+    assert ventana.view.annotation_count() == 1
 
     QTest.keyClick(ventana.view.viewport(), Qt.Key_Escape)
     qapp.processEvents()
@@ -1799,7 +1816,7 @@ def test_tras_la_goma_se_puede_volver_a_seleccionar_y_borrar(ventana, qapp):
     ventana._update_actions()
     QTest.keyClick(ventana, Qt.Key_Delete)
     qapp.processEvents()
-    assert ventana.view.annotation_count() == 1
+    assert ventana.view.annotation_count() == 0
 
 
 # -- el acerca de y las licencias ----------------------------------------
@@ -2092,3 +2109,37 @@ def test_mientras_se_escribe_en_una_celda_del_no_borra_la_tabla(ventana, qapp):
 
     QTest.keyClick(ventana.view.viewport(), Qt.Key_Escape)
     qapp.processEvents()
+
+
+def test_la_goma_avisa_de_que_el_borrado_es_definitivo(ventana, qapp):
+    """Al guardar desaparece del archivo: el usuario tiene que saberlo."""
+    ventana.select_tool(Tool.ERASER)
+    ventana.statusBar().clearMessage()
+    _pasar_la_goma(ventana, [(120, 150), (200, 150)])
+    qapp.processEvents()
+    assert ventana.statusBar().currentMessage() == tr("status_erased")
+
+
+# -- ensenar y esconder el panel lateral ----------------------------------
+def test_el_menu_ver_ensena_y_esconde_el_panel_lateral(ventana, qapp):
+    """Se podia cerrar con el aspa y luego no habia forma de recuperarlo."""
+    assert ventana.act_side_panel.isCheckable()
+    assert ventana.bookmark_dock.isVisible()
+    assert ventana.act_side_panel.isChecked()
+
+    ventana.act_side_panel.trigger()
+    qapp.processEvents()
+    assert not ventana.bookmark_dock.isVisible()
+
+    ventana.act_side_panel.trigger()
+    qapp.processEvents()
+    assert ventana.bookmark_dock.isVisible()
+
+
+def test_cerrar_el_panel_con_su_aspa_desmarca_la_opcion(ventana, qapp):
+    ventana.bookmark_dock.close()
+    qapp.processEvents()
+    assert not ventana.act_side_panel.isChecked()
+    ventana.act_side_panel.trigger()      # y se recupera desde el menu
+    qapp.processEvents()
+    assert ventana.bookmark_dock.isVisible()
