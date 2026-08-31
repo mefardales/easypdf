@@ -221,6 +221,7 @@ class Annotation:
     cells: list[str] = field(default_factory=list)
     image_data: bytes = b""
     image_name: str = ""
+    done: bool = False          # nota ya leida
     color: RGB = (0.85, 0.10, 0.10)
     fill: RGB | None = None
     width: float = 1.5

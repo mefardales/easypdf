@@ -42,7 +42,7 @@ from .. import __app_name__, __url__, __version__
 from ..config import PALETTE, Settings
 from ..document import DEFAULT_PAGE_SIZE, PAGE_SIZES, PasswordRequired, PdfDocument, PdfError
 from ..i18n import LANGUAGES, language, page_size_label, set_language, tr
-from ..model import Align, Font
+from ..model import Align, Font, Kind
 from ..printing import print_document, print_preview
 from ..templates import (
     TemplateError,
@@ -230,11 +230,23 @@ class MainWindow(QMainWindow):
 
         # Los atajos si dependen de la herramienta: con la goma cambian su
         # tamano, que es lo que se quiere ajustar mientras se borra.
+        # Sin repetir combinaciones: QKeySequence.ZoomIn ya es Ctrl++ en esta
+        # plataforma, y dos atajos iguales en la misma accion hacen que Qt los
+        # considere ambiguos y no dispare ninguno.
+        def _atajos(*candidatos):
+            vistos, salida = set(), []
+            for sec in candidatos:
+                texto = QKeySequence(sec).toString()
+                if texto and texto not in vistos:
+                    vistos.add(texto)
+                    salida.append(QKeySequence(sec))
+            return salida
+
         self._sc_zoom_in = QAction(self)
-        self._sc_zoom_in.setShortcuts([QKeySequence.ZoomIn, QKeySequence("Ctrl++")])
+        self._sc_zoom_in.setShortcuts(_atajos(QKeySequence.ZoomIn, "Ctrl++", "Ctrl+="))
         self._sc_zoom_in.triggered.connect(lambda: self.zoom_or_eraser(1))
         self._sc_zoom_out = QAction(self)
-        self._sc_zoom_out.setShortcuts([QKeySequence.ZoomOut, QKeySequence("Ctrl+-")])
+        self._sc_zoom_out.setShortcuts(_atajos(QKeySequence.ZoomOut, "Ctrl+-"))
         self._sc_zoom_out.triggered.connect(lambda: self.zoom_or_eraser(-1))
         # y ademas los corchetes, como en cualquier programa de dibujo
         self._sc_brush_up = QAction(self)
@@ -770,9 +782,30 @@ class MainWindow(QMainWindow):
         botones.addWidget(self.btn_bookmark_del)
         columna.addLayout(botones)
 
-        dock = QDockWidget(tr("bookmarks_dock"), self)
+        # --- pestana de notas ---
+        caja_notas = QWidget(self)
+        col_notas = QVBoxLayout(caja_notas)
+        col_notas.setContentsMargins(4, 4, 4, 4)
+        self.notes_list = QListWidget(caja_notas)
+        self.notes_list.itemClicked.connect(self._go_to_note)
+        self.notes_list.itemChanged.connect(self._on_note_checked)
+        col_notas.addWidget(self.notes_list)
+        fila_notas = QHBoxLayout()
+        self.btn_notes_show = QPushButton(tr("notes_show_done"), caja_notas)
+        self.btn_notes_show.setCheckable(True)
+        self.btn_notes_show.toggled.connect(lambda *_: self.refresh_notes())
+        fila_notas.addWidget(self.btn_notes_show)
+        col_notas.addLayout(fila_notas)
+
+        from PySide6.QtWidgets import QTabWidget
+
+        self.side_tabs = QTabWidget(self)
+        self.side_tabs.addTab(caja, tr("bookmarks_dock"))
+        self.side_tabs.addTab(caja_notas, tr("notes_tab"))
+
+        dock = QDockWidget(tr("side_dock"), self)
         dock.setObjectName("dock_bookmarks")
-        dock.setWidget(caja)
+        dock.setWidget(self.side_tabs)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
         self.bookmark_dock = dock
@@ -814,6 +847,7 @@ class MainWindow(QMainWindow):
         marcadores.sort(key=lambda m: m[1])          # en orden de pagina
         self.view.document.set_bookmarks(marcadores)
         self.refresh_bookmarks()
+        self.refresh_notes()
         self.view.notify_modified()
 
     def remove_bookmark(self) -> None:
@@ -826,7 +860,81 @@ class MainWindow(QMainWindow):
         del marcadores[fila]
         self.view.document.set_bookmarks(marcadores)
         self.refresh_bookmarks()
+        self.refresh_notes()
         self.view.notify_modified()
+
+    def refresh_notes(self) -> None:
+        """Rehace la lista de notas del documento.
+
+        Las leidas desaparecen, salvo que se pida verlas. Asi la lista es lo
+        que queda por mirar, no un inventario.
+        """
+        if not hasattr(self, "notes_list"):
+            return
+        from PySide6.QtWidgets import QListWidgetItem
+
+        ver_leidas = self.btn_notes_show.isChecked()
+        self.notes_list.blockSignals(True)
+        self.notes_list.clear()
+        pendientes = 0
+        for ann in sorted(
+            (a for a in self.view.store if a.kind is Kind.NOTE),
+            key=lambda a: (a.page, a.rect[1], a.rect[0]),
+        ):
+            if ann.done and not ver_leidas:
+                continue
+            if not ann.done:
+                pendientes += 1
+            texto = (ann.text or "").strip().splitlines()
+            resumen = texto[0] if texto else tr("note_empty")
+            item = QListWidgetItem(tr("note_entry", page=ann.page + 1, text=resumen[:60]))
+            item.setData(Qt.UserRole, ann.id)
+            item.setToolTip(ann.text or "")
+            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+            item.setCheckState(Qt.Checked if ann.done else Qt.Unchecked)
+            if ann.done:
+                fuente = item.font()
+                fuente.setStrikeOut(True)
+                item.setFont(fuente)
+            self.notes_list.addItem(item)
+        self.notes_list.blockSignals(False)
+        indice = self.side_tabs.indexOf(self.notes_list.parentWidget())
+        if indice >= 0:
+            etiqueta = tr("notes_tab")
+            self.side_tabs.setTabText(
+                indice, f"{etiqueta} ({pendientes})" if pendientes else etiqueta
+            )
+
+    def _note_by_id(self, ann_id):
+        for ann in self.view.store:
+            if ann.id == ann_id:
+                return ann
+        return None
+
+    def _go_to_note(self, item) -> None:
+        """Lleva a la nota y ensena su texto."""
+        ann = self._note_by_id(item.data(Qt.UserRole))
+        if ann is None:
+            return
+        self.view.go_to_page(ann.page)
+        grafico = self.view._items.get(ann.id)
+        if grafico is not None:
+            self.view.centerOn(grafico)
+            self.view._scene.clearSelection()
+            grafico.setSelected(True)
+        self.statusBar().showMessage(ann.text or tr("note_empty"), 8000)
+
+    def _on_note_checked(self, item) -> None:
+        """Marca o desmarca una nota como leida."""
+        ann = self._note_by_id(item.data(Qt.UserRole))
+        if ann is None:
+            return
+        leida = item.checkState() == Qt.Checked
+        if leida == ann.done:
+            return
+        ann.done = leida
+        self.view.notify_modified()
+        self.refresh_notes()
 
     def _create_status_bar(self) -> None:
         status = self.statusBar()
@@ -854,6 +962,7 @@ class MainWindow(QMainWindow):
         self.view.pageChanged.connect(self._on_page_changed)
         self.view.zoomChanged.connect(self._on_zoom_changed)
         self.view.eraserSizeChanged.connect(self._on_eraser_size)
+        self.view.modified.connect(self.refresh_notes)
         self.view.noteCreated.connect(self.edit_note)
         self.view.modified.connect(self._on_modified)
         self.view.toolFinished.connect(
@@ -1043,6 +1152,7 @@ class MainWindow(QMainWindow):
         self.view.undo_stack.setClean()
         self._build_thumbnails()
         self.refresh_bookmarks()
+        self.refresh_notes()
         self._update_title()
         self._update_actions()
         self.statusBar().showMessage(tr("status_new"), 6000)
@@ -1093,6 +1203,7 @@ class MainWindow(QMainWindow):
         item.setToolTip(item.ann.text)
         item.update()
         self.view.notify_modified()
+        self.refresh_notes()
 
     def zoom_or_eraser(self, delta: int) -> None:
         """Ctrl+ y Ctrl-: cambian la goma si esta activa, si no el zoom.
@@ -1271,6 +1382,7 @@ class MainWindow(QMainWindow):
         self.view.undo_stack.setClean()
         self._build_thumbnails()
         self.refresh_bookmarks()
+        self.refresh_notes()
         self._update_title()
         self._update_actions()
         self.statusBar().showMessage(tr("template_new_done", name=nombre), 6000)
@@ -1310,11 +1422,17 @@ class MainWindow(QMainWindow):
             act.setStatusTip(tr(tip) if tip else tr(clave, app=__app_name__))
         for menu, clave in self._menu_keys.items():
             menu.setTitle(tr(clave))
+        if hasattr(self, "side_tabs"):
+            self.side_tabs.setTabText(0, tr("bookmarks_dock"))
+            self.side_tabs.setTabText(1, tr("notes_tab"))
+            self.btn_notes_show.setText(tr("notes_show_done"))
+            self.refresh_notes()
         if hasattr(self, "bookmark_dock"):
-            self.bookmark_dock.setWindowTitle(tr("bookmarks_dock"))
+            self.bookmark_dock.setWindowTitle(tr("side_dock"))
             self.btn_bookmark_add.setText(tr("bookmark_add"))
             self.btn_bookmark_del.setText(tr("bookmark_remove"))
             self.refresh_bookmarks()
+        self.refresh_notes()
         if hasattr(self, "thumb_dock"):
             self.thumb_dock.setWindowTitle(tr("pages_dock"))
         for nombre, act in getattr(self, "page_size_actions", {}).items():
@@ -1414,6 +1532,7 @@ class MainWindow(QMainWindow):
         self._refresh_recent_menu(self.settings.push_recent(path))
         self._build_thumbnails()
         self.refresh_bookmarks()
+        self.refresh_notes()
         self._update_title()
         self._update_actions()
         self.statusBar().showMessage(tr("status_opened", path=path), 5000)
