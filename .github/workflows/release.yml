@@ -84,7 +84,7 @@ jobs:
             - Las guias de alineacion se quedaban pintadas en la pagina al
               crear o cargar anotaciones, sin estar arrastrando nada.
 
-            ## Descargas            ## Descargas
+            ## Descargas
 
             | Archivo | Para |
             |---|---|
