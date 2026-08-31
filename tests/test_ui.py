@@ -1313,7 +1313,11 @@ def test_el_panel_ensena_las_plantillas_de_serie_por_tipo(ventana):
 
 def test_una_plantilla_de_serie_se_aplica_sobre_el_documento(ventana, qapp):
     hojas = _hojas_de_plantilla(ventana)
-    membrete = next(i for _g, _r, i in hojas if "Membrete" in i.text(0))
+    from easypdf.templates import builtin_infos
+
+    # se busca por su rama, no por el nombre: cambia con el idioma
+    primera = builtin_infos()[0].name
+    membrete = next(i for _g, _r, i in hojas if primera in i.text(0))
     ventana.tpl_tree.setCurrentItem(membrete)
     assert ventana.btn_tpl_use.isEnabled()
 
@@ -1332,7 +1336,11 @@ def test_las_de_serie_no_se_pueden_borrar(ventana):
 
 def test_documento_nuevo_desde_una_plantilla_de_serie(ventana, qapp):
     hojas = _hojas_de_plantilla(ventana)
-    acta = next(i for _g, _r, i in hojas if "Acta" in i.text(0))
+    from easypdf.templates import builtin_infos
+
+    con_tabla = next(i.name for i in builtin_infos() if i.category == "table"
+                     and i.annotations > 5)
+    acta = next(i for _g, _r, i in hojas if con_tabla in i.text(0))
     ventana.tpl_tree.setCurrentItem(acta)
 
     ventana._modified = False
