@@ -1278,3 +1278,89 @@ def test_se_pueden_quitar_todas_las_guias(ventana):
     ventana._clear_guides()
     assert vista.page_guides(0)["h"] == []
     assert vista.page_guides(0)["v"] == []
+
+
+# --------------------------------------------------------------------------
+# Panel de plantillas
+# --------------------------------------------------------------------------
+
+def _hojas_de_plantilla(ventana):
+    """Las plantillas del arbol, sin los titulos de grupo."""
+    salida = []
+    arbol = ventana.tpl_tree
+    for i in range(arbol.topLevelItemCount()):
+        grupo = arbol.topLevelItem(i)
+        for j in range(grupo.childCount()):
+            rama = grupo.child(j)
+            for k in range(rama.childCount()):
+                salida.append((grupo.text(0), rama.text(0), rama.child(k)))
+    return salida
+
+
+def test_el_panel_ensena_las_plantillas_de_serie_por_tipo(ventana):
+    hojas = _hojas_de_plantilla(ventana)
+    assert len(hojas) >= 4
+    assert len({rama for _g, rama, _i in hojas}) >= 3   # varios tipos
+
+
+def test_una_plantilla_de_serie_se_aplica_sobre_el_documento(ventana, qapp):
+    hojas = _hojas_de_plantilla(ventana)
+    membrete = next(i for _g, _r, i in hojas if "Membrete" in i.text(0))
+    ventana.tpl_tree.setCurrentItem(membrete)
+    assert ventana.btn_tpl_use.isEnabled()
+
+    antes = len(ventana.view.store)
+    assert ventana.use_selected_template()
+    qapp.processEvents()
+    assert len(ventana.view.store) > antes
+
+
+def test_las_de_serie_no_se_pueden_borrar(ventana):
+    hojas = _hojas_de_plantilla(ventana)
+    ventana.tpl_tree.setCurrentItem(hojas[0][2])
+    assert not ventana.btn_tpl_del.isEnabled()
+    assert ventana.delete_selected_template() is False
+
+
+def test_documento_nuevo_desde_una_plantilla_de_serie(ventana, qapp):
+    hojas = _hojas_de_plantilla(ventana)
+    acta = next(i for _g, _r, i in hojas if "Acta" in i.text(0))
+    ventana.tpl_tree.setCurrentItem(acta)
+
+    ventana._modified = False
+    ventana.view.undo_stack.setClean()
+    assert ventana.new_from_selected_template()
+    qapp.processEvents()
+
+    tipos = {a.kind for a in ventana.view.store}
+    assert Kind.TABLE in tipos and Kind.TEXT in tipos
+
+
+def test_guardar_y_borrar_una_plantilla_propia_desde_el_panel(ventana, qapp, tmp_path,
+                                                              monkeypatch):
+    from PySide6.QtWidgets import QInputDialog, QMessageBox
+
+    monkeypatch.setattr(ventana, "templates_dir", lambda: str(tmp_path))
+    monkeypatch.setattr(ventana, "_ensure_templates_dir", lambda: str(tmp_path))
+    monkeypatch.setattr(QInputDialog, "getText",
+                        staticmethod(lambda *a, **k: ("Mi informe", True)))
+    monkeypatch.setattr(QInputDialog, "getItem",
+                        staticmethod(lambda *a, **k: (a[3][0], True)))
+
+    ventana.view.add_annotation(
+        Annotation(kind=Kind.RECT, page=0, rect=(10.0, 10.0, 90.0, 60.0), width=2)
+    )
+    qapp.processEvents()
+    assert ventana.save_as_template()
+
+    ventana.refresh_templates()
+    mias = [i for _g, _r, i in _hojas_de_plantilla(ventana) if "Mi informe" in i.text(0)]
+    assert len(mias) == 1
+
+    ventana.tpl_tree.setCurrentItem(mias[0])
+    assert ventana.btn_tpl_del.isEnabled()     # la propia si se borra
+    monkeypatch.setattr(QMessageBox, "question",
+                        staticmethod(lambda *a, **k: QMessageBox.Yes))
+    assert ventana.delete_selected_template()
+    assert not [i for _g, _r, i in _hojas_de_plantilla(ventana)
+                if "Mi informe" in i.text(0)]

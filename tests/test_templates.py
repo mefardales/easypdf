@@ -107,3 +107,86 @@ def test_sin_nombre_no_se_guarda(tmp_path, anotaciones):
 
 def test_lista_vacia_si_no_hay_carpeta(tmp_path):
     assert list_templates(str(tmp_path / "no-existe")) == []
+
+
+# --------------------------------------------------------------------------
+# Tipos y plantillas de serie
+# --------------------------------------------------------------------------
+
+def test_una_plantilla_guarda_su_tipo(tmp_path):
+    from easypdf.templates import list_templates, save_template
+
+    ann = Annotation(kind=Kind.RECT, page=0, rect=(0.0, 0.0, 50.0, 50.0), width=1)
+    save_template(str(tmp_path), "Membrete", [ann], [(595.0, 842.0)],
+                  category="letterhead")
+
+    guardadas = list_templates(str(tmp_path))
+    assert len(guardadas) == 1
+    assert guardadas[0].category == "letterhead"
+    assert guardadas[0].builtin is False
+
+
+def test_un_tipo_desconocido_cae_en_otras(tmp_path):
+    from easypdf.templates import DEFAULT_CATEGORY, list_templates, save_template
+
+    ann = Annotation(kind=Kind.RECT, page=0, rect=(0.0, 0.0, 50.0, 50.0), width=1)
+    save_template(str(tmp_path), "Rara", [ann], [(595.0, 842.0)], category="inventado")
+    assert list_templates(str(tmp_path))[0].category == DEFAULT_CATEGORY
+
+
+def test_una_plantilla_vieja_sin_tipo_se_sigue_leyendo(tmp_path):
+    """Los archivos guardados antes de que existieran los tipos valen igual."""
+    import json
+
+    from easypdf.templates import EXTENSION, list_templates
+
+    ruta = tmp_path / ("Antigua" + EXTENSION)
+    ruta.write_text(json.dumps({
+        "version": 1, "name": "Antigua",
+        "pages": [{"width": 595.0, "height": 842.0}],
+        "annotations": [],
+    }), encoding="utf-8")
+
+    guardadas = list_templates(str(tmp_path))
+    assert len(guardadas) == 1
+    assert guardadas[0].category == "other"
+
+
+def test_las_plantillas_de_serie_estan_completas():
+    from easypdf.templates import CATEGORIES, builtin_infos
+
+    incluidas = builtin_infos()
+    assert len(incluidas) >= 4
+    for info in incluidas:
+        assert info.builtin is True
+        assert info.category in CATEGORIES
+        assert info.pages >= 1
+        assert info.annotations >= 1
+        assert info.path.startswith("builtin:")
+
+
+def test_se_puede_cargar_una_plantilla_de_serie():
+    from easypdf.templates import load_builtin
+
+    nombre, paginas, anotaciones = load_builtin("Acta de reunion")
+    assert nombre == "Acta de reunion"
+    assert paginas == [(595.0, 842.0)]
+    assert any(a.kind is Kind.TABLE for a in anotaciones)
+    assert any(a.kind is Kind.TEXT for a in anotaciones)
+
+
+def test_cargar_una_de_serie_da_copias_independientes():
+    """Usarla dos veces no puede compartir las mismas anotaciones."""
+    from easypdf.templates import load_builtin
+
+    _n1, _p1, unas = load_builtin("Carta")
+    _n2, _p2, otras = load_builtin("Carta")
+    unas[0].text = "cambiado"
+    assert otras[0].text != "cambiado"
+
+
+def test_pedir_una_de_serie_que_no_existe_avisa():
+    from easypdf.templates import TemplateError, load_builtin
+
+    with pytest.raises(TemplateError):
+        load_builtin("no existe")
