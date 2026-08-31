@@ -10,7 +10,7 @@ on:
       version:
         description: "Version a publicar (sin la v)"
         type: string
-        default: "1.2.0"
+        default: "1.2.1"
 
 permissions:
   contents: write
@@ -56,32 +56,35 @@ jobs:
           prerelease: false
           generate_release_notes: false
           body: |
-            ## Novedades de la 1.2.0
+            ## Novedades de la 1.2.1
 
-            **Herramientas nuevas**
-            - **Goma** (tecla E): borra arrastrando por encima. Sobre un trazo
-              a mano alzada quita solo la parte que tocas, y lo parte en dos si
-              lo cruzas por el medio. Ctrl+ y Ctrl- cambian su tamano.
-            - **Notas** (tecla N): un clic coloca una nota y pide su texto. Se
-              guardan como nota estandar del PDF, asi que se ven en cualquier
-              lector, y vuelven a aparecer al abrir el documento.
-            - **Marcadores**: panel propio para anadirlos, quitarlos y saltar a
-              su pagina. Se guardan como el indice del PDF.
+            **Aviso de version nueva**
+            - El programa comprueba al arrancar si hay una version mas nueva en
+              easypdf.surf y ofrece ir a descargarla. No descarga ni instala
+              nada por su cuenta, y se puede desactivar desde el menu Ayuda.
+              Solo hace una peticion GET: no envia ningun dato.
 
-            **Reglas y alineacion**
-            - Reglas arriba y a la izquierda que miden desde la esquina de la
-              hoja, en milimetros, centimetros, pulgadas o puntos.
-            - Al arrastrar, los elementos se alinean solos con los bordes y el
-              centro de la hoja y con las demas anotaciones, ensenando una guia.
+            **La goma ahora tapa, no borra**
+            - Pinta un trazo opaco encima del documento, como un corrector.
+              Blanco por defecto, con un boton para elegir otro color.
+            - Aviso: tapa lo que se ve, pero el texto sigue en la capa de texto
+              del PDF y se puede seleccionar. No sirve para ocultar datos
+              confidenciales.
+            - Los botones de zoom vuelven a ampliar y reducir tambien con la
+              goma activa. Su tamano se cambia con Ctrl+ / Ctrl- o con [ y ].
+
+            **Tablas**
+            - El texto ya no salta de sitio al terminar de escribir en una
+              celda: el editor usaba otro margen y otra alineacion.
+            - DEL vuelve a borrar la tabla despues de haber editado una celda.
+            - Van mas rapidas: arrastrar una tabla de 20x6 pasa de 5,2 a 2,9 ms
+              por fotograma.
 
             **Correcciones**
-            - Al reordenar paginas arrastrando una miniatura, soltarla entre dos
-              paginas ya no la mandaba al final de todas.
-            - El instalador de Windows se compila con el bootloader de
-              PyInstaller hecho desde el codigo fuente, para que algunos
-              antivirus dejen de dar un falso positivo.
+            - Las guias de alineacion se quedaban pintadas en la pagina al
+              crear o cargar anotaciones, sin estar arrastrando nada.
 
-            ## Descargas
+            ## Descargas            ## Descargas
 
             | Archivo | Para |
             |---|---|
