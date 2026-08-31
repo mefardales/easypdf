@@ -388,6 +388,10 @@ class MainWindow(QMainWindow):
         self.act_snap.toggled.connect(self.view.set_snap)
         self._action_keys[self.act_snap] = ("snap", None)
         view_menu.addAction(self.act_snap)
+        self.act_guides_clear = QAction(tr("guides_clear"), self)
+        self.act_guides_clear.triggered.connect(self._clear_guides)
+        self._action_keys[self.act_guides_clear] = ("guides_clear", None)
+        view_menu.addAction(self.act_guides_clear)
         view_menu.addSeparator()
 
         view_menu.addAction(self.act_zoom_in)
@@ -731,6 +735,10 @@ class MainWindow(QMainWindow):
         self.view.pageChanged.connect(lambda *_: self._update_rulers())
         self.view.mouseMovedOnPage.connect(self._on_mouse_on_page)
         return caja
+
+    def _clear_guides(self) -> None:
+        self.view.clear_all_guides()
+        self.statusBar().showMessage(tr("guides_hint"), 6000)
 
     def _update_rulers(self) -> None:
         if hasattr(self, "ruler_h"):
