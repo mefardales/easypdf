@@ -218,6 +218,11 @@ class MainWindow(QMainWindow):
         self.act_redo.setShortcuts([QKeySequence.Redo, QKeySequence("Ctrl+Y")])
         self.act_redo.setIcon(icons.icon("redo"))
 
+        self.act_copy = action("copy_sel", self.copy_selection,
+                               shortcut=QKeySequence.Copy)
+        self.act_cut = action("cut_sel", self.cut_selection, shortcut=QKeySequence.Cut)
+        self.act_paste = action("paste_sel", self.paste_clipboard,
+                                shortcut=QKeySequence.Paste)
         self.act_delete = action("delete_sel", self.delete_selection, "delete",
                                  QKeySequence.Delete, "delete_sel_tip")
         self.act_select_all = action("select_all", self.view.select_all_annotations,
@@ -355,6 +360,10 @@ class MainWindow(QMainWindow):
         self._menu_keys[edit_menu] = "menu_edit"
         edit_menu.addAction(self.act_undo)
         edit_menu.addAction(self.act_redo)
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.act_cut)
+        edit_menu.addAction(self.act_copy)
+        edit_menu.addAction(self.act_paste)
         edit_menu.addSeparator()
         edit_menu.addAction(self.act_delete)
         edit_menu.addAction(self.act_select_all)
@@ -2083,6 +2092,27 @@ class MainWindow(QMainWindow):
         if not self.view.delete_selected():
             self.statusBar().showMessage(tr("status_no_selection"), 3000)
 
+    def copy_selection(self) -> None:
+        cuantas = self.view.copy_selected()
+        if cuantas:
+            self.statusBar().showMessage(tr("status_copied", count=cuantas), 3000)
+        else:
+            self.statusBar().showMessage(tr("status_no_selection"), 3000)
+
+    def cut_selection(self) -> None:
+        cuantas = self.view.cut_selected()
+        if cuantas:
+            self.statusBar().showMessage(tr("status_cut", count=cuantas), 3000)
+        else:
+            self.statusBar().showMessage(tr("status_no_selection"), 3000)
+
+    def paste_clipboard(self) -> None:
+        cuantas = self.view.paste_clipboard()
+        if cuantas:
+            self.statusBar().showMessage(tr("status_pasted", count=cuantas), 3000)
+        else:
+            self.statusBar().showMessage(tr("status_clipboard_empty"), 3000)
+
     # ------------------------------------------------------------------ estado
     def _on_page_changed(self, index: int) -> None:
         self._updating_page_box = True
@@ -2132,7 +2162,14 @@ class MainWindow(QMainWindow):
         for act in self.tool_group.actions():
             act.setEnabled(has_doc)
         editando = self.view.is_editing_text
-        self.act_delete.setEnabled(bool(self.view.selected_items()) and not editando)
+        hay_seleccion = bool(self.view.selected_items())
+        self.act_delete.setEnabled(hay_seleccion and not editando)
+        # Mientras se escribe dentro de un texto, copiar y pegar son los del
+        # editor: si las acciones siguieran activas robarian el atajo y no se
+        # podria copiar una palabra.
+        self.act_copy.setEnabled(hay_seleccion and not editando)
+        self.act_cut.setEnabled(hay_seleccion and not editando)
+        self.act_paste.setEnabled(has_doc and not editando)
         self.act_page_delete.setEnabled(has_doc and self.view.page_count > 1)
         self.act_select_all.setEnabled(has_doc and not editando)
         count = self.view.annotation_count()

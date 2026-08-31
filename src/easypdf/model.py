@@ -164,6 +164,22 @@ def rotate_annotation(ann: Annotation, degrees: int, width: float, height: float
     ann.strokes = [[gira(p) for p in stroke] for stroke in ann.strokes]
 
 
+def move_annotation(ann: Annotation, dx: float, dy: float) -> None:
+    """Desplaza una anotacion en el sitio, con todo lo que la compone.
+
+    Hay que tocar las tres representaciones: el rectangulo (cuadros, textos,
+    tablas e imagenes), los extremos (lineas y flechas) y los trazos (tinta y
+    goma). Mover solo el rectangulo dejaria la linea donde estaba.
+    """
+    if not dx and not dy:
+        return
+    x0, y0, x1, y1 = ann.rect
+    ann.rect = (x0 + dx, y0 + dy, x1 + dx, y1 + dy)
+    ann.p1 = (ann.p1[0] + dx, ann.p1[1] + dy)
+    ann.p2 = (ann.p2[0] + dx, ann.p2[1] + dy)
+    ann.strokes = [[(x + dx, y + dy) for x, y in stroke] for stroke in ann.strokes]
+
+
 #: Tamanos de la goma, en puntos PDF. Ctrl+ y Ctrl- recorren esta lista.
 ERASER_SIZES = (6.0, 10.0, 16.0, 24.0, 36.0, 54.0, 80.0)
 ERASER_DEFAULT = 16.0

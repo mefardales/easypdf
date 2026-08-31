@@ -1481,3 +1481,271 @@ def test_las_reglas_se_repintan_al_tocar_las_guias(ventana, qapp):
     ventana.view.move_guide(150.0)
     ventana.view.drop_guide(150.0)
     assert len(avisos) >= 3
+
+
+# -- copiar y pegar -------------------------------------------------------
+def _vaciar_portapapeles():
+    from PySide6.QtGui import QGuiApplication
+
+    portapapeles = QGuiApplication.clipboard()
+    if portapapeles is not None:
+        portapapeles.clear()
+
+
+def _seleccionar(ventana, *anotaciones):
+    vista = ventana.view
+    for item in vista.selected_items():
+        item.setSelected(False)
+    for ann in anotaciones:
+        vista._items[ann.id].setSelected(True)
+
+
+def test_copiar_y_pegar_duplica_lo_seleccionado(ventana, qapp):
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0))
+    ventana.view.add_annotation(caja)
+    qapp.processEvents()
+    _seleccionar(ventana, caja)
+
+    assert ventana.view.copy_selected() == 1
+    assert ventana.view.paste_clipboard() == 1
+    qapp.processEvents()
+
+    copias = [a for a in ventana.view.annotations() if a.id != caja.id]
+    assert len(copias) == 1
+    copia = copias[0]
+    assert copia.id != caja.id                 # es otra anotacion, no la misma
+    assert copia.kind is Kind.RECT
+    salto = ventana.view.PASTE_OFFSET
+    assert copia.rect == (100 + salto, 100 + salto, 200 + salto, 160 + salto)
+    # y queda seleccionada, lista para moverla
+    assert [i.ann for i in ventana.view.selected_items()] == [copia]
+
+
+def test_pegar_arrastra_todo_lo_que_define_la_anotacion(ventana, qapp):
+    """Una linea no vive en su rectangulo: hay que mover tambien sus extremos."""
+    linea = Annotation(kind=Kind.LINE, page=0, p1=(50.0, 300.0), p2=(250.0, 380.0))
+    trazo = Annotation(kind=Kind.INK, page=0, strokes=[[(10.0, 20.0), (30.0, 40.0)]])
+    ventana.view.add_annotation(linea)
+    ventana.view.add_annotation(trazo)
+    qapp.processEvents()
+    _seleccionar(ventana, linea, trazo)
+    assert ventana.view.copy_selected() == 2
+    assert ventana.view.paste_clipboard() == 2
+    qapp.processEvents()
+
+    salto = ventana.view.PASTE_OFFSET
+    nuevas = [a for a in ventana.view.annotations() if a.id not in (linea.id, trazo.id)]
+    copia_linea = next(a for a in nuevas if a.kind is Kind.LINE)
+    copia_trazo = next(a for a in nuevas if a.kind is Kind.INK)
+    assert copia_linea.p1 == (50 + salto, 300 + salto)
+    assert copia_linea.p2 == (250 + salto, 380 + salto)
+    assert copia_trazo.strokes == [[(10 + salto, 20 + salto), (30 + salto, 40 + salto)]]
+
+
+def test_pegar_una_tabla_conserva_su_contenido(ventana, qapp):
+    tabla = Annotation(kind=Kind.TABLE, page=0, rect=(60.0, 60.0, 400.0, 200.0),
+                       rows=2, cols=2, cells=["a", "b", "c", "d"], font_size=9.0)
+    ventana.view.add_annotation(tabla)
+    qapp.processEvents()
+    _seleccionar(ventana, tabla)
+    ventana.view.copy_selected()
+    ventana.view.paste_clipboard()
+    qapp.processEvents()
+
+    copia = next(a for a in ventana.view.annotations() if a.id != tabla.id)
+    assert (copia.rows, copia.cols) == (2, 2)
+    assert copia.cells == ["a", "b", "c", "d"]
+    assert copia.font_size == 9.0
+
+
+def test_pegar_dos_veces_no_deja_una_copia_encima_de_otra(ventana, qapp):
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0))
+    ventana.view.add_annotation(caja)
+    qapp.processEvents()
+    _seleccionar(ventana, caja)
+    ventana.view.copy_selected()
+    ventana.view.paste_clipboard()
+    ventana.view.paste_clipboard()
+    qapp.processEvents()
+
+    esquinas = sorted(a.rect[0] for a in ventana.view.annotations() if a.kind is Kind.RECT)
+    salto = ventana.view.PASTE_OFFSET
+    assert esquinas == [100.0, 100 + salto, 100 + 2 * salto]
+
+
+def test_una_pegada_entera_se_deshace_de_una_vez(ventana, qapp):
+    """Pegar tres cosas es un solo paso de deshacer, no tres."""
+    originales = [
+        Annotation(kind=Kind.RECT, page=0, rect=(10.0, 10.0, 60.0, 60.0)),
+        Annotation(kind=Kind.RECT, page=0, rect=(80.0, 10.0, 130.0, 60.0)),
+        Annotation(kind=Kind.RECT, page=0, rect=(150.0, 10.0, 200.0, 60.0)),
+    ]
+    for ann in originales:
+        ventana.view.add_annotation(ann)
+    qapp.processEvents()
+    _seleccionar(ventana, *originales)
+    ventana.view.copy_selected()
+    assert ventana.view.paste_clipboard() == 3
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == 6
+
+    ventana.view.undo_stack.undo()
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == 3
+
+
+def test_cortar_copia_y_quita_lo_seleccionado(ventana, qapp):
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0))
+    ventana.view.add_annotation(caja)
+    qapp.processEvents()
+    _seleccionar(ventana, caja)
+
+    assert ventana.view.cut_selected() == 1
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == 0
+
+    assert ventana.view.paste_clipboard() == 1     # seguia en el portapapeles
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == 1
+
+
+def test_sin_nada_copiado_pegar_no_hace_nada(ventana, qapp):
+    _vaciar_portapapeles()
+    antes = ventana.view.annotation_count()
+    assert ventana.view.paste_clipboard() == 0
+    assert ventana.view.annotation_count() == antes
+
+
+def test_se_pega_en_la_pagina_que_se_esta_viendo(ventana, qapp):
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0))
+    ventana.view.add_annotation(caja)
+    qapp.processEvents()
+    _seleccionar(ventana, caja)
+    ventana.view.copy_selected()
+
+    assert ventana.view.paste_clipboard(page=2) == 1
+    qapp.processEvents()
+    copia = next(a for a in ventana.view.annotations() if a.id != caja.id)
+    assert copia.page == 2
+
+
+def test_copiar_y_pegar_no_roban_el_atajo_mientras_se_escribe(ventana, qapp):
+    """Dentro de un texto, Ctrl+C y Ctrl+V son los del editor, no los nuestros."""
+    texto = Annotation(kind=Kind.TEXT, page=0, rect=(80.0, 80.0, 300.0, 130.0),
+                       text="hola")
+    item = ventana.view.add_annotation(texto)
+    qapp.processEvents()
+    _seleccionar(ventana, texto)
+    ventana._update_actions()
+    assert ventana.act_copy.isEnabled()
+    assert ventana.act_paste.isEnabled()
+
+    item.start_editing()
+    qapp.processEvents()
+    ventana._update_actions()
+    assert not ventana.act_copy.isEnabled()
+    assert not ventana.act_cut.isEnabled()
+    assert not ventana.act_paste.isEnabled()
+    ventana.view.finish_all_editing()
+    qapp.processEvents()
+
+
+def test_los_atajos_de_teclado_copian_y_pegan(ventana, qapp):
+    """Lo que se pidio: Ctrl+C y Ctrl+V, no solo el menu."""
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0))
+    ventana.view.add_annotation(caja)
+    qapp.processEvents()
+    _seleccionar(ventana, caja)
+    ventana._update_actions()
+
+    QTest.keyClick(ventana, Qt.Key_C, Qt.ControlModifier)
+    qapp.processEvents()
+    QTest.keyClick(ventana, Qt.Key_V, Qt.ControlModifier)
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == 2
+
+    _seleccionar(ventana, caja)
+    ventana._update_actions()
+    QTest.keyClick(ventana, Qt.Key_X, Qt.ControlModifier)
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == 1
+
+
+def test_lo_copiado_por_otro_programa_no_se_pega(ventana, qapp):
+    """Un texto cualquiera del portapapeles no puede convertirse en anotaciones."""
+    from PySide6.QtGui import QGuiApplication
+
+    QGuiApplication.clipboard().setText("una nota que copie de otro sitio")
+    antes = ventana.view.annotation_count()
+    assert ventana.view.paste_clipboard() == 0
+    assert ventana.view.annotation_count() == antes
+
+
+# -- la goma se queda dentro de la hoja -----------------------------------
+def _claros_fuera_de_la_pagina(ventana, pagina: int = 0, margen: int = 40) -> int:
+    """Cuenta los pixeles claros pintados en el borde de fuera del papel.
+
+    Se pinta una franja alrededor de la hoja y se miran solo esos pixeles: es
+    donde se veria lo que se sale. El documento tiene mas paginas, asi que las
+    que caigan dentro de la franja se descuentan; son papel tambien.
+    """
+    from PySide6.QtCore import QRect, QRectF
+    from PySide6.QtGui import QColor, QImage, QPainter
+
+    vista = ventana.view
+    papel = vista._page_items[pagina].mapRectToScene(
+        vista._page_items[pagina].boundingRect()
+    )
+    zona = papel.adjusted(-margen, -margen, margen, margen)
+    imagen = QImage(int(zona.width()), int(zona.height()), QImage.Format_RGB32)
+    imagen.fill(QColor("#404040"))
+    pintor = QPainter(imagen)
+    vista.scene().render(pintor, QRectF(imagen.rect()), zona)
+    pintor.end()
+
+    # El borde de la propia hoja va suavizado: dos pixeles de respeto.
+    dentro = papel.translated(-zona.x(), -zona.y()).adjusted(-2, -2, 2, 2)
+    otras = [
+        item.mapRectToScene(item.boundingRect())
+        .translated(-zona.x(), -zona.y())
+        .adjusted(-2, -2, 2, 2)
+        for i, item in enumerate(vista._page_items) if i != pagina
+    ]
+    ancho, alto = imagen.width(), imagen.height()
+    franjas = [
+        QRect(0, 0, ancho, margen),                       # arriba
+        QRect(0, alto - margen, ancho, margen),           # abajo
+        QRect(0, 0, margen, alto),                        # izquierda
+        QRect(ancho - margen, 0, margen, alto),           # derecha
+    ]
+    vistos, claros = set(), 0
+    for franja in franjas:
+        for y in range(franja.top(), franja.bottom() + 1):
+            for x in range(franja.left(), franja.right() + 1):
+                if (x, y) in vistos or not imagen.rect().contains(x, y):
+                    continue
+                vistos.add((x, y))
+                if dentro.contains(x, y) or any(r.contains(x, y) for r in otras):
+                    continue
+                if QColor(imagen.pixel(x, y)).lightness() > 200:
+                    claros += 1
+    return claros
+
+
+def test_la_goma_no_pinta_fuera_de_la_hoja(ventana, qapp):
+    """Sacando la goma de la pagina se comia el fondo gris de alrededor."""
+    ventana.select_tool(Tool.ERASER)
+    ventana.view.set_eraser_size(24)
+    _pasar_la_goma(ventana, [(200, 200), (50, 100), (-150, -80), (-200, 300)])
+    qapp.processEvents()
+    assert _claros_fuera_de_la_pagina(ventana) == 0
+
+
+def test_una_anotacion_tampoco_se_pinta_fuera_de_la_hoja(ventana, qapp):
+    """Lo que sale del papel no se imprime, asi que tampoco se ve en pantalla."""
+    ventana.view.add_annotation(
+        Annotation(kind=Kind.RECT, page=0, rect=(-200.0, 100.0, 300.0, 200.0),
+                   color=(1.0, 1.0, 1.0), fill=(1.0, 1.0, 1.0), width=3)
+    )
+    qapp.processEvents()
+    assert _claros_fuera_de_la_pagina(ventana) == 0

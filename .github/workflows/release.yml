@@ -10,7 +10,7 @@ on:
       version:
         description: "Version a publicar (sin la v)"
         type: string
-        default: "1.5.0"
+        default: "1.5.1"
 
 permissions:
   contents: write
@@ -56,26 +56,26 @@ jobs:
           prerelease: false
           generate_release_notes: false
           body: |
-            ## Novedades de la 1.5.0
+            ## Novedades de la 1.5.1
 
-            **Se actualiza sola, sin ir a la pagina web**
-            - Cuando sale una version nueva, el aviso trae un boton de
-              **Descargar e instalar**. Baja el paquete que le toca al sistema,
-              con su barra de avance, y en Windows arranca el instalador y
-              cierra el programa para que pueda sustituirse. Antes solo abria
-              la web y habia que buscar el archivo a mano.
-            - La descarga se compara con el `.sha256` publicado antes de
-              ejecutar nada: si no coincide, se tira y no se instala.
-            - Si hay un documento sin guardar, primero pregunta; si se cancela,
-              no se instala nada.
-            - En Linux se baja el paquete portable y se ofrece abrir la carpeta,
-              porque ahi no hay instalador que ejecutar.
-            - Se sigue pudiendo apagar la comprobacion en Ayuda, y el aviso
-              mantiene "Ahora no" y "Saltar esta version".
+            **La goma se queda dentro de la hoja**
+            - Al sacarla del papel pintaba encima del fondo gris de alrededor.
+              Las anotaciones son de su pagina y ya no pintan fuera de ella,
+              sea la goma o cualquier otra cosa. Ademas asi la pantalla ensena
+              lo mismo que sale impreso: lo que se sale del papel nunca se
+              imprimio.
 
-            El instalador sigue sin estar firmado, asi que Windows o el
-            antivirus pueden avisar igual que con la descarga manual: es el
-            mismo archivo. La propia ventana lo advierte.
+            **Copiar y pegar**
+            - `Ctrl+C`, `Ctrl+X` y `Ctrl+V` sobre lo que este seleccionado, y
+              tambien en el menu Editar. Se puede copiar en una ventana y pegar
+              en otra.
+            - Lo pegado cae un poco corrido en la pagina que se este viendo, ya
+              seleccionado para arrastrarlo a su sitio. Pegando varias veces
+              seguidas cada copia se separa un poco mas, para que no se apilen.
+            - Una pegada entera se deshace de una vez, aunque lleve varias
+              anotaciones.
+            - Mientras se escribe dentro de un texto, `Ctrl+C` y `Ctrl+V` son
+              los del editor: copian y pegan letras, no anotaciones.
 
             ## Descargas
 

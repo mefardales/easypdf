@@ -37,6 +37,7 @@ from ..model import (
     AnnotationStore,
     Font,
     Kind,
+    move_annotation,
 )
 from .commands import (
     AddAnnotationCommand,
@@ -102,6 +103,12 @@ class PageItem(QGraphicsItem):
         self._pixmap: QPixmap | None = None
         self._pixmap_scale = 0.0
         self.setFlag(QGraphicsItem.ItemUsesExtendedStyleOption, True)
+        # Las anotaciones son hijas de la pagina y no pueden pintar fuera de
+        # ella: la goma es blanca y opaca, asi que al salirse de la hoja se
+        # comia el fondo gris. Lo que se sale tampoco saldria impreso, asi que
+        # recortarlo aqui es ademas lo que hace que la pantalla y el papel
+        # coincidan.
+        self.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
         self.setZValue(0)
 
     def boundingRect(self) -> QRectF:
@@ -222,6 +229,9 @@ class PdfView(QGraphicsView):
         self.rulers_guides: dict[int, dict[str, list[float]]] = {}
         self._guide_drag = None      # ("h"|"v", pagina, valor, indice o None)
         self._eraser_size = ERASER_DEFAULT
+        # Cuantas veces se ha pegado lo mismo: cada pegada se separa un poco
+        # mas para que no se apilen unas encima de otras sin verse.
+        self._paste_count = 0
         self._erasing = False
         self._erase_item = None
         self._eraser_color = (1.0, 1.0, 1.0)   # blanco, el color del papel
@@ -1151,6 +1161,58 @@ class PdfView(QGraphicsView):
     def select_all_annotations(self) -> None:
         for item in self._annotation_items():
             item.setSelected(True)
+
+    # ------------------------------------------------------- copiar y pegar
+    #: Cuanto se separa lo pegado de su original, en puntos PDF. Lo justo
+    #: para verlo encima y poder arrastrarlo, como en cualquier editor.
+    PASTE_OFFSET = 12.0
+
+    def copy_selected(self) -> int:
+        """Copia lo seleccionado al portapapeles. Devuelve cuantas copio."""
+        from .clipboard import copy_annotations
+
+        items = self.selected_items()
+        if not items:
+            return 0
+        cuantas = copy_annotations(item.ann for item in items)
+        if cuantas:
+            self._paste_count = 0        # la primera pegada va al lado
+        return cuantas
+
+    def cut_selected(self) -> int:
+        """Copia y elimina. El borrado se deshace como cualquier otro."""
+        cuantas = self.copy_selected()
+        if cuantas:
+            self.delete_selected()
+        return cuantas
+
+    def paste_clipboard(self, page: int | None = None) -> int:
+        """Pega en la pagina indicada (por omision, la que se esta viendo)."""
+        from ..templates import shift_to_page
+        from .clipboard import clipboard_annotations
+
+        if self.document is None:
+            return 0
+        copiadas = clipboard_annotations()
+        if not copiadas:
+            return 0
+        destino = self.current_page if page is None else page
+        # shift_to_page da identidad nueva a cada copia y conserva la
+        # distancia entre paginas, para poder pegar lo copiado de varias.
+        colocadas = shift_to_page(copiadas, destino, self.page_count)
+        if not colocadas:
+            return 0
+        self._paste_count += 1
+        salto = self.PASTE_OFFSET * self._paste_count
+        for ann in colocadas:
+            move_annotation(ann, salto, salto)
+        self._scene.clearSelection()
+        self.undo_stack.beginMacro(tr("cmd_paste", count=len(colocadas)))
+        for ann in colocadas:
+            item = self.add_annotation(ann)
+            item.setSelected(True)       # queda listo para moverlo
+        self.undo_stack.endMacro()
+        return len(colocadas)
 
     def _on_annotation_edited(self, item, before, after) -> None:
         self.undo_stack.push(ChangeAnnotationsCommand(self, [(item, before, after)]))

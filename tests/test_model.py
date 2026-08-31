@@ -172,3 +172,27 @@ def test_snap_offset_no_mueve_lo_que_ya_esta_alineado():
     from easypdf.model import snap_offset
 
     assert snap_offset([100.0], [100.0], 6.0) == (0.0, 100.0)
+
+
+def test_mover_una_anotacion_arrastra_todo_lo_que_la_compone():
+    """El rectangulo no basta: las lineas viven en sus extremos y la tinta en sus trazos."""
+    from easypdf.model import move_annotation
+
+    ann = Annotation(
+        kind=Kind.LINE, page=0, rect=(10.0, 20.0, 110.0, 120.0),
+        p1=(10.0, 20.0), p2=(110.0, 120.0),
+        strokes=[[(0.0, 0.0), (5.0, 5.0)]],
+    )
+    move_annotation(ann, 7.0, -3.0)
+    assert ann.rect == (17.0, 17.0, 117.0, 117.0)
+    assert ann.p1 == (17.0, 17.0)
+    assert ann.p2 == (117.0, 117.0)
+    assert ann.strokes == [[(7.0, -3.0), (12.0, 2.0)]]
+
+
+def test_mover_cero_no_toca_nada():
+    from easypdf.model import move_annotation
+
+    ann = Annotation(kind=Kind.RECT, page=0, rect=(1.0, 2.0, 3.0, 4.0))
+    move_annotation(ann, 0.0, 0.0)
+    assert ann.rect == (1.0, 2.0, 3.0, 4.0)

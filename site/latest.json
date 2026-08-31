@@ -1,7 +1,7 @@
 {
-  "version": "1.5.0",
+  "version": "1.5.1",
   "url": "https://easypdf.surf",
-  "setup": "https://github.com/mefardales/easypdf/releases/download/v1.5.0/EasyPDF-1.5.0-Setup.exe",
-  "portable": "https://github.com/mefardales/easypdf/releases/download/v1.5.0/EasyPDF-1.5.0-windows-x64-portable.zip",
-  "linux": "https://github.com/mefardales/easypdf/releases/download/v1.5.0/EasyPDF-1.5.0-linux-x64.tar.xz"
+  "setup": "https://github.com/mefardales/easypdf/releases/download/v1.5.1/EasyPDF-1.5.1-Setup.exe",
+  "portable": "https://github.com/mefardales/easypdf/releases/download/v1.5.1/EasyPDF-1.5.1-windows-x64-portable.zip",
+  "linux": "https://github.com/mefardales/easypdf/releases/download/v1.5.1/EasyPDF-1.5.1-linux-x64.tar.xz"
 }
