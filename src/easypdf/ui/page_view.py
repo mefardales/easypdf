@@ -181,6 +181,7 @@ class PdfView(QGraphicsView):
     eraserSizeChanged = Signal(float)
     noteCreated = Signal(object)
     mouseMovedOnPage = Signal(object)   # posicion en el viewport
+    guidesChanged = Signal()            # hay que repintar las reglas
     selectionChanged = Signal()
     textEditing = Signal(bool)
 
@@ -825,19 +826,19 @@ class PdfView(QGraphicsView):
         """Empieza a sacar una guia nueva desde la regla."""
         pagina = self._current_page
         self._guide_drag = (orientacion, pagina, valor, None)
-        self.viewport().update()
+        self._guides_changed()
 
     def grab_guide(self, orientacion: str, pagina: int, indice: int, valor: float) -> None:
         """Coge una guia que ya existe para moverla."""
         self._guide_drag = (orientacion, pagina, valor, indice)
-        self.viewport().update()
+        self._guides_changed()
 
     def move_guide(self, valor: float) -> None:
         if self._guide_drag is None or valor is None:
             return
         orientacion, pagina, _viejo, indice = self._guide_drag
         self._guide_drag = (orientacion, pagina, valor, indice)
-        self.viewport().update()
+        self._guides_changed()
 
     def drop_guide(self, valor) -> None:
         """Suelta la guia. Fuera de la pagina, se borra."""
@@ -857,7 +858,7 @@ class PdfView(QGraphicsView):
                 guias[indice] = float(valor)
             else:
                 del guias[indice]        # sacada fuera del margen: se borra
-        self.viewport().update()
+        self._guides_changed()
 
     def _guide_inside(self, pagina: int, orientacion: str, valor) -> bool:
         if valor is None or not (0 <= pagina < len(self._page_items)):
@@ -885,11 +886,16 @@ class PdfView(QGraphicsView):
 
     def clear_guides_of_page(self, pagina: int) -> None:
         self.rulers_guides.pop(pagina, None)
-        self.viewport().update()
+        self._guides_changed()
 
     def clear_all_guides(self) -> None:
         self.rulers_guides.clear()
+        self._guides_changed()
+
+    def _guides_changed(self) -> None:
+        """Repinta la pagina y avisa a las reglas."""
         self.viewport().update()
+        self.guidesChanged.emit()
 
     # ------------------------------------------------------------------ guias
     def show_guides(self, x, y, page) -> None:
