@@ -78,7 +78,7 @@ def annotation_to_dict(ann: Annotation) -> dict:
     if ann.kind in (Kind.LINE, Kind.ARROW):
         datos["p1"] = list(ann.p1)
         datos["p2"] = list(ann.p2)
-    if ann.kind is Kind.INK:
+    if ann.kind in (Kind.INK, Kind.ERASE):
         datos["strokes"] = [[list(p) for p in trazo] for trazo in ann.strokes]
     if ann.kind in (Kind.TEXT, Kind.TABLE):
         datos.update(

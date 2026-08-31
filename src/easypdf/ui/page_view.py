@@ -38,6 +38,7 @@ from ..model import (
     Font,
     Kind,
     move_annotation,
+    stroke_touches,
 )
 from .commands import (
     AddAnnotationCommand,
@@ -187,6 +188,7 @@ class PdfView(QGraphicsView):
     toolFinished = Signal()
     eraserSizeChanged = Signal(float)
     noteCreated = Signal(object)
+    erased = Signal()          # ha terminado una pasada de goma
     mouseMovedOnPage = Signal(object)   # posicion en el viewport
     guidesChanged = Signal()            # hay que repintar las reglas
     selectionChanged = Signal()
@@ -1022,11 +1024,27 @@ class PdfView(QGraphicsView):
         self._erase_item.append_point(point)
         return True
 
-    def _finish_erase(self) -> None:
-        """Cierra el trazo de la goma y lo deja como una anotacion mas.
+    def annotations_under(self, borrado: Annotation) -> list:
+        """Los items por los que ha pasado la goma, en su misma pagina."""
+        encontrados = []
+        for item in self._annotation_items():
+            ann = item.ann
+            if ann is borrado or ann.page != borrado.page or ann.kind is Kind.ERASE:
+                continue
+            if stroke_touches(borrado.strokes, borrado.width, ann.bounds()):
+                encontrados.append(item)
+        return encontrados
 
-        No es un borrado destructivo: es pintura opaca encima, asi que se
-        deshace, se mueve y se elimina como cualquier otra anotacion.
+    def _finish_erase(self) -> None:
+        """Cierra la pasada de goma y borra lo que haya pasado por debajo.
+
+        Borra de verdad: se lleva por delante las anotaciones por las que pasa,
+        y al guardar el archivo tambien quita el contenido original que tape.
+        Tapar no bastaba: el texto pintado de blanco se sigue pudiendo
+        seleccionar y copiar de un PDF, asi que quien borraba un dato
+        confidencial se creia a salvo sin estarlo.
+
+        Hasta que se guarda, se deshace con Ctrl+Z como cualquier otra cosa.
         """
         self._erasing = False
         item = self._erase_item
@@ -1038,11 +1056,15 @@ class PdfView(QGraphicsView):
             return
         item.sync_model()
         self._items[item.ann.id] = item
-        # Se apunta como "borrar con la goma" y no como "anadir dibujo":
-        # por dentro es un trazo, pero el usuario ha borrado.
+        tapadas = self.annotations_under(item.ann)
+        self.undo_stack.beginMacro(tr("cmd_erase"))
         self.undo_stack.push(
             AddAnnotationCommand(self, item.ann, item, tr("cmd_erase"))
         )
+        if tapadas:
+            self.undo_stack.push(DeleteAnnotationsCommand(self, tapadas))
+        self.undo_stack.endMacro()
+        self.erased.emit()
 
     # ------------------------------------------------------------------ raton
     def _cerrar_celda_si_toca(self, event) -> None:
@@ -1089,7 +1111,7 @@ class PdfView(QGraphicsView):
             if page is None:
                 return
             ann = Annotation(
-                kind=Kind.INK,
+                kind=Kind.ERASE,
                 page=page.index,
                 color=tuple(self._eraser_color),
                 width=self._eraser_size,

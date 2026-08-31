@@ -62,6 +62,12 @@ TEXTS: dict[str, dict[str, str]] = {
             "<i>italic</i> (Ctrl+I) and alignment.</li>"
             "<li>With the <b>Image</b> tool, or by dropping an image file onto the window, "
             "you can place photos, signatures or logos on top of the PDF.</li>"
+            "<li>The <b>Eraser</b> really erases: it removes the annotations it "
+            "passes over, and when you save the file it also takes out the original "
+            "text or image underneath, so it cannot be selected or copied any more. "
+            "Until you save, <b>Ctrl+Z</b> brings everything back; once saved it is "
+            "gone for good. <b>Ctrl+</b> and <b>Ctrl-</b> change its size and you can "
+            "pick its colour.</li>"
             "<li><b>Ctrl+C</b>, <b>Ctrl+X</b> and <b>Ctrl+V</b> copy, cut and paste "
             "whatever is selected. What you paste lands slightly offset on the page "
             "you are on, already selected so you can drag it into place.</li>"
@@ -174,6 +180,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "goto_label": "Page number (1-{total}):",
         "fullscreen": "&Full screen",
         "thumbnails": "&Thumbnails panel",
+        "side_panel": "&Side panel (bookmarks, notes, elements)",
         "pages_dock": "Pages",
         # --- documento ---
         "menu_document": "&Document",
@@ -382,6 +389,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "status_new": "New document. Add pages from the Document menu and save with Ctrl+S",
         "status_image_placed": "Image placed: {name}",
         "status_no_selection": "No annotation is selected",
+        "status_erased": "Erased. Saving removes it from the file for good.",
         "status_pick_select": "Nothing is selected. Press Esc to go back to the Select tool, then click what you want.",
         "status_copied": "{count} copied",
         "status_cut": "{count} cut",
@@ -466,6 +474,12 @@ TEXTS: dict[str, dict[str, str]] = {
             "(Ctrl+B), <i>cursiva</i> (Ctrl+I) y alineacion.</li>"
             "<li>Con la herramienta <b>Imagen</b> (o soltando un archivo de imagen sobre la "
             "ventana) puedes colocar fotos, firmas o logotipos encima del PDF.</li>"
+            "<li>La <b>goma</b> borra de verdad: se lleva las anotaciones por las que "
+            "pasa y, al guardar el archivo, tambien quita el texto o la imagen "
+            "original que haya debajo, de modo que ya no se puede seleccionar ni "
+            "copiar. Hasta que guardas, <b>Ctrl+Z</b> lo devuelve todo; una vez "
+            "guardado no hay vuelta atras. Con <b>Ctrl+</b> y <b>Ctrl-</b> se cambia "
+            "su tamano, y se puede elegir su color.</li>"
             "<li><b>Ctrl+C</b>, <b>Ctrl+X</b> y <b>Ctrl+V</b> copian, cortan y pegan "
             "lo que este seleccionado. Lo pegado cae un poco corrido en la pagina que "
             "se este viendo, ya seleccionado para poder arrastrarlo a su sitio.</li>"
@@ -575,6 +589,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "goto_label": "Numero de pagina (1-{total}):",
         "fullscreen": "Pantalla &completa",
         "thumbnails": "Panel de &miniaturas",
+        "side_panel": "Panel &lateral (marcadores, notas, elementos)",
         "pages_dock": "Paginas",
         "menu_document": "&Documento",
         "page_add": "&Anadir una pagina al final",
@@ -784,6 +799,7 @@ TEXTS: dict[str, dict[str, str]] = {
         ),
         "status_image_placed": "Imagen colocada: {name}",
         "status_no_selection": "No hay ninguna anotacion seleccionada",
+        "status_erased": "Borrado. Al guardar desaparece del archivo para siempre.",
         "status_pick_select": "No hay nada seleccionado. Pulsa Esc para volver a Seleccionar y pincha lo que quieras.",
         "status_copied": "{count} copiadas",
         "status_cut": "{count} cortadas",
