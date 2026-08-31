@@ -970,11 +970,16 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         if editor is None:
             return
         textos = self.ann.normalized_cells()
-        textos[indice] = editor.toPlainText()
+        try:
+            textos[indice] = editor.toPlainText()
+            editor.setParentItem(None)
+            if editor.scene() is not None:
+                editor.scene().removeItem(editor)
+        except RuntimeError:
+            # Qt ya lo habia destruido (al cerrar la ventana, por ejemplo).
+            # Lo escrito se pierde, pero la tabla queda en un estado sano.
+            pass
         self.ann.cells = textos
-        editor.setParentItem(None)
-        if editor.scene() is not None:
-            editor.scene().removeItem(editor)
         self.update()
         self.notify_scene("end_edit")
         self.notify_scene("text_editing_finished")
@@ -993,11 +998,12 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         super().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event) -> None:
-        if self.is_editing and event.key() in (Qt.Key_Escape, Qt.Key_Tab):
-            siguiente = self._editing_cell + 1
+        if self.is_editing and event.key() in (Qt.Key_Escape, Qt.Key_Tab, Qt.Key_Backtab):
+            paso = {Qt.Key_Tab: 1, Qt.Key_Backtab: -1}.get(event.key(), 0)
+            destino = self._editing_cell + paso
             self.finish_editing()
-            if event.key() == Qt.Key_Tab and siguiente < self.ann.cell_count():
-                self.edit_cell(siguiente)
+            if paso and 0 <= destino < self.ann.cell_count():
+                self.edit_cell(destino)
             event.accept()
             return
         super().keyPressEvent(event)

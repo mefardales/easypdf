@@ -2336,6 +2336,10 @@ class MainWindow(QMainWindow):
         return answer == QMessageBox.Discard
 
     def closeEvent(self, event) -> None:
+        # Lo que se estuviera escribiendo en una celda se guarda antes de
+        # preguntar nada: si no, se perderia sin avisar y ademas quedaria un
+        # editor vivo colgando de la tabla mientras Qt desmonta la escena.
+        self.view.finish_all_editing()
         if not self._confirm_discard():
             event.ignore()
             return

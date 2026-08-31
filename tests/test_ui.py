@@ -1978,3 +1978,117 @@ def test_las_pestanas_del_panel_no_se_confunden_al_cambiar_de_idioma(ventana, qa
         set_language("en")
         ventana.retranslate()
         qapp.processEvents()
+
+
+# -- la tabla dejaba el programa bloqueado --------------------------------
+def _dibujar_tabla(ventana, qapp, desde=(80.0, 120.0), hasta=(420.0, 300.0)):
+    """Inserta una tabla arrastrando, como hace el usuario con la herramienta."""
+    from PySide6.QtCore import QPointF
+
+    vista = ventana.view
+    pagina = vista._page_items[vista.current_page]
+
+    def punto(x, y):
+        return vista.mapFromScene(pagina.mapToScene(QPointF(x, y)))
+
+    ventana.select_tool(Tool.TABLE)
+    qapp.processEvents()
+    QTest.mousePress(vista.viewport(), Qt.LeftButton, Qt.NoModifier, punto(*desde))
+    QTest.mouseMove(vista.viewport(), punto(*hasta))
+    qapp.processEvents()
+    QTest.mouseRelease(vista.viewport(), Qt.LeftButton, Qt.NoModifier, punto(*hasta))
+    qapp.processEvents()
+    return punto
+
+
+def test_al_pinchar_fuera_la_celda_deja_de_editarse(ventana, qapp):
+    """El editor es hijo de la tabla: al perder el foco, ella no se enteraba.
+
+    Se quedaba en modo edicion para siempre, y en ese modo se le ceden los
+    atajos al editor de texto: DEL, Ctrl+C y Ctrl+V dejaban de funcionar en
+    todo el documento hasta que alguien pulsaba Esc.
+    """
+    punto = _dibujar_tabla(ventana, qapp)
+    assert ventana.view.is_editing_text          # la tabla abre su primera celda
+
+    QTest.mouseClick(ventana.view.viewport(), Qt.LeftButton, Qt.NoModifier,
+                     punto(500.0, 620.0))
+    qapp.processEvents()
+    assert not ventana.view.is_editing_text
+
+
+def test_una_tabla_se_puede_borrar_con_del(ventana, qapp):
+    punto = _dibujar_tabla(ventana, qapp)
+    QTest.mouseClick(ventana.view.viewport(), Qt.LeftButton, Qt.NoModifier,
+                     punto(500.0, 620.0))
+    QTest.mouseClick(ventana.view.viewport(), Qt.LeftButton, Qt.NoModifier,
+                     punto(200.0, 200.0))
+    qapp.processEvents()
+    ventana._update_actions()
+    assert ventana.act_delete.isEnabled()
+    assert len(ventana.view.selected_items()) == 1
+
+    QTest.keyClick(ventana, Qt.Key_Delete)
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == 0
+
+
+def test_una_tabla_se_puede_copiar_y_pegar(ventana, qapp):
+    punto = _dibujar_tabla(ventana, qapp)
+    QTest.mouseClick(ventana.view.viewport(), Qt.LeftButton, Qt.NoModifier,
+                     punto(500.0, 620.0))
+    QTest.mouseClick(ventana.view.viewport(), Qt.LeftButton, Qt.NoModifier,
+                     punto(200.0, 200.0))
+    qapp.processEvents()
+    ventana._update_actions()
+
+    QTest.keyClick(ventana, Qt.Key_C, Qt.ControlModifier)
+    qapp.processEvents()
+    QTest.keyClick(ventana, Qt.Key_V, Qt.ControlModifier)
+    qapp.processEvents()
+    tablas = [a for a in ventana.view.annotations() if a.kind is Kind.TABLE]
+    assert len(tablas) == 2
+    assert tablas[0].id != tablas[1].id
+
+
+def test_tab_pasa_de_celda_y_shift_tab_vuelve(ventana, qapp):
+    """La ayuda lo prometia desde siempre y no ocurria: el tabulador se lo
+    quedaba el widget para mover el foco antes de llegar a la tabla."""
+    tabla = Annotation(kind=Kind.TABLE, page=0, rect=(80.0, 120.0, 420.0, 300.0),
+                       rows=2, cols=2)
+    item = ventana.view.add_annotation(tabla)
+    qapp.processEvents()
+    item.edit_cell(0)
+    qapp.processEvents()
+
+    vista = ventana.view.viewport()
+    QTest.keyClicks(vista, "uno")
+    QTest.keyClick(vista, Qt.Key_Tab)
+    qapp.processEvents()
+    assert item._editing_cell == 1
+
+    QTest.keyClicks(vista, "dos")
+    QTest.keyClick(vista, Qt.Key_Backtab, Qt.ShiftModifier)
+    qapp.processEvents()
+    assert item._editing_cell == 0
+
+    QTest.keyClick(vista, Qt.Key_Escape)
+    qapp.processEvents()
+    assert not ventana.view.is_editing_text
+    assert tabla.cells[:2] == ["uno", "dos"]
+
+
+def test_mientras_se_escribe_en_una_celda_del_no_borra_la_tabla(ventana, qapp):
+    """Lo contrario tambien tiene que seguir siendo cierto."""
+    tabla = Annotation(kind=Kind.TABLE, page=0, rect=(80.0, 120.0, 420.0, 300.0),
+                       rows=2, cols=2)
+    item = ventana.view.add_annotation(tabla)
+    qapp.processEvents()
+    item.edit_cell(0)
+    qapp.processEvents()
+    ventana._update_actions()
+    assert not ventana.act_delete.isEnabled()
+    assert not ventana.act_copy.isEnabled()
+
+    QTest.keyClick(ventana.view.viewport(), Qt.Key_Escape)
+    qapp.processEvents()

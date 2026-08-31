@@ -1045,7 +1045,33 @@ class PdfView(QGraphicsView):
         )
 
     # ------------------------------------------------------------------ raton
+    def _cerrar_celda_si_toca(self, event) -> None:
+        """Cierra el editor de celda si el clic no cae dentro de el.
+
+        El editor es hijo de la tabla, asi que al pinchar fuera quien pierde el
+        foco es el editor y la tabla no se entera: se quedaba editando para
+        siempre. Y en modo edicion los atajos se le ceden al editor de texto,
+        con lo que DEL, Ctrl+C y Ctrl+V dejaban de funcionar en todo el
+        documento hasta que alguien pulsaba Esc.
+
+        Se mira aqui y no con focusItemChanged de la escena: esa senal tambien
+        salta mientras Qt destruye la escena al cerrar, con los items ya a
+        medio liberar, y eso reventaba el programa.
+        """
+        if not self._text_editing:
+            return
+        tocado = self._scene.itemAt(
+            self.mapToScene(event.position().toPoint()), self.transform()
+        )
+        for item in list(self._annotation_items()):
+            if not getattr(item, "is_editing", False):
+                continue
+            if tocado is not None and tocado is getattr(item, "_editor", None):
+                continue                 # se sigue escribiendo en esa celda
+            item.finish_editing()
+
     def mousePressEvent(self, event) -> None:
+        self._cerrar_celda_si_toca(event)
         if (self._tool is Tool.SELECT and event.button() == Qt.LeftButton
                 and self._guide_drag is None):
             escena = self.mapToScene(event.position().toPoint())
@@ -1160,6 +1186,41 @@ class PdfView(QGraphicsView):
             event.accept()
             return
         super().mouseReleaseEvent(event)
+
+    def event(self, evento) -> bool:
+        """Atiende el tabulador antes que nadie.
+
+        Tab no llega ni a keyPressEvent ni a la tabla: primero lo usa el widget
+        para pasar el foco al siguiente control, y despues la escena para
+        pasarlo al siguiente item. Por eso Tab entre celdas, que la ayuda
+        promete desde siempre, no funcionaba nunca.
+        """
+        if self._es_tabulador(evento) and self._tab_entre_celdas(evento):
+            return True
+        return super().event(evento)
+
+    def viewportEvent(self, evento) -> bool:
+        # Segun de donde venga la pulsacion la recibe la vista o su viewport,
+        # asi que el tabulador se mira en los dos sitios.
+        if self._es_tabulador(evento) and self._tab_entre_celdas(evento):
+            return True
+        return super().viewportEvent(evento)
+
+    @staticmethod
+    def _es_tabulador(evento) -> bool:
+        from PySide6.QtCore import QEvent
+
+        return (evento.type() == QEvent.Type.KeyPress
+                and evento.key() in (Qt.Key_Tab, Qt.Key_Backtab))
+
+    def _tab_entre_celdas(self, evento) -> bool:
+        """Pasa a la celda siguiente (o anterior) si se esta editando una."""
+        foco = self._scene.focusItem()
+        tabla = foco.parentItem() if foco is not None else None
+        if tabla is None or not getattr(tabla, "is_editing", False):
+            return False
+        tabla.keyPressEvent(evento)
+        return bool(evento.isAccepted())
 
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key_Escape:
