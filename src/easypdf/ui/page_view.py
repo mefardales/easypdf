@@ -1067,33 +1067,45 @@ class PdfView(QGraphicsView):
         self.erased.emit()
 
     # ------------------------------------------------------------------ raton
-    def _cerrar_celda_si_toca(self, event) -> None:
-        """Cierra el editor de celda si el clic no cae dentro de el.
+    def _salir_de_la_edicion(self, event) -> bool:
+        """Cierra el texto o la celda que se este editando al pinchar fuera.
 
-        El editor es hijo de la tabla, asi que al pinchar fuera quien pierde el
-        foco es el editor y la tabla no se entera: se quedaba editando para
-        siempre. Y en modo edicion los atajos se le ceden al editor de texto,
-        con lo que DEL, Ctrl+C y Ctrl+V dejaban de funcionar en todo el
-        documento hasta que alguien pulsaba Esc.
+        El editor de una celda es hijo de la tabla, asi que al pinchar fuera
+        quien pierde el foco es el editor y la tabla no se entera: se quedaba
+        editando para siempre y con ella DEL, Ctrl+C y Ctrl+V desactivados.
+
+        Si el clic cae en un sitio vacio, ese primer clic solo sirve para salir
+        del cuadro y el elemento se queda seleccionado: asi se puede copiar o
+        borrar justo despues, que es lo que uno espera. El siguiente clic en
+        vacio ya suelta la seleccion.
 
         Se mira aqui y no con focusItemChanged de la escena: esa senal tambien
-        salta mientras Qt destruye la escena al cerrar, con los items ya a
-        medio liberar, y eso reventaba el programa.
+        salta mientras Qt destruye la escena al cerrar, con los items a medio
+        liberar, y eso reventaba el programa.
+
+        Devuelve True si se queda con el clic.
         """
         if not self._text_editing:
-            return
+            return False
         tocado = self._scene.itemAt(
             self.mapToScene(event.position().toPoint()), self.transform()
         )
-        for item in list(self._annotation_items()):
-            if not getattr(item, "is_editing", False):
-                continue
-            if tocado is not None and tocado is getattr(item, "_editor", None):
-                continue                 # se sigue escribiendo en esa celda
-            item.finish_editing()
+        editandose = self._items_editandose()
+        if any(tocado is getattr(item, "_editor", None) is not None
+               for item in editandose):
+            return False                 # se sigue escribiendo en esa celda
+        self.finish_all_editing()
+        if tocado is None or not isinstance(tocado, AnnotationItemMixin):
+            self._scene.clearSelection()
+            for item in editandose:
+                item.setSelected(True)
+            event.accept()
+            return True                  # el clic se gasta en salir del cuadro
+        return False
 
     def mousePressEvent(self, event) -> None:
-        self._cerrar_celda_si_toca(event)
+        if self._salir_de_la_edicion(event):
+            return
         if (self._tool is Tool.SELECT and event.button() == Qt.LeftButton
                 and self._guide_drag is None):
             escena = self.mapToScene(event.position().toPoint())
@@ -1249,10 +1261,17 @@ class PdfView(QGraphicsView):
             if self._draft_item is not None:
                 self.detach_item(self._draft_item)
                 self._draft_item = None
+            # Esc sale del cuadro y vuelve a la herramienta de seleccionar,
+            # pero NO suelta lo seleccionado: lo normal despues de terminar
+            # algo es copiarlo, moverlo o borrarlo, y antes no quedaba nada a
+            # lo que aplicarlo. Para deseleccionar se pincha en un sitio
+            # vacio, como en cualquier programa.
+            editandose = self._items_editandose()
             # Cerrar los editores abiertos: si no, el editor de una celda se
             # queda vivo con el foco y luego DEL no llega a borrar la tabla.
             self.finish_all_editing()
-            self._scene.clearSelection()
+            for item in editandose:
+                item.setSelected(True)
             self.clear_search()
             self.set_tool(Tool.SELECT)
             self.toolFinished.emit()
@@ -1268,6 +1287,13 @@ class PdfView(QGraphicsView):
         super().keyPressEvent(event)
 
     # ------------------------------------------------------------------ edicion
+    def _items_editandose(self) -> list:
+        """Los items que tienen un texto o una celda abiertos ahora mismo."""
+        return [
+            item for item in self._annotation_items()
+            if getattr(item, "is_editing", False) or getattr(item, "_editing", False)
+        ]
+
     def finish_all_editing(self) -> None:
         """Cierra cualquier celda o texto que se este editando."""
         for item in self._annotation_items():

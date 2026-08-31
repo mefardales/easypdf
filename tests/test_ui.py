@@ -2194,3 +2194,102 @@ def test_quitar_las_guias_las_quita_de_todo_el_documento(ventana, qapp):
     vista.clear_all_guides()
     qapp.processEvents()
     assert vista.rulers_guides == {"h": [], "v": []}
+
+
+# -- salir de un elemento y poder copiarlo --------------------------------
+def _dibujar(ventana, qapp, tool, desde, hasta):
+    """Dibuja una anotacion arrastrando, como hace el usuario."""
+    from PySide6.QtCore import QPointF
+
+    vista = ventana.view
+    pagina = vista._page_items[vista.current_page]
+
+    def punto(x, y):
+        return vista.mapFromScene(pagina.mapToScene(QPointF(x, y)))
+
+    ventana.select_tool(tool)
+    qapp.processEvents()
+    QTest.mousePress(vista.viewport(), Qt.LeftButton, Qt.NoModifier, punto(*desde))
+    QTest.mouseMove(vista.viewport(), punto(*hasta))
+    qapp.processEvents()
+    QTest.mouseRelease(vista.viewport(), Qt.LeftButton, Qt.NoModifier, punto(*hasta))
+    qapp.processEvents()
+    return punto
+
+
+@pytest.mark.parametrize("tool", [Tool.TEXT, Tool.RECT, Tool.TABLE, Tool.ARROW])
+def test_esc_sale_del_elemento_y_lo_deja_listo_para_copiar(ventana, qapp, tool):
+    """Esc soltaba tambien la seleccion, y Ctrl+C se quedaba sin nada que copiar."""
+    _vaciar_portapapeles()
+    _dibujar(ventana, qapp, tool, (80.0, 100.0), (350.0, 160.0))
+    QTest.keyClick(ventana.view.viewport(), Qt.Key_Escape)
+    qapp.processEvents()
+
+    assert ventana.view.tool is Tool.SELECT
+    assert not ventana.view.is_editing_text
+    assert len(ventana.view.selected_items()) == 1
+
+    antes = ventana.view.annotation_count()
+    ventana._update_actions()
+    QTest.keyClick(ventana, Qt.Key_C, Qt.ControlModifier)
+    qapp.processEvents()
+    QTest.keyClick(ventana, Qt.Key_V, Qt.ControlModifier)
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == antes + 1
+
+
+@pytest.mark.parametrize("tool", [Tool.TEXT, Tool.TABLE])
+def test_el_primer_clic_fuera_sale_del_cuadro_sin_soltarlo(ventana, qapp, tool):
+    """Salir de un texto o una celda no puede dejarte sin nada seleccionado."""
+    _vaciar_portapapeles()
+    punto = _dibujar(ventana, qapp, tool, (80.0, 100.0), (350.0, 160.0))
+    assert ventana.view.is_editing_text
+
+    QTest.mouseClick(ventana.view.viewport(), Qt.LeftButton, Qt.NoModifier,
+                     punto(480.0, 700.0))
+    qapp.processEvents()
+    assert not ventana.view.is_editing_text
+    assert len(ventana.view.selected_items()) == 1
+
+    antes = ventana.view.annotation_count()
+    ventana._update_actions()
+    QTest.keyClick(ventana, Qt.Key_C, Qt.ControlModifier)
+    qapp.processEvents()
+    QTest.keyClick(ventana, Qt.Key_V, Qt.ControlModifier)
+    qapp.processEvents()
+    assert ventana.view.annotation_count() == antes + 1
+
+
+def test_el_segundo_clic_en_vacio_si_suelta_la_seleccion(ventana, qapp):
+    """Se sigue pudiendo deseleccionar, que si no no habria forma."""
+    punto = _dibujar(ventana, qapp, Tool.TEXT, (80.0, 100.0), (350.0, 160.0))
+    QTest.mouseClick(ventana.view.viewport(), Qt.LeftButton, Qt.NoModifier,
+                     punto(480.0, 700.0))
+    qapp.processEvents()
+    assert ventana.view.selected_items()
+
+    QTest.mouseClick(ventana.view.viewport(), Qt.LeftButton, Qt.NoModifier,
+                     punto(480.0, 700.0))
+    qapp.processEvents()
+    assert not ventana.view.selected_items()
+
+
+def test_esc_sigue_cancelando_lo_que_se_esta_dibujando(ventana, qapp):
+    """Lo que Esc si tiene que tirar: el trazo a medias."""
+    from PySide6.QtCore import QPointF
+
+    vista = ventana.view
+    pagina = vista._page_items[0]
+
+    def punto(x, y):
+        return vista.mapFromScene(pagina.mapToScene(QPointF(x, y)))
+
+    antes = vista.annotation_count()
+    ventana.select_tool(Tool.RECT)
+    QTest.mousePress(vista.viewport(), Qt.LeftButton, Qt.NoModifier, punto(80.0, 100.0))
+    QTest.mouseMove(vista.viewport(), punto(300.0, 200.0))
+    qapp.processEvents()
+    QTest.keyClick(vista.viewport(), Qt.Key_Escape)
+    qapp.processEvents()
+    assert vista.annotation_count() == antes
+    assert vista.tool is Tool.SELECT
