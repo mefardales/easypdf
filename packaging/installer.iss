@@ -11,7 +11,7 @@
 ; Los archivos y carpetas siguen llamandose EasyPDF (un ejecutable llamado
 ; easypdf.surf.exe pareceria tener una extension rara).
 #define MyAppFolder "EasyPDF"
-#define MyAppVersion "1.3.0"
+#define MyAppVersion "1.4.0"
 #define MyAppPublisher "easypdf.surf"
 #define MyAppURL "https://github.com/mefardales/easypdf"
 #define MyAppExeName "EasyPDF.exe"
