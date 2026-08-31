@@ -448,3 +448,91 @@ def test_si_el_servidor_no_dice_el_tamano_sigue_contando(dialogo_de_actualizacio
     dialogo = crear()
     dialogo._progreso(3 * MEGA, 0)
     assert dialogo.nota.text() == tr("update_progress_unknown", done="3.0")
+
+
+# -- el aviso al arrancar -------------------------------------------------
+def test_al_arrancar_comprueba_solo_y_ensena_el_cartel(qapp, servidor, monkeypatch, tmp_path):
+    """Sin tocar nada: se abre el programa y sale el aviso si hay version nueva."""
+    import time
+
+    from PySide6.QtWidgets import QPushButton
+
+    from easypdf.i18n import tr
+    from easypdf.ui import update_check, update_download
+    from easypdf.ui.main_window import MainWindow
+
+    servidor["cuerpo"] = json.dumps({
+        "version": "9.9.9",
+        "url": "https://easypdf.surf",
+        "setup": "https://easypdf.surf/EasyPDF-9.9.9-Setup.exe",
+        "linux": "https://easypdf.surf/EasyPDF-9.9.9-linux-x64.tar.xz",
+    })
+    monkeypatch.setattr(update_check, "LATEST_URL", servidor["url"])
+
+    visto = {}
+
+    def falso_exec(self):
+        visto["texto"] = self.texto.text()
+        visto["botones"] = [b.text() for b in self.findChildren(QPushButton)]
+        return 0
+
+    monkeypatch.setattr(update_download.UpdateDialog, "exec", falso_exec)
+
+    ventana = MainWindow()
+    try:
+        ventana.settings.set_value("updates/skip", "")
+        assert ventana.act_update_auto.isChecked()   # activado de serie
+        ventana.show()
+        fin = time.monotonic() + 15
+        while "texto" not in visto and time.monotonic() < fin:
+            qapp.processEvents()
+            time.sleep(0.01)
+        assert "texto" in visto, "el aviso no ha salido solo al arrancar"
+        assert "9.9.9" in visto["texto"]
+        # y trae el boton de descargar, no solo el enlace a la web
+        assert tr("update_download") in visto["botones"]
+    finally:
+        ventana.updater.cancel()
+        ventana._modified = False
+        ventana.view.undo_stack.setClean()
+        ventana.close()
+
+
+def test_si_se_apaga_la_comprobacion_no_molesta_al_arrancar(qapp, servidor, monkeypatch):
+    from easypdf.ui import update_check, update_download
+    from easypdf.ui.main_window import MainWindow
+
+    monkeypatch.setattr(update_check, "LATEST_URL", servidor["url"])
+    llamadas = []
+    monkeypatch.setattr(update_download.UpdateDialog, "exec",
+                        lambda self: llamadas.append(1) or 0)
+
+    # La preferencia se guarda antes de abrir la ventana: es al construirla
+    # cuando decide si programa la consulta.
+    from easypdf.config import Settings
+
+    Settings().set_value("updates/auto", False)
+    ventana = MainWindow()
+    try:
+        assert not ventana.act_update_auto.isChecked()
+        import time
+
+        fin = time.monotonic() + 5
+        while time.monotonic() < fin:
+            qapp.processEvents()
+            time.sleep(0.01)
+        assert llamadas == []
+    finally:
+        Settings().set_value("updates/auto", True)
+        ventana.updater.cancel()
+        ventana._modified = False
+        ventana.view.undo_stack.setClean()
+        ventana.close()
+
+
+def test_el_aviso_no_lleva_la_nota_del_antivirus(dialogo_de_actualizacion):
+    """Se pidio quitarla: el aviso solo dice que hay version nueva."""
+    crear, tr = dialogo_de_actualizacion
+    dialogo = crear()
+    assert "antivirus" not in dialogo.nota.text().lower()
+    assert not dialogo.nota.isVisible() or dialogo.nota.text() == ""

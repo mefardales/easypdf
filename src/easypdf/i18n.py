@@ -309,10 +309,6 @@ TEXTS: dict[str, dict[str, str]] = {
         ),
         "update_cancel": "Cancel",
         "update_close": "Close",
-        "update_av_note": (
-            "The installer is not signed yet, so Windows or your antivirus "
-            "may warn about it. It is the same file published on easypdf.surf."
-        ),
         "cursor_pos": "{x} x {y} {unit}",
         "rulers": "&Rulers",
         "ruler_unit_menu": "Ruler &units",
@@ -713,11 +709,6 @@ TEXTS: dict[str, dict[str, str]] = {
         ),
         "update_cancel": "Cancelar",
         "update_close": "Cerrar",
-        "update_av_note": (
-            "El instalador todavia no esta firmado, asi que Windows o el "
-            "antivirus pueden avisar. Es el mismo archivo que se publica "
-            "en easypdf.surf."
-        ),
         "cursor_pos": "{x} x {y} {unit}",
         "rulers": "&Reglas",
         "ruler_unit_menu": "&Unidades de la regla",

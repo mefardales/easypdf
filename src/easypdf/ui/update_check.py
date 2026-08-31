@@ -33,15 +33,19 @@ class UpdateChecker(QObject):
         """Deja de avisar del resultado. Se llama al cerrar la ventana."""
         self._cancelled = True
 
-    def start(self, url: str = LATEST_URL, current: str | None = None) -> None:
+    def start(self, url: str | None = None, current: str | None = None) -> None:
+        # La direccion se lee al llamar, no al importar el modulo: como valor
+        # por omision quedaba congelada la de entonces y no habia forma de
+        # apuntar a otra parte (por ejemplo en las pruebas).
         if self._running:
             return
         self._running = True
+        destino = url or LATEST_URL
         version = current or __version__
 
         def trabajo() -> None:
             try:
-                datos = check(version, url)
+                datos = check(version, destino)
             except Exception:  # pragma: no cover - defensivo
                 datos = None
             self._running = False

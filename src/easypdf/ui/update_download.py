@@ -8,7 +8,6 @@ hilo aparte y se comprueba con el sha256 publicado antes de ejecutar nada.
 from __future__ import annotations
 
 import os
-import sys
 import tempfile
 import threading
 
@@ -183,9 +182,6 @@ class UpdateDialog(QDialog):
             self.boton_descargar = self._boton(
                 tr("update_download"), self._descargar, principal=True
             )
-            if sys.platform.startswith("win"):
-                self.nota.setText(tr("update_av_note"))
-                self.nota.show()
         else:
             self.nota.setText(tr("update_no_asset"))
             self.nota.show()
@@ -244,8 +240,7 @@ class UpdateDialog(QDialog):
         self._limpiar_botones()
         if is_installer(ruta):
             self.texto.setText(tr("update_ready_install"))
-            self.nota.setText(tr("update_av_note"))
-            self.nota.show()
+            self.nota.hide()
             self._boton(tr("update_install_now"), self._instalar, principal=True)
         else:
             # En Linux se publica un paquete portable: no hay nada que
