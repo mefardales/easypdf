@@ -744,17 +744,17 @@ def test_soltar_en_el_hueco_entre_miniaturas_no_manda_la_pagina_al_final(ventana
     r1 = lista.visualRect(lista.model().index(1, 0))
     ultima = lista.count() - 1
 
-    # el hueco entre la primera y la segunda
+    # El punto justo entre las dos miniaturas. No se afirma si Qt ve ahi una
+    # miniatura o no: eso depende de las metricas de cada plataforma. Lo que
+    # importa es donde acaba la pagina.
     hueco = QPoint(r0.center().x(), (r0.bottom() + r1.top()) // 2)
-    assert not lista.indexAt(hueco).isValid()      # Qt no ve ninguna ahi
     destino = lista.drop_row(hueco)
     assert destino == 1, f"el hueco deberia dar la posicion 1, dio {destino}"
     assert destino != ultima or ultima == 1
 
-    # por encima de la primera tampoco puede mandar al final
+    # y por encima de la primera, tampoco puede irse al final
     encima = QPoint(r0.center().x(), max(0, r0.top() - 3))
-    if not lista.indexAt(encima).isValid():
-        assert lista.drop_row(encima) == 0
+    assert lista.drop_row(encima) == 0
 
 
 def test_el_destino_al_soltar_nunca_retrocede_al_bajar_el_raton(ventana):
