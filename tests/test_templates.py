@@ -192,3 +192,41 @@ def test_pedir_una_de_serie_que_no_existe_avisa():
 
     with pytest.raises(TemplateError):
         load_builtin("no existe")
+
+
+# -- portapapeles ---------------------------------------------------------
+def test_lo_copiado_va_y_vuelve_igual():
+    from easypdf.ui.clipboard import decode, encode
+
+    originales = [
+        Annotation(kind=Kind.RECT, page=1, rect=(10.0, 20.0, 30.0, 40.0), width=3.0),
+        Annotation(kind=Kind.TABLE, page=0, rows=2, cols=2,
+                   cells=["a", "b", "c", "d"], font_size=9.0),
+    ]
+    vueltas = decode(encode(originales))
+    assert [a.kind for a in vueltas] == [Kind.RECT, Kind.TABLE]
+    assert vueltas[0].rect == (10.0, 20.0, 30.0, 40.0)
+    assert vueltas[0].width == 3.0
+    assert vueltas[1].cells == ["a", "b", "c", "d"]
+
+
+def test_un_texto_de_otro_programa_no_se_lee_como_anotaciones():
+    from easypdf.ui.clipboard import decode
+
+    assert decode("una nota cualquiera") == []
+    assert decode("") == []
+    assert decode('{"otra": "cosa"}') == []
+    assert decode('[1, 2, 3]') == []
+
+
+def test_una_anotacion_rota_no_tira_las_demas():
+    """Si una entrada esta mal, se salta y se pegan las que si valen."""
+    import json
+
+    from easypdf.ui.clipboard import decode, encode
+
+    datos = json.loads(encode([Annotation(kind=Kind.RECT, page=0)]))
+    datos["annotations"].insert(0, {"kind": "esto-no-existe"})
+    leidas = decode(json.dumps(datos))
+    assert len(leidas) == 1
+    assert leidas[0].kind is Kind.RECT

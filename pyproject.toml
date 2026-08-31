@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "easypdf"
-version = "1.5.0"
+version = "1.5.1"
 description = "easypdf.surf: lector de PDF sencillo con anotaciones (cuadros, lineas, texto) e impresion"
 readme = "README.md"
 requires-python = ">=3.9"

@@ -53,6 +53,9 @@ TEXTS: dict[str, dict[str, str]] = {
             "<i>italic</i> (Ctrl+I) and alignment.</li>"
             "<li>With the <b>Image</b> tool, or by dropping an image file onto the window, "
             "you can place photos, signatures or logos on top of the PDF.</li>"
+            "<li><b>Ctrl+C</b>, <b>Ctrl+X</b> and <b>Ctrl+V</b> copy, cut and paste "
+            "whatever is selected. What you paste lands slightly offset on the page "
+            "you are on, already selected so you can drag it into place.</li>"
             "<li><b>Ctrl+Z</b> and <b>Ctrl+Y</b> undo and redo.</li></ul>"
             "<h3>Moving around</h3><ul>"
             "<li><b>Ctrl+wheel</b> zooms; <b>Ctrl+0</b> goes back to 100%.</li>"
@@ -104,6 +107,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "cmd_page_rotate": "Rotate page {page}",
         "cmd_erase": "Erase",
         "cmd_template": "Apply template ({count} annotations)",
+        "cmd_paste": "Paste ({count})",
         # --- archivo ---
         "new": "&New blank document",
         "new_tip": "Create an empty PDF to start from scratch",
@@ -126,6 +130,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "menu_edit": "&Edit",
         "undo": "Undo",
         "redo": "Redo",
+        "copy_sel": "&Copy",
+        "cut_sel": "Cu&t",
+        "paste_sel": "&Paste",
         "delete_sel": "&Delete selection",
         "delete_sel_tip": "Delete the selected annotations",
         "select_all": "Select &all annotations",
@@ -341,6 +348,10 @@ TEXTS: dict[str, dict[str, str]] = {
         "status_new": "New document. Add pages from the Document menu and save with Ctrl+S",
         "status_image_placed": "Image placed: {name}",
         "status_no_selection": "No annotation is selected",
+        "status_copied": "{count} copied",
+        "status_cut": "{count} cut",
+        "status_pasted": "{count} pasted",
+        "status_clipboard_empty": "There is nothing of easypdf.surf to paste",
         "status_annotations": "{count} annotations",
         "status_annotation": "1 annotation",
         "status_editing": "Type the note; Esc when done",
@@ -410,6 +421,9 @@ TEXTS: dict[str, dict[str, str]] = {
             "(Ctrl+B), <i>cursiva</i> (Ctrl+I) y alineacion.</li>"
             "<li>Con la herramienta <b>Imagen</b> (o soltando un archivo de imagen sobre la "
             "ventana) puedes colocar fotos, firmas o logotipos encima del PDF.</li>"
+            "<li><b>Ctrl+C</b>, <b>Ctrl+X</b> y <b>Ctrl+V</b> copian, cortan y pegan "
+            "lo que este seleccionado. Lo pegado cae un poco corrido en la pagina que "
+            "se este viendo, ya seleccionado para poder arrastrarlo a su sitio.</li>"
             "<li><b>Ctrl+Z</b> y <b>Ctrl+Y</b> deshacen y rehacen.</li></ul>"
             "<h3>Moverse por el documento</h3><ul>"
             "<li><b>Ctrl+rueda</b> hace zoom; <b>Ctrl+0</b> vuelve al 100%.</li>"
@@ -461,6 +475,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "cmd_page_rotate": "Girar la pagina {page}",
         "cmd_erase": "Borrar con la goma",
         "cmd_template": "Aplicar plantilla ({count} anotaciones)",
+        "cmd_paste": "Pegar ({count})",
         "new": "&Nuevo documento en blanco",
         "new_tip": "Crear un PDF vacio para empezar de cero",
         "open": "&Abrir...",
@@ -481,6 +496,9 @@ TEXTS: dict[str, dict[str, str]] = {
         "menu_edit": "&Editar",
         "undo": "Deshacer",
         "redo": "Rehacer",
+        "copy_sel": "&Copiar",
+        "cut_sel": "Cor&tar",
+        "paste_sel": "&Pegar",
         "delete_sel": "&Eliminar seleccion",
         "delete_sel_tip": "Eliminar las anotaciones seleccionadas",
         "select_all": "Seleccionar &todas las anotaciones",
@@ -697,6 +715,10 @@ TEXTS: dict[str, dict[str, str]] = {
         ),
         "status_image_placed": "Imagen colocada: {name}",
         "status_no_selection": "No hay ninguna anotacion seleccionada",
+        "status_copied": "{count} copiadas",
+        "status_cut": "{count} cortadas",
+        "status_pasted": "{count} pegadas",
+        "status_clipboard_empty": "No hay nada de easypdf.surf que pegar",
         "status_annotations": "{count} anotaciones",
         "status_annotation": "1 anotacion",
         "status_editing": "Escribe la nota; Esc para terminar",
