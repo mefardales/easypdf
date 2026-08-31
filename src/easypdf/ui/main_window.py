@@ -170,6 +170,7 @@ class MainWindow(QMainWindow):
         self._create_status_bar()
         self._connect_view()
         self._restore_settings()
+        self._setup_updates()
         self._load_style_defaults()
         self.view.set_tool(Tool.SELECT)
         self._update_actions()
@@ -278,6 +279,11 @@ class MainWindow(QMainWindow):
         self.act_about = action("about", self.show_about)
         self.act_about.setText(tr("about", app=__app_name__))
         self.act_website = action("website", lambda: QDesktopServices.openUrl(QUrl(__url__)))
+        self.act_update = action("update_check", lambda: self.check_updates(manual=True))
+        self.act_update_auto = QAction(tr("update_auto"), self)
+        self.act_update_auto.setCheckable(True)
+        self.act_update_auto.toggled.connect(self._set_update_auto)
+        self._action_keys[self.act_update_auto] = ("update_auto", None)
 
         # Herramientas (excluyentes entre si)
         self.tool_group = QActionGroup(self)
@@ -448,6 +454,8 @@ class MainWindow(QMainWindow):
         help_menu.addSeparator()
         help_menu.addAction(self.act_help)
         help_menu.addAction(self.act_website)
+        help_menu.addAction(self.act_update)
+        help_menu.addAction(self.act_update_auto)
         help_menu.addSeparator()
         help_menu.addAction(self.act_about)
 
@@ -1834,6 +1842,8 @@ class MainWindow(QMainWindow):
         # sigue pidiendo miniaturas de un PDF que ya no esta abierto.
         self._thumb_timer.stop()
         self._thumb_queue.clear()
+        if hasattr(self, "updater"):
+            self.updater.cancel()
         document = self.view.document
         if document is not None:
             document.close()
@@ -1889,6 +1899,61 @@ class MainWindow(QMainWindow):
         vista.place_image(os.path.basename(path), datos, pagina.index, pagina.mapFromScene(escena))
         self.statusBar().showMessage(tr("status_image_placed", name=os.path.basename(path)), 4000)
         return True
+
+    # ------------------------------------------------------------------ actualizaciones
+    def _setup_updates(self) -> None:
+        """Prepara el aviso de version nueva y lo lanza si toca."""
+        from .update_check import UpdateChecker
+
+        self._update_manual = False
+        self.updater = UpdateChecker(self)
+        self.updater.finished.connect(self._on_update_result)
+        activo = self.settings.value("updates/auto", True, type_=bool)
+        self.act_update_auto.blockSignals(True)
+        self.act_update_auto.setChecked(bool(activo))
+        self.act_update_auto.blockSignals(False)
+        if activo:
+            # Se retrasa un poco: primero que arranque la ventana.
+            QTimer.singleShot(2500, lambda: self.check_updates(manual=False))
+
+    def _set_update_auto(self, activo: bool) -> None:
+        self.settings.set_value("updates/auto", bool(activo))
+
+    def check_updates(self, manual: bool = False) -> None:
+        """Pregunta a la web oficial si hay una version mas nueva."""
+        if self.updater.running:
+            return
+        self._update_manual = manual
+        if manual:
+            self.statusBar().showMessage(tr("update_checking"), 5000)
+        self.updater.start()
+
+    def _on_update_result(self, datos) -> None:
+        if not datos:
+            if self._update_manual:
+                QMessageBox.information(
+                    self, __app_name__, tr("update_none", version=__version__)
+                )
+            return
+        nueva = str(datos.get("version", ""))
+        if not self._update_manual and nueva == self.settings.value("updates/skip", ""):
+            return                       # el usuario dijo que no le avisaran
+        self._ask_to_update(nueva, str(datos.get("url") or __url__))
+
+    def _ask_to_update(self, nueva: str, url: str) -> None:
+        aviso = QMessageBox(self)
+        aviso.setWindowTitle(tr("update_title"))
+        aviso.setTextFormat(Qt.RichText)
+        aviso.setText(tr("update_body", new=nueva, old=__version__))
+        ir = aviso.addButton(tr("update_go"), QMessageBox.AcceptRole)
+        aviso.addButton(tr("update_later"), QMessageBox.RejectRole)
+        saltar = aviso.addButton(tr("update_skip"), QMessageBox.DestructiveRole)
+        aviso.exec()
+        pulsado = aviso.clickedButton()
+        if pulsado is ir:
+            QDesktopServices.openUrl(QUrl(url))
+        elif pulsado is saltar:
+            self.settings.set_value("updates/skip", nueva)
 
     # ------------------------------------------------------------------ ayuda
     def show_about(self) -> None:

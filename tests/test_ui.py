@@ -1121,3 +1121,70 @@ def test_los_rectangulos_de_celda_se_memorizan_y_se_rehacen_al_cambiar(ventana, 
     nuevos = item.local_cell_rects()
     assert nuevos is not primeros                     # rehechos al cambiar
     assert len(nuevos) == ann.rows * 4
+
+
+# --------------------------------------------------------------------------
+# Aviso de version nueva
+# --------------------------------------------------------------------------
+
+def test_el_aviso_de_version_ofrece_ir_esperar_o_saltar(ventana, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+
+    from easypdf import __version__
+
+    visto = {}
+
+    def falso_exec(self):
+        visto["texto"] = self.text()
+        visto["botones"] = [b.text() for b in self.buttons()]
+        return 0
+
+    monkeypatch.setattr(QMessageBox, "exec", falso_exec)
+    ventana.settings.set_value("updates/skip", "")
+    ventana._update_manual = False
+    ventana._on_update_result({"version": "9.9.9", "url": "https://easypdf.surf"})
+
+    assert "9.9.9" in visto["texto"]
+    assert __version__ in visto["texto"]
+    assert len(visto["botones"]) == 3
+
+
+def test_no_se_avisa_dos_veces_de_una_version_saltada(ventana, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+
+    visto = {}
+    monkeypatch.setattr(QMessageBox, "exec",
+                        lambda self: visto.setdefault("texto", self.text()) or 0)
+
+    ventana.settings.set_value("updates/skip", "9.9.9")
+    ventana._update_manual = False
+    ventana._on_update_result({"version": "9.9.9"})
+    assert "texto" not in visto           # en el arranque no molesta
+
+    ventana._update_manual = True         # pero si la busca a mano, si
+    ventana._on_update_result({"version": "9.9.9"})
+    assert "9.9.9" in visto.get("texto", "")
+    ventana.settings.set_value("updates/skip", "")
+
+
+def test_sin_novedad_solo_avisa_si_lo_pidio_el_usuario(ventana, monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+
+    llamadas = []
+    monkeypatch.setattr(QMessageBox, "information",
+                        staticmethod(lambda *a, **k: llamadas.append(a)))
+
+    ventana._update_manual = False
+    ventana._on_update_result(None)
+    assert not llamadas                    # al arrancar, en silencio
+
+    ventana._update_manual = True
+    ventana._on_update_result(None)
+    assert llamadas                        # buscando a mano, contesta
+
+
+def test_el_aviso_al_arrancar_se_puede_desactivar(ventana):
+    ventana.act_update_auto.setChecked(False)
+    assert ventana.settings.value("updates/auto", True, type_=bool) is False
+    ventana.act_update_auto.setChecked(True)
+    assert ventana.settings.value("updates/auto", True, type_=bool) is True
