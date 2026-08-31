@@ -10,7 +10,7 @@ on:
       version:
         description: "Version a publicar (sin la v)"
         type: string
-        default: "1.6.1"
+        default: "1.6.2"
 
 permissions:
   contents: write
@@ -56,15 +56,21 @@ jobs:
           prerelease: false
           generate_release_notes: false
           body: |
-            ## Novedades de la 1.6.1
+            ## Novedades de la 1.6.2
 
-            **Las guias se ven en todas las paginas**
-            - Una guia sacada de la regla era de la pagina en la que se
-              soltaba. Se ponen para alinear lo mismo en todas las hojas, asi
-              que ahora son del documento entero: la misma linea sale en todas
-              las paginas y el iman tira de las anotaciones de cualquiera de
-              ellas.
-            - Quitarlas las quita de todo el documento.
+            **Salir de un elemento ya no lo deja sin seleccionar**
+
+            Se hacia un texto, se salia del cuadro y `Ctrl+C` no copiaba nada:
+            al salir se soltaba tambien la seleccion, asi que no habia nada que
+            copiar. Pasaba igual con las tablas, los cuadros y las flechas.
+
+            - `Esc` termina lo que estes haciendo y vuelve a Seleccionar, pero
+              deja seleccionado lo que acabas de hacer. Copiar, mover o borrar
+              justo despues ya funciona.
+            - El primer clic fuera de un texto o de una celda sirve para salir
+              del cuadro y lo deja seleccionado. El segundo, en una zona vacia,
+              ya suelta la seleccion, como en cualquier programa.
+            - `Esc` sigue tirando el trazo que se este dibujando a medias.
 
             ## Descargas
 
