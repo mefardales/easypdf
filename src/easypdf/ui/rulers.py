@@ -216,7 +216,8 @@ class Ruler(QWidget):
         # Una guia horizontal ("h") es una linea a lo ancho: su posicion se
         # lee en la regla vertical. Y al reves. Por eso el eje va cruzado.
         eje = "v" if self._horizontal else "h"
-        colocadas = list(vista.rulers_guides.get(numero, {}).get(eje, []))
+        # Las guias son de todo el documento: se ven en cualquier pagina.
+        colocadas = list(vista.rulers_guides.get(eje, []))
 
         arrastrando = None
         arrastre = getattr(vista, "_guide_drag", None)
