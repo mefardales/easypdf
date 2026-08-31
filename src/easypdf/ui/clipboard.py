@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 
-from PySide6.QtCore import QMimeData
 from PySide6.QtGui import QGuiApplication
 
 from ..model import Annotation
@@ -59,12 +58,13 @@ def copy_annotations(annotations) -> int:
     portapapeles = _clipboard()
     if not lista or portapapeles is None:
         return 0
-    texto = encode(lista)
-    datos = QMimeData()
-    datos.setData(MIME, texto.encode("utf-8"))
-    # Tambien como texto: no estorba, y deja ver lo copiado si hace falta.
-    datos.setText(texto)
-    portapapeles.setMimeData(datos)
+    # Va como texto y no con un tipo MIME propio a proposito. Un QMimeData
+    # creado aqui se lo queda el portapapeles, pero el envoltorio de Python
+    # tambien cree que es suyo y lo borra: el programa reventaba al cerrarse
+    # despues de haber copiado algo. El texto no tiene ese problema, y no se
+    # pierde nada: lo copiado lleva su marca dentro y decode() la comprueba,
+    # asi que un texto de otro programa no se cuela como anotaciones.
+    portapapeles.setText(encode(lista))
     return len(lista)
 
 
@@ -74,15 +74,10 @@ def clipboard_annotations() -> list[Annotation]:
     if portapapeles is None:
         return []
     datos = portapapeles.mimeData()
-    if datos is None:
-        return []
-    if datos.hasFormat(MIME):
+    if datos is not None and datos.hasFormat(MIME):
+        # Lo copiado por una version anterior, que si usaba un tipo propio.
         return decode(bytes(datos.data(MIME)).decode("utf-8", "replace"))
-    if datos.hasText():
-        # Algunos escritorios pierden los tipos MIME propios entre procesos,
-        # pero el texto sobrevive: si resulta ser nuestro, vale igual.
-        return decode(datos.text())
-    return []
+    return decode(portapapeles.text())
 
 
 def has_annotations() -> bool:

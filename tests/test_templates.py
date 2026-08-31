@@ -230,3 +230,35 @@ def test_una_anotacion_rota_no_tira_las_demas():
     leidas = decode(json.dumps(datos))
     assert len(leidas) == 1
     assert leidas[0].kind is Kind.RECT
+
+
+def test_copiar_no_deja_el_programa_reventando_al_cerrarse(tmp_path):
+    """Un QMimeData creado en Python se lo quedan Qt y Python a la vez.
+
+    Los dos lo borran, y el programa se caia con un fallo de segmentacion al
+    cerrarse en cuanto se hubiera copiado algo. No se puede comprobar dentro
+    de este proceso: hay que abrir uno aparte y mirar como termina.
+    """
+    import os
+    import subprocess
+    import sys
+    import textwrap
+
+    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    guion = tmp_path / "copiar.py"
+    guion.write_text(textwrap.dedent(f"""
+        import sys
+        sys.path.insert(0, {os.path.join(raiz, "src")!r})
+        from PySide6.QtWidgets import QApplication
+        app = QApplication([])
+        from easypdf.model import Annotation, Kind
+        from easypdf.ui.clipboard import clipboard_annotations, copy_annotations
+        copy_annotations([Annotation(kind=Kind.RECT, page=0, rect=(1.0, 2.0, 3.0, 4.0))])
+        assert len(clipboard_annotations()) == 1
+    """))
+    entorno = dict(os.environ, QT_QPA_PLATFORM="offscreen")
+    fin = subprocess.run([sys.executable, str(guion)], env=entorno,
+                         capture_output=True, timeout=120)
+    assert fin.returncode == 0, (
+        f"el proceso termino con {fin.returncode}: {fin.stderr.decode()[-400:]}"
+    )

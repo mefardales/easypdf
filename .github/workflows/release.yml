@@ -10,7 +10,7 @@ on:
       version:
         description: "Version a publicar (sin la v)"
         type: string
-        default: "1.5.3"
+        default: "1.5.4"
 
 permissions:
   contents: write
@@ -56,24 +56,38 @@ jobs:
           prerelease: false
           generate_release_notes: false
           body: |
-            ## Novedades de la 1.5.3
+            ## Novedades de la 1.5.4
 
-            **Menos letra pequena**
-            - El aviso de version nueva ya no lleva la nota del antivirus.
-            - La ventana de informacion se queda con el nombre, la version y
-              la licencia del programa. Las de las bibliotecas pasan al boton
-              **Licencias**, que sigue ahi porque PySide6 es LGPL y hay que
-              avisar de que se usa.
+            **Una tabla dejaba el programa a medio gas**
 
-            **Comprobacion al arrancar**
-            - Sigue funcionando igual: al abrir el programa consulta la web
-              oficial y, si hay una version mas nueva, sale el aviso con el
-              boton de descargar e instalar. Se apaga en el menu Ayuda.
-              Ahora hay una prueba que abre la ventana de verdad y comprueba
-              que el cartel sale solo, para que no se rompa sin que nos
-              enteremos.
-            - De paso, la direccion que se consulta se leia al importar el
-              modulo y quedaba congelada; ahora se lee al preguntar.
+            Al insertar una tabla se abre sola su primera celda para escribir.
+            El editor de la celda es hijo de la tabla, asi que cuando se
+            pinchaba en otra parte el que perdia el foco era el editor y la
+            tabla no se enteraba: se quedaba en modo edicion para siempre. Y
+            en modo edicion los atajos se le ceden al editor de texto, para
+            poder copiar una palabra, con lo que **DEL, Ctrl+C y Ctrl+V
+            dejaban de funcionar en todo el documento** hasta que alguien
+            pulsaba Esc sin saber por que.
+
+            - Al pinchar fuera, la celda se cierra y guarda lo escrito.
+            - Se puede borrar una tabla con DEL, y copiarla y pegarla.
+            - Mientras se escribe dentro de una celda los atajos siguen siendo
+              los del editor, que es lo correcto.
+
+            **El programa reventaba al cerrarse despues de copiar**
+            - Copiar dejaba las anotaciones en el portapapeles con un tipo MIME
+              propio. Ese paquete se lo queda Qt, pero el envoltorio de Python
+              cree que tambien es suyo, y los dos lo borraban: fallo de
+              segmentacion al salir. Ahora va como texto, con su marca dentro,
+              que es igual de seguro (un texto de otro programa no se cuela
+              como anotaciones) y no tiene ese problema. Estaba desde la 1.5.1.
+
+            **Tab entre celdas**
+            - La ayuda lo promete desde siempre y no ocurria nunca: el
+              tabulador se lo quedaba primero el widget para pasar el foco al
+              siguiente control y despues la escena para pasarlo al siguiente
+              elemento, y no llegaba a la tabla. Ahora Tab pasa a la celda
+              siguiente y Shift+Tab a la anterior.
 
             ## Descargas
 
