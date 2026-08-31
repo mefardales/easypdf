@@ -227,8 +227,10 @@ class PdfView(QGraphicsView):
         self._draft_page = 0
         self.snap_enabled = True
         self._guides = (None, None, None)
-        # Guias del usuario, en coordenadas de pagina: {pagina: {"h": [...], "v": [...]}}
-        self.rulers_guides: dict[int, dict[str, list[float]]] = {}
+        # Guias del usuario, en coordenadas de pagina. Son de todo el
+        # documento, no de una pagina: una guia sirve para alinear lo mismo en
+        # todas las hojas, que es justo para lo que se pone.
+        self.rulers_guides: dict[str, list[float]] = {"h": [], "v": []}
         self._guide_drag = None      # ("h"|"v", pagina, valor, indice o None)
         self._eraser_size = ERASER_DEFAULT
         # Cuantas veces se ha pegado lo mismo: cada pegada se separa un poco
@@ -842,10 +844,10 @@ class PdfView(QGraphicsView):
         lapiz = QPen(QColor("#00a3c4"))
         lapiz.setWidthF(1.0)
         lapiz.setCosmetic(True)
-        for pagina, item in enumerate(self._page_items):
-            guias = self.rulers_guides.get(pagina)
-            if not guias:
-                continue
+        guias = self.rulers_guides
+        if not (guias["h"] or guias["v"]):
+            return
+        for item in self._page_items:
             caja = item.sceneBoundingRect()
             painter.setPen(lapiz)
             for y in guias["h"]:
@@ -874,8 +876,10 @@ class PdfView(QGraphicsView):
                     painter.drawLine(QPointF(sx, caja.top()), QPointF(sx, caja.bottom()))
 
     # ------------------------------------------------------------------ guias del usuario
-    def page_guides(self, page: int) -> dict[str, list[float]]:
-        return self.rulers_guides.setdefault(page, {"h": [], "v": []})
+    def page_guides(self, page: int = 0) -> dict[str, list[float]]:
+        """Las guias del documento. El numero de pagina ya no cambia nada:
+        se ensenan y sirven para alinear en todas."""
+        return self.rulers_guides
 
     def start_guide(self, orientacion: str, valor: float) -> None:
         """Empieza a sacar una guia nueva desde la regla."""
@@ -939,12 +943,8 @@ class PdfView(QGraphicsView):
                     return ("v", pagina, i, x)
         return None
 
-    def clear_guides_of_page(self, pagina: int) -> None:
-        self.rulers_guides.pop(pagina, None)
-        self._guides_changed()
-
     def clear_all_guides(self) -> None:
-        self.rulers_guides.clear()
+        self.rulers_guides = {"h": [], "v": []}
         self._guides_changed()
 
     def _guides_changed(self) -> None:

@@ -2143,3 +2143,54 @@ def test_cerrar_el_panel_con_su_aspa_desmarca_la_opcion(ventana, qapp):
     ventana.act_side_panel.trigger()      # y se recupera desde el menu
     qapp.processEvents()
     assert ventana.bookmark_dock.isVisible()
+
+
+def test_una_guia_vale_para_todas_las_paginas(ventana, qapp):
+    """Se ponen para alinear lo mismo en todas las hojas, no en una sola."""
+    vista = ventana.view
+    vista.clear_all_guides()
+    vista.start_guide("h", 250.0)
+    vista.drop_guide(250.0)
+    qapp.processEvents()
+
+    assert vista.rulers_guides["h"] == [250.0]
+    # da igual por que pagina se pregunte: la guia es del documento
+    assert vista.page_guides(0)["h"] == [250.0]
+    assert vista.page_guides(2)["h"] == [250.0]
+    assert vista.page_guides(0) is vista.page_guides(2)
+
+
+def test_una_anotacion_de_otra_pagina_se_alinea_con_la_guia(ventana, qapp):
+    """De poco sirve verla en todas las paginas si solo tira en la suya."""
+    vista = ventana.view
+    vista.clear_all_guides()
+    vista.snap_enabled = True
+    vista.start_guide("h", 250.0)
+    vista.drop_guide(250.0)
+    qapp.processEvents()
+
+    from PySide6.QtCore import QPointF
+
+    caja = Annotation(kind=Kind.RECT, page=2, rect=(100.0, 100.0, 200.0, 150.0))
+    item = vista.add_annotation(caja)
+    qapp.processEvents()
+
+    # se propone soltarla con el borde de arriba tres puntos pasada la guia
+    propuesta = QPointF(item.pos().x(), item.pos().y() + (250.0 - 100.0) + 3.0)
+    item.setPos(item.compute_snap(propuesta))
+    qapp.processEvents()
+    assert abs(caja.bounds()[1] - 250.0) < 0.01
+
+
+def test_quitar_las_guias_las_quita_de_todo_el_documento(ventana, qapp):
+    vista = ventana.view
+    vista.start_guide("h", 100.0)
+    vista.drop_guide(100.0)
+    vista.start_guide("v", 200.0)
+    vista.drop_guide(200.0)
+    qapp.processEvents()
+    assert vista.rulers_guides["h"] and vista.rulers_guides["v"]
+
+    vista.clear_all_guides()
+    qapp.processEvents()
+    assert vista.rulers_guides == {"h": [], "v": []}
