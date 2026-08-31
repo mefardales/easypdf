@@ -217,6 +217,9 @@ class PdfView(QGraphicsView):
         self._draft_page = 0
         self.snap_enabled = True
         self._guides = (None, None, None)
+        # Guias del usuario, en coordenadas de pagina: {pagina: {"h": [...], "v": [...]}}
+        self.rulers_guides: dict[int, dict[str, list[float]]] = {}
+        self._guide_drag = None      # ("h"|"v", pagina, valor, indice o None)
         self._eraser_size = ERASER_DEFAULT
         self._erasing = False
         self._erase_item = None
@@ -778,6 +781,116 @@ class PdfView(QGraphicsView):
             self.noteCreated.emit(item)   # la ventana pide el texto
         self.toolFinished.emit()
 
+    def _draw_ruler_guides(self, painter) -> None:  # pragma: no cover - dibujo
+        """Pinta las guias sacadas de las reglas."""
+        lapiz = QPen(QColor("#00a3c4"))
+        lapiz.setWidthF(1.0)
+        lapiz.setCosmetic(True)
+        for pagina, item in enumerate(self._page_items):
+            guias = self.rulers_guides.get(pagina)
+            if not guias:
+                continue
+            caja = item.sceneBoundingRect()
+            painter.setPen(lapiz)
+            for y in guias["h"]:
+                sy = item.mapToScene(QPointF(0, y)).y()
+                painter.drawLine(QPointF(caja.left(), sy), QPointF(caja.right(), sy))
+            for x in guias["v"]:
+                sx = item.mapToScene(QPointF(x, 0)).x()
+                painter.drawLine(QPointF(sx, caja.top()), QPointF(sx, caja.bottom()))
+
+        # la que se esta arrastrando, discontinua para distinguirla
+        if self._guide_drag is not None:
+            orientacion, pagina, valor, _indice = self._guide_drag
+            if 0 <= pagina < len(self._page_items):
+                item = self._page_items[pagina]
+                caja = item.sceneBoundingRect()
+                arrastre = QPen(QColor("#00a3c4"))
+                arrastre.setStyle(Qt.DashLine)
+                arrastre.setWidthF(1.0)
+                arrastre.setCosmetic(True)
+                painter.setPen(arrastre)
+                if orientacion == "h":
+                    sy = item.mapToScene(QPointF(0, valor)).y()
+                    painter.drawLine(QPointF(caja.left(), sy), QPointF(caja.right(), sy))
+                else:
+                    sx = item.mapToScene(QPointF(valor, 0)).x()
+                    painter.drawLine(QPointF(sx, caja.top()), QPointF(sx, caja.bottom()))
+
+    # ------------------------------------------------------------------ guias del usuario
+    def page_guides(self, page: int) -> dict[str, list[float]]:
+        return self.rulers_guides.setdefault(page, {"h": [], "v": []})
+
+    def start_guide(self, orientacion: str, valor: float) -> None:
+        """Empieza a sacar una guia nueva desde la regla."""
+        pagina = self._current_page
+        self._guide_drag = (orientacion, pagina, valor, None)
+        self.viewport().update()
+
+    def grab_guide(self, orientacion: str, pagina: int, indice: int, valor: float) -> None:
+        """Coge una guia que ya existe para moverla."""
+        self._guide_drag = (orientacion, pagina, valor, indice)
+        self.viewport().update()
+
+    def move_guide(self, valor: float) -> None:
+        if self._guide_drag is None or valor is None:
+            return
+        orientacion, pagina, _viejo, indice = self._guide_drag
+        self._guide_drag = (orientacion, pagina, valor, indice)
+        self.viewport().update()
+
+    def drop_guide(self, valor) -> None:
+        """Suelta la guia. Fuera de la pagina, se borra."""
+        if self._guide_drag is None:
+            return
+        orientacion, pagina, ultimo, indice = self._guide_drag
+        self._guide_drag = None
+        if valor is None:
+            valor = ultimo
+        guias = self.page_guides(pagina)[orientacion]
+        dentro = self._guide_inside(pagina, orientacion, valor)
+        if indice is None:
+            if dentro:
+                guias.append(float(valor))
+        elif 0 <= indice < len(guias):
+            if dentro:
+                guias[indice] = float(valor)
+            else:
+                del guias[indice]        # sacada fuera del margen: se borra
+        self.viewport().update()
+
+    def _guide_inside(self, pagina: int, orientacion: str, valor) -> bool:
+        if valor is None or not (0 <= pagina < len(self._page_items)):
+            return False
+        caja = self._page_items[pagina].boundingRect()
+        limite = caja.height() if orientacion == "h" else caja.width()
+        return 0 <= valor <= limite
+
+    def guide_at(self, escena_pos):
+        """Guia que hay bajo un punto de la escena, si la hay."""
+        margen = 4.0 / max(self._zoom, 1e-6)
+        for pagina, item in enumerate(self._page_items):
+            local = item.mapFromScene(escena_pos)
+            caja = item.boundingRect()
+            if not caja.adjusted(-margen, -margen, margen, margen).contains(local):
+                continue
+            guias = self.page_guides(pagina)
+            for i, y in enumerate(guias["h"]):
+                if abs(local.y() - y) <= margen:
+                    return ("h", pagina, i, y)
+            for i, x in enumerate(guias["v"]):
+                if abs(local.x() - x) <= margen:
+                    return ("v", pagina, i, x)
+        return None
+
+    def clear_guides_of_page(self, pagina: int) -> None:
+        self.rulers_guides.pop(pagina, None)
+        self.viewport().update()
+
+    def clear_all_guides(self) -> None:
+        self.rulers_guides.clear()
+        self.viewport().update()
+
     # ------------------------------------------------------------------ guias
     def show_guides(self, x, y, page) -> None:
         """Marca las guias a las que se esta alineando (None = ninguna)."""
@@ -796,6 +909,7 @@ class PdfView(QGraphicsView):
 
     def drawForeground(self, painter, rect) -> None:  # pragma: no cover - dibujo
         super().drawForeground(painter, rect)
+        self._draw_ruler_guides(painter)
         x, y, page = self._guides
         if page is None or (x is None and y is None):
             return
@@ -869,6 +983,15 @@ class PdfView(QGraphicsView):
 
     # ------------------------------------------------------------------ raton
     def mousePressEvent(self, event) -> None:
+        if (self._tool is Tool.SELECT and event.button() == Qt.LeftButton
+                and self._guide_drag is None):
+            escena = self.mapToScene(event.position().toPoint())
+            encontrada = self.guide_at(escena)
+            if encontrada is not None:
+                orientacion, pagina, indice, valor = encontrada
+                self.grab_guide(orientacion, pagina, indice, valor)
+                event.accept()
+                return
         if self._tool is Tool.ERASER and event.button() == Qt.LeftButton:
             if self.document is None:
                 return
@@ -906,6 +1029,15 @@ class PdfView(QGraphicsView):
 
     def mouseMoveEvent(self, event) -> None:
         self.mouseMovedOnPage.emit(event.position().toPoint())
+        if self._guide_drag is not None:
+            orientacion, pagina, _v, _i = self._guide_drag
+            if 0 <= pagina < len(self._page_items):
+                local = self._page_items[pagina].mapFromScene(
+                    self.mapToScene(event.position().toPoint())
+                )
+                self.move_guide(local.y() if orientacion == "h" else local.x())
+            event.accept()
+            return
         if self._erasing and self._erase_item is not None:
             # se sigue pintando en la misma pagina en la que se empezo
             page = self._page_items[self._erase_item.ann.page]
@@ -945,6 +1077,16 @@ class PdfView(QGraphicsView):
         event.accept()
 
     def mouseReleaseEvent(self, event) -> None:
+        if self._guide_drag is not None:
+            orientacion, pagina, valor, _i = self._guide_drag
+            if 0 <= pagina < len(self._page_items):
+                local = self._page_items[pagina].mapFromScene(
+                    self.mapToScene(event.position().toPoint())
+                )
+                valor = local.y() if orientacion == "h" else local.x()
+            self.drop_guide(valor)
+            event.accept()
+            return
         self.clear_guides()
         if self._erasing and event.button() == Qt.LeftButton:
             self._finish_erase()

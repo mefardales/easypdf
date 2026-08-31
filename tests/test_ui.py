@@ -1188,3 +1188,93 @@ def test_el_aviso_al_arrancar_se_puede_desactivar(ventana):
     assert ventana.settings.value("updates/auto", True, type_=bool) is False
     ventana.act_update_auto.setChecked(True)
     assert ventana.settings.value("updates/auto", True, type_=bool) is True
+
+
+# --------------------------------------------------------------------------
+# Guias sacadas de las reglas
+# --------------------------------------------------------------------------
+
+def test_arrastrar_desde_la_regla_deja_una_guia(ventana):
+    vista = ventana.view
+    vista.start_guide("h", 200.0)
+    vista.move_guide(250.0)
+    vista.drop_guide(250.0)
+    assert vista.page_guides(0)["h"] == [250.0]
+
+    vista.start_guide("v", 100.0)
+    vista.drop_guide(150.0)
+    assert vista.page_guides(0)["v"] == [150.0]
+
+
+def test_soltar_la_guia_fuera_de_la_pagina_no_la_crea(ventana):
+    vista = ventana.view
+    _ancho, alto = vista.document.page_size(0)
+
+    vista.start_guide("h", 100.0)
+    vista.drop_guide(alto + 50)
+    assert vista.page_guides(0)["h"] == []
+
+    vista.start_guide("h", 100.0)
+    vista.drop_guide(-25.0)
+    assert vista.page_guides(0)["h"] == []
+
+
+def test_una_guia_se_mueve_y_sacandola_fuera_se_borra(ventana):
+    vista = ventana.view
+    vista.start_guide("h", 300.0)
+    vista.drop_guide(300.0)
+
+    vista.grab_guide("h", 0, 0, 300.0)
+    vista.drop_guide(420.0)
+    assert vista.page_guides(0)["h"] == [420.0]
+
+    vista.grab_guide("h", 0, 0, 420.0)
+    vista.drop_guide(-30.0)              # fuera del margen: se borra
+    assert vista.page_guides(0)["h"] == []
+
+
+def test_se_encuentra_la_guia_que_hay_bajo_el_raton(ventana):
+    from PySide6.QtCore import QPointF
+
+    vista = ventana.view
+    vista.start_guide("h", 300.0)
+    vista.drop_guide(300.0)
+    pagina = vista._page_items[0]
+
+    encima = pagina.mapToScene(QPointF(100.0, 300.0))
+    hallada = vista.guide_at(encima)
+    assert hallada is not None
+    assert hallada[0] == "h" and hallada[3] == 300.0
+
+    assert vista.guide_at(pagina.mapToScene(QPointF(100.0, 520.0))) is None
+
+
+def test_las_anotaciones_se_alinean_con_las_guias(ventana, qapp):
+    from PySide6.QtCore import QPointF
+
+    vista = ventana.view
+    vista.start_guide("v", 150.0)
+    vista.drop_guide(150.0)
+
+    caja = Annotation(kind=Kind.RECT, page=0, rect=(300.0, 400.0, 380.0, 450.0), width=2)
+    vista.add_annotation(caja)
+    qapp.processEvents()
+
+    item = vista._items[caja.id]
+    desfase = 150.0 - caja.bounds()[0] + 2.5      # casi encima de la guia
+    item.setPos(item.compute_snap(QPointF(item.pos().x() + desfase, item.pos().y())))
+    qapp.processEvents()
+    assert abs(caja.bounds()[0] - 150.0) < 0.01
+
+
+def test_se_pueden_quitar_todas_las_guias(ventana):
+    vista = ventana.view
+    vista.start_guide("h", 200.0)
+    vista.drop_guide(200.0)
+    vista.start_guide("v", 200.0)
+    vista.drop_guide(200.0)
+    assert vista.page_guides(0)["h"] and vista.page_guides(0)["v"]
+
+    ventana._clear_guides()
+    assert vista.page_guides(0)["h"] == []
+    assert vista.page_guides(0)["v"] == []

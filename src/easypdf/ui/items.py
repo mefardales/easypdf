@@ -250,6 +250,13 @@ class AnnotationItemMixin:
             x0, y0, x1, y1 = otro.ann.bounds()
             xs += [x0, (x0 + x1) / 2.0, x1]
             ys += [y0, (y0 + y1) / 2.0, y1]
+        # y las guias que el usuario haya sacado de las reglas, que es
+        # justamente para lo que las coloca
+        vista = self._view()
+        if vista is not None and hasattr(vista, "page_guides"):
+            propias = vista.page_guides(self.ann.page)
+            xs += list(propias["v"])
+            ys += list(propias["h"])
         return (xs, ys)
 
     def _snap(self, nueva_pos):

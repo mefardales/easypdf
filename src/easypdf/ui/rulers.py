@@ -32,7 +32,8 @@ class Ruler(QWidget):
             self.setFixedHeight(RULER_SIZE)
         else:
             self.setFixedWidth(RULER_SIZE)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.setCursor(Qt.SplitVCursor if horizontal else Qt.SplitHCursor)
+        self._arrastrando = False
 
     # -- unidades --------------------------------------------------------
     @property
@@ -80,6 +81,43 @@ class Ruler(QWidget):
             escena = self._view.mapToScene(0, int(pixel)).y()
         _menor, _mayor, por_unidad = self._step_pt()
         return (escena - origen) / por_unidad
+
+    # -- sacar guias -----------------------------------------------------
+    def _valor_en_pagina(self, pos_global):
+        """Coordenada de pagina que corresponde a un punto de la pantalla."""
+        vista = self._view
+        pagina = vista.current_page_item()
+        if pagina is None:
+            return None
+        en_vista = vista.viewport().mapFromGlobal(pos_global)
+        escena = vista.mapToScene(en_vista)
+        local = pagina.mapFromScene(escena)
+        return local.y() if self._horizontal else local.x()
+
+    def mousePressEvent(self, event) -> None:  # pragma: no cover - gesto de raton
+        if event.button() != Qt.LeftButton:
+            return
+        valor = self._valor_en_pagina(event.globalPosition().toPoint())
+        if valor is None:
+            return
+        self._arrastrando = True
+        self._view.start_guide("h" if self._horizontal else "v", valor)
+        event.accept()
+
+    def mouseMoveEvent(self, event) -> None:  # pragma: no cover - gesto de raton
+        if not self._arrastrando:
+            return
+        valor = self._valor_en_pagina(event.globalPosition().toPoint())
+        if valor is not None:
+            self._view.move_guide(valor)
+        event.accept()
+
+    def mouseReleaseEvent(self, event) -> None:  # pragma: no cover - gesto de raton
+        if not self._arrastrando:
+            return
+        self._arrastrando = False
+        self._view.drop_guide(self._valor_en_pagina(event.globalPosition().toPoint()))
+        event.accept()
 
     # -- pintado ---------------------------------------------------------
     def paintEvent(self, event) -> None:  # pragma: no cover - dibujo
