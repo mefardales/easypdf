@@ -312,6 +312,12 @@ BUILTIN_TEXTS = {
         "task": "Task",
         "done": "Done",
         "who": "Who",
+        "label": "Label",
+        "option": "Option",
+        "yes": "Yes",
+        "no": "No",
+        "heading": "Heading",
+        "notes_short": "Notes",
     },
     "es": {
         "letterhead": "Membrete",
@@ -374,6 +380,12 @@ BUILTIN_TEXTS = {
         "task": "Tarea",
         "done": "Hecho",
         "who": "Quien",
+        "label": "Etiqueta",
+        "option": "Opcion",
+        "yes": "Si",
+        "no": "No",
+        "heading": "Titulo",
+        "notes_short": "Notas",
     },
 }
 

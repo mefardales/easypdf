@@ -66,50 +66,6 @@ class DeleteAnnotationsCommand(QUndoCommand):
         self._view.notify_modified()
 
 
-class EraseCommand(QUndoCommand):
-    """Un pasada de goma: recorta trazos y quita lo que se borro entero.
-
-    Todo el arrastre es un solo paso de deshacer, no uno por punto.
-    """
-
-    def __init__(self, view, changes: Sequence, removed: Sequence) -> None:
-        super().__init__(tr("cmd_erase"))
-        self._view = view
-        # (item, trazos antes, trazos despues)
-        self._changes = [(i, [list(t) for t in a], [list(t) for t in d])
-                         for i, a, d in changes]
-        self._removed = list(removed)
-        self._skip_first_redo = True     # la goma ya lo hizo al arrastrar
-
-    def _poner_trazos(self, item, strokes) -> None:
-        item.ann.strokes = [list(t) for t in strokes]
-        item.prepareGeometryChange()
-        item.apply_model()
-        item.update()
-
-    def redo(self) -> None:
-        if self._skip_first_redo:
-            self._skip_first_redo = False
-            return
-        for item, _antes, despues in self._changes:
-            self._poner_trazos(item, despues)
-        for item in self._removed:
-            self._view.detach_item(item)
-            try:
-                self._view.store.remove(item.ann)
-            except ValueError:  # pragma: no cover - defensivo
-                pass
-        self._view.notify_modified()
-
-    def undo(self) -> None:
-        for item in self._removed:
-            self._view.attach_item(item, item.ann)
-            self._view.store.add(item.ann)
-        for item, antes, _despues in self._changes:
-            self._poner_trazos(item, antes)
-        self._view.notify_modified()
-
-
 class ChangeAnnotationsCommand(QUndoCommand):
     """Cambia geometria o estilo de anotaciones ya existentes."""
 

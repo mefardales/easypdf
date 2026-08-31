@@ -10,7 +10,7 @@ on:
       version:
         description: "Version a publicar (sin la v)"
         type: string
-        default: "1.5.1"
+        default: "1.5.2"
 
 permissions:
   contents: write
@@ -56,26 +56,45 @@ jobs:
           prerelease: false
           generate_release_notes: false
           body: |
-            ## Novedades de la 1.5.1
+            ## Novedades de la 1.5.2
 
-            **La goma se queda dentro de la hoja**
-            - Al sacarla del papel pintaba encima del fondo gris de alrededor.
-              Las anotaciones son de su pagina y ya no pintan fuera de ella,
-              sea la goma o cualquier otra cosa. Ademas asi la pantalla ensena
-              lo mismo que sale impreso: lo que se sale del papel nunca se
-              imprimio.
+            **DEL dejaba de funcionar despues de usar la goma**
+            - Con una herramienta de dibujo activa el clic pinta en vez de
+              seleccionar, asi que no habia nada que borrar y la accion estaba
+              desactivada: la tecla ni se disparaba y no pasaba absolutamente
+              nada. Ahora avisa en la barra de estado y dice como salir
+              (Esc vuelve a Seleccionar). Igual con Ctrl+C y Ctrl+X.
+            - En el menu de deshacer, una pasada de goma ponia "Anadir dibujo".
+              Ahora pone "Borrar con la goma", que es lo que hizo el usuario.
 
-            **Copiar y pegar**
-            - `Ctrl+C`, `Ctrl+X` y `Ctrl+V` sobre lo que este seleccionado, y
-              tambien en el menu Editar. Se puede copiar en una ventana y pegar
-              en otra.
-            - Lo pegado cae un poco corrido en la pagina que se este viendo, ya
-              seleccionado para arrastrarlo a su sitio. Pegando varias veces
-              seguidas cada copia se separa un poco mas, para que no se apilen.
-            - Una pegada entera se deshace de una vez, aunque lleve varias
-              anotaciones.
-            - Mientras se escribe dentro de un texto, `Ctrl+C` y `Ctrl+V` son
-              los del editor: copian y pegan letras, no anotaciones.
+            **El panel lateral se quedaba sin sitio**
+            - Las miniaturas se llevaban la columna entera y al panel le
+              quedaban 190 px: el arbol de plantillas ensenaba tres filas y el
+              boton de guardar quedaba pegado al borde. Ahora la columna se
+              reparte a medias en el primer arranque, y el panel no baja de
+              300 px. Si ya lo habias movido, manda lo que dejaste guardado.
+
+            **Piezas para montar formularios**
+            - Pestana **Elementos** en el panel lateral, con catorce piezas ya
+              hechas repartidas en cuatro grupos: campos (con raya, de tres
+              rayas, de fecha, con recuadro), casillas (suelta, lista de
+              cuatro, Si/No), firmas (linea de firma, dos firmas, lugar y
+              fecha) y estructura (titulo con raya, separador, tabla con
+              cabeceras, recuadro de notas).
+            - Doble clic, o el boton Insertar, y la pieza cae centrada en la
+              pagina que se este viendo, sin salirse del papel y ya
+              seleccionada. Todo el grupo es un solo paso de deshacer.
+            - Son anotaciones normales, asi que se editan y se mueven como
+              cualquier otra cosa; y cuando la hoja esta lista, el boton
+              **Guardar actual...** de la pestana Plantillas la deja guardada
+              en la carpeta Templates para reutilizarla.
+            - Los nombres y los textos salen en el idioma de la interfaz.
+
+            **Ventana de informacion mas limpia**
+            - La letra pequena de las bibliotecas y la garantia sale de la
+              ventana principal y pasa a un boton **Licencias**. Sigue estando,
+              porque PySide6 es LGPL y hay que avisar de que se usa, pero ya no
+              estorba a quien solo quiere ver la version.
 
             ## Descargas
 
