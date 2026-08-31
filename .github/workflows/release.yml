@@ -10,7 +10,7 @@ on:
       version:
         description: "Version a publicar (sin la v)"
         type: string
-        default: "1.4.0"
+        default: "1.5.0"
 
 permissions:
   contents: write
@@ -56,29 +56,26 @@ jobs:
           prerelease: false
           generate_release_notes: false
           body: |
-            ## Novedades de la 1.4.0
+            ## Novedades de la 1.5.0
 
-            **Trece plantillas de serie, en el idioma del programa**
-            - Membretes: membrete.
-            - Oficina: carta, memorando y acta de reunion.
-            - Informes: portada de informe e informe mensual.
-            - Certificados: diploma y certificado de asistencia.
-            - Cuadros y facturas: cuadro de datos, factura y presupuesto.
-            - Formularios: hoja de firmas y lista de comprobacion.
+            **Se actualiza sola, sin ir a la pagina web**
+            - Cuando sale una version nueva, el aviso trae un boton de
+              **Descargar e instalar**. Baja el paquete que le toca al sistema,
+              con su barra de avance, y en Windows arranca el instalador y
+              cierra el programa para que pueda sustituirse. Antes solo abria
+              la web y habia que buscar el archivo a mano.
+            - La descarga se compara con el `.sha256` publicado antes de
+              ejecutar nada: si no coincide, se tira y no se instala.
+            - Si hay un documento sin guardar, primero pregunta; si se cancela,
+              no se instala nada.
+            - En Linux se baja el paquete portable y se ofrece abrir la carpeta,
+              porque ahi no hay instalador que ejecutar.
+            - Se sigue pudiendo apagar la comprobacion en Ayuda, y el aviso
+              mantiene "Ahora no" y "Saltar esta version".
 
-            Estan hechas con las mismas anotaciones que crearia el usuario,
-            asi que una vez cargadas se editan y se mueven como cualquier otra
-            cosa. Los nombres y los textos salen en el idioma de la interfaz.
-
-            **Reglas mas utiles**
-            - Cada guia deja su marca en la regla que le corresponde, y la que
-              se esta moviendo sale en rojo con su medida al lado y en la barra
-              de estado. Antes habia que adivinar donde se colocaba.
-
-            **Carpeta de plantillas**
-            - Pasa a llamarse Templates, y los archivos .easypdf-template.json.
-              Lo que ya hubiera guardado no se pierde: la carpeta antigua se
-              renombra sola y se siguen leyendo los archivos anteriores.
+            El instalador sigue sin estar firmado, asi que Windows o el
+            antivirus pueden avisar igual que con la descarga manual: es el
+            mismo archivo. La propia ventana lo advierte.
 
             ## Descargas
 

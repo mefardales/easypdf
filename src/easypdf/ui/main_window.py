@@ -17,6 +17,7 @@ from PySide6.QtGui import (
     QPixmap,
 )
 from PySide6.QtWidgets import (
+    QApplication,
     QColorDialog,
     QComboBox,
     QDialog,
@@ -790,7 +791,11 @@ class MainWindow(QMainWindow):
 
     def _create_bookmarks(self) -> None:
         from PySide6.QtWidgets import (
-            QDockWidget, QHBoxLayout, QListWidget, QPushButton, QVBoxLayout, QWidget,
+            QDockWidget,
+            QHBoxLayout,
+            QPushButton,
+            QVBoxLayout,
+            QWidget,
         )
 
         caja = QWidget(self)
@@ -2264,22 +2269,35 @@ class MainWindow(QMainWindow):
         nueva = str(datos.get("version", ""))
         if not self._update_manual and nueva == self.settings.value("updates/skip", ""):
             return                       # el usuario dijo que no le avisaran
-        self._ask_to_update(nueva, str(datos.get("url") or __url__))
+        self._ask_to_update(nueva, datos)
 
-    def _ask_to_update(self, nueva: str, url: str) -> None:
-        aviso = QMessageBox(self)
-        aviso.setWindowTitle(tr("update_title"))
-        aviso.setTextFormat(Qt.RichText)
-        aviso.setText(tr("update_body", new=nueva, old=__version__))
-        ir = aviso.addButton(tr("update_go"), QMessageBox.AcceptRole)
-        aviso.addButton(tr("update_later"), QMessageBox.RejectRole)
-        saltar = aviso.addButton(tr("update_skip"), QMessageBox.DestructiveRole)
-        aviso.exec()
-        pulsado = aviso.clickedButton()
-        if pulsado is ir:
-            QDesktopServices.openUrl(QUrl(url))
-        elif pulsado is saltar:
+    def _ask_to_update(self, nueva: str, datos: dict) -> None:
+        from .update_download import UpdateDialog
+
+        dialogo = UpdateDialog(self, nueva, datos, install_cb=self.install_update)
+        dialogo.exec()
+        if dialogo.skipped:
             self.settings.set_value("updates/skip", nueva)
+
+    def install_update(self, ruta: str) -> bool:
+        """Cierra el programa y arranca el instalador que se acaba de bajar.
+
+        Devuelve False si el usuario cancela al cerrar (por ejemplo porque
+        tenia un documento sin guardar): entonces no se instala nada.
+        """
+        from ..updates import launch_installer
+
+        if not self.close():             # respeta el aviso de cambios sin guardar
+            return False
+        try:
+            launch_installer(ruta)
+        except Exception as exc:         # pragma: no cover - depende del sistema
+            QMessageBox.warning(
+                self, __app_name__, tr("update_download_failed", error=str(exc))
+            )
+            return False
+        QApplication.quit()
+        return True
 
     # ------------------------------------------------------------------ ayuda
     def show_about(self) -> None:

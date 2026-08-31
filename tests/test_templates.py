@@ -178,9 +178,7 @@ def test_se_puede_cargar_una_plantilla_de_serie():
 
 def test_cargar_una_de_serie_da_copias_independientes():
     """Usarla dos veces no puede compartir las mismas anotaciones."""
-    from easypdf.templates import load_builtin
-
-    from easypdf.templates import builtin_infos
+    from easypdf.templates import builtin_infos, load_builtin
 
     alguna = builtin_infos()[1].name
     _n1, _p1, unas = load_builtin(alguna)

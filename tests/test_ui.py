@@ -1135,44 +1135,102 @@ def test_los_rectangulos_de_celda_se_memorizan_y_se_rehacen_al_cambiar(ventana, 
 # Aviso de version nueva
 # --------------------------------------------------------------------------
 
-def test_el_aviso_de_version_ofrece_ir_esperar_o_saltar(ventana, monkeypatch):
-    from PySide6.QtWidgets import QMessageBox
+#: Lo que responderia la web: version nueva y sus paquetes.
+NOVEDAD = {
+    "version": "9.9.9",
+    "url": "https://easypdf.surf",
+    "setup": "https://easypdf.surf/EasyPDF-9.9.9-Setup.exe",
+    "linux": "https://easypdf.surf/EasyPDF-9.9.9-linux-x64.tar.xz",
+}
+
+
+def test_el_aviso_de_version_ofrece_descargar_esperar_o_saltar(ventana, monkeypatch):
+    from PySide6.QtWidgets import QPushButton
 
     from easypdf import __version__
+    from easypdf.i18n import tr
+    from easypdf.ui.update_download import UpdateDialog
 
     visto = {}
 
     def falso_exec(self):
-        visto["texto"] = self.text()
-        visto["botones"] = [b.text() for b in self.buttons()]
+        visto["texto"] = self.texto.text()
+        visto["botones"] = [b.text() for b in self.findChildren(QPushButton)]
         return 0
 
-    monkeypatch.setattr(QMessageBox, "exec", falso_exec)
+    monkeypatch.setattr(UpdateDialog, "exec", falso_exec)
     ventana.settings.set_value("updates/skip", "")
     ventana._update_manual = False
-    ventana._on_update_result({"version": "9.9.9", "url": "https://easypdf.surf"})
+    ventana._on_update_result(dict(NOVEDAD))
 
     assert "9.9.9" in visto["texto"]
     assert __version__ in visto["texto"]
-    assert len(visto["botones"]) == 3
+    # Lo que se pidio: bajarla desde aqui, sin tener que ir a la web a mano.
+    assert tr("update_download") in visto["botones"]
+    assert tr("update_go") in visto["botones"]
+    assert tr("update_later") in visto["botones"]
+    assert tr("update_skip") in visto["botones"]
+
+
+def test_saltar_la_version_desde_el_aviso_queda_apuntado(ventana, monkeypatch):
+    from easypdf.ui.update_download import UpdateDialog
+
+    def falso_exec(self):
+        self.skipped = True               # como pulsar "Saltar esta version"
+        return 0
+
+    monkeypatch.setattr(UpdateDialog, "exec", falso_exec)
+    ventana.settings.set_value("updates/skip", "")
+    ventana._update_manual = True
+    ventana._on_update_result(dict(NOVEDAD))
+    assert ventana.settings.value("updates/skip", "") == "9.9.9"
+    ventana.settings.set_value("updates/skip", "")
 
 
 def test_no_se_avisa_dos_veces_de_una_version_saltada(ventana, monkeypatch):
-    from PySide6.QtWidgets import QMessageBox
+    from easypdf.ui.update_download import UpdateDialog
 
     visto = {}
-    monkeypatch.setattr(QMessageBox, "exec",
-                        lambda self: visto.setdefault("texto", self.text()) or 0)
+    monkeypatch.setattr(UpdateDialog, "exec",
+                        lambda self: visto.setdefault("texto", self.texto.text()) or 0)
 
     ventana.settings.set_value("updates/skip", "9.9.9")
     ventana._update_manual = False
-    ventana._on_update_result({"version": "9.9.9"})
+    ventana._on_update_result(dict(NOVEDAD))
     assert "texto" not in visto           # en el arranque no molesta
 
     ventana._update_manual = True         # pero si la busca a mano, si
-    ventana._on_update_result({"version": "9.9.9"})
+    ventana._on_update_result(dict(NOVEDAD))
     assert "9.9.9" in visto.get("texto", "")
     ventana.settings.set_value("updates/skip", "")
+
+
+def test_instalar_cierra_el_programa_y_arranca_el_instalador(ventana, monkeypatch):
+    from PySide6.QtWidgets import QApplication
+
+    from easypdf import updates
+    from easypdf.ui.main_window import MainWindow
+
+    arrancados = []
+    monkeypatch.setattr(updates, "launch_installer", arrancados.append)
+    monkeypatch.setattr(MainWindow, "close", lambda self: True)
+    monkeypatch.setattr(QApplication, "quit", staticmethod(lambda: None))
+
+    assert ventana.install_update("C:/tmp/EasyPDF-9.9.9-Setup.exe")
+    assert arrancados == ["C:/tmp/EasyPDF-9.9.9-Setup.exe"]
+
+
+def test_si_no_se_puede_cerrar_no_se_instala_nada(ventana, monkeypatch):
+    """Con cambios sin guardar el usuario puede cancelar: entonces no se toca nada."""
+    from easypdf import updates
+    from easypdf.ui.main_window import MainWindow
+
+    arrancados = []
+    monkeypatch.setattr(updates, "launch_installer", arrancados.append)
+    monkeypatch.setattr(MainWindow, "close", lambda self: False)
+
+    assert not ventana.install_update("C:/tmp/EasyPDF-9.9.9-Setup.exe")
+    assert arrancados == []
 
 
 def test_sin_novedad_solo_avisa_si_lo_pidio_el_usuario(ventana, monkeypatch):
