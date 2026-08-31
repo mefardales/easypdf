@@ -186,6 +186,10 @@ class Ruler(QWidget):
                                      Qt.AlignLeft | Qt.AlignVCenter, etiqueta)
                     painter.restore()
 
+        # Marcas de las guias ya colocadas, para saber donde estan sin
+        # tener que mirar la pagina.
+        self._pintar_guias(painter, origen, escala, largo, por_unidad)
+
         # marca de donde esta el raton
         if self._mouse >= 0:
             painter.setPen(QPen(QColor("#d81b1b"), 1))
@@ -194,6 +198,66 @@ class Ruler(QWidget):
             else:
                 painter.drawLine(0, int(self._mouse), self.width(), int(self._mouse))
         painter.end()
+
+    def _guide_pixel(self, valor: float, origen: float) -> float:
+        """Pixel de la regla que corresponde a una coordenada de pagina."""
+        escena = origen + valor
+        punto = QPointF(escena, 0) if self._horizontal else QPointF(0, escena)
+        p = self._view.mapFromScene(punto)
+        return p.x() if self._horizontal else p.y()
+
+    def _pintar_guias(self, painter, origen, escala, largo, por_unidad) -> None:
+        """Dibuja donde cae cada guia, y la medida de la que se arrastra."""
+        vista = self._view
+        pagina = vista.current_page_item()
+        if pagina is None:
+            return
+        numero = vista.current_page
+        # Una guia horizontal ("h") es una linea a lo ancho: su posicion se
+        # lee en la regla vertical. Y al reves. Por eso el eje va cruzado.
+        eje = "v" if self._horizontal else "h"
+        colocadas = list(vista.rulers_guides.get(numero, {}).get(eje, []))
+
+        arrastrando = None
+        arrastre = getattr(vista, "_guide_drag", None)
+        if arrastre is not None and arrastre[0] == eje and arrastre[1] == numero:
+            arrastrando = arrastre[2]
+            indice = arrastre[3]
+            if indice is not None and 0 <= indice < len(colocadas):
+                colocadas.pop(indice)      # se dibuja en su sitio nuevo
+
+        grosor = self.height() if self._horizontal else self.width()
+        for valor in colocadas:
+            pixel = self._guide_pixel(valor, origen)
+            if -4 <= pixel <= largo + 4:
+                painter.setPen(QPen(QColor("#00a3c4"), 2))
+                if self._horizontal:
+                    painter.drawLine(int(pixel), 2, int(pixel), grosor - 2)
+                else:
+                    painter.drawLine(2, int(pixel), grosor - 2, int(pixel))
+
+        if arrastrando is None:
+            return
+        # La que se esta moviendo: marca mas visible y su medida al lado,
+        # para poder colocarla donde toca sin adivinar.
+        pixel = self._guide_pixel(arrastrando, origen)
+        painter.setPen(QPen(QColor("#d81b1b"), 2))
+        if self._horizontal:
+            painter.drawLine(int(pixel), 0, int(pixel), grosor)
+        else:
+            painter.drawLine(0, int(pixel), grosor, int(pixel))
+
+        etiqueta = f"{arrastrando / por_unidad:.1f}"
+        fondo = QColor("#d81b1b")
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(fondo)
+        if self._horizontal:
+            caja = QRectF(min(pixel + 3, largo - 34), 1, 32, grosor - 2)
+        else:
+            caja = QRectF(1, min(pixel + 3, largo - 16), grosor - 2, 14)
+        painter.drawRect(caja)
+        painter.setPen(QPen(QColor("#ffffff")))
+        painter.drawText(caja, Qt.AlignCenter, etiqueta)
 
 
 __all__ = ["Ruler", "RULER_SIZE", "PT_PER_MM", "PT_PER_IN"]

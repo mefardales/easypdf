@@ -739,11 +739,26 @@ class MainWindow(QMainWindow):
         self.view.zoomChanged.connect(lambda *_: self._update_rulers())
         self.view.pageChanged.connect(lambda *_: self._update_rulers())
         self.view.mouseMovedOnPage.connect(self._on_mouse_on_page)
+        self.view.guidesChanged.connect(self._on_guides_changed)
         return caja
 
     def _clear_guides(self) -> None:
         self.view.clear_all_guides()
         self.statusBar().showMessage(tr("guides_hint"), 6000)
+
+    def _on_guides_changed(self) -> None:
+        """Repinta las reglas y ensena la medida de la guia que se mueve."""
+        self._update_rulers()
+        arrastre = self.view._guide_drag
+        if arrastre is None:
+            return
+        orientacion, _pagina, valor, _indice = arrastre
+        # la guia horizontal se mide en la regla vertical
+        regla = self.ruler_v if orientacion == "h" else self.ruler_h
+        _menor, _mayor, por_unidad = regla._step_pt()
+        self.statusBar().showMessage(
+            tr("guide_at", value=f"{valor / por_unidad:.1f}", unit=regla.unit), 3000
+        )
 
     def _update_rulers(self) -> None:
         if hasattr(self, "ruler_h"):

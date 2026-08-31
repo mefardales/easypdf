@@ -1380,3 +1380,46 @@ def test_guardar_y_borrar_una_plantilla_propia_desde_el_panel(ventana, qapp, tmp
     assert ventana.delete_selected_template()
     assert not [i for _g, _r, i in _hojas_de_plantilla(ventana)
                 if "Mi informe" in i.text(0)]
+
+
+def test_la_regla_ensena_donde_estan_las_guias(ventana, qapp):
+    """Una guia horizontal se mide en la regla vertical, y al reves."""
+    vista = ventana.view
+    vista.start_guide("v", 150.0)      # linea vertical: va en la regla de arriba
+    vista.drop_guide(150.0)
+    qapp.processEvents()
+
+    origen = vista.current_page_item().scenePos()
+    esperado = ventana.ruler_h._guide_pixel(150.0, origen.x())
+    real = ventana.ruler_h.value_at(esperado)
+    assert real is not None
+    from easypdf.ui.rulers import PT_PER_MM
+    assert abs(real - 150.0 / PT_PER_MM) < 0.6
+
+
+def test_al_mover_una_guia_se_ensena_su_medida(ventana, qapp):
+    vista = ventana.view
+    vista.start_guide("h", 200.0)
+    vista.drop_guide(200.0)
+    qapp.processEvents()
+
+    vista.grab_guide("h", 0, 0, 200.0)
+    vista.move_guide(300.0)
+    qapp.processEvents()
+
+    mensaje = ventana.statusBar().currentMessage()
+    assert mensaje, "no se dijo donde esta la guia"
+    # 300 pt son unos 105,8 mm
+    assert "105" in mensaje or "106" in mensaje, mensaje
+    vista.drop_guide(300.0)
+
+
+def test_las_reglas_se_repintan_al_tocar_las_guias(ventana, qapp):
+    """Sin este aviso, la marca de la regla no se movia con la guia."""
+    avisos = []
+    ventana.view.guidesChanged.connect(lambda: avisos.append(1))
+
+    ventana.view.start_guide("h", 100.0)
+    ventana.view.move_guide(150.0)
+    ventana.view.drop_guide(150.0)
+    assert len(avisos) >= 3
