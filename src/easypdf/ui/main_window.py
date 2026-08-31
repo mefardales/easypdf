@@ -45,8 +45,12 @@ from ..i18n import LANGUAGES, language, page_size_label, set_language, tr
 from ..model import Align, Font, Kind
 from ..printing import print_document, print_preview
 from ..templates import (
+    CATEGORIES,
     TemplateError,
+    builtin_infos,
+    delete_template,
     list_templates,
+    load_builtin,
     load_template,
     save_template,
 )
@@ -170,6 +174,7 @@ class MainWindow(QMainWindow):
         self._create_status_bar()
         self._connect_view()
         self._restore_settings()
+        self.refresh_templates()
         self._setup_updates()
         self._load_style_defaults()
         self.view.set_tool(Tool.SELECT)
@@ -805,11 +810,41 @@ class MainWindow(QMainWindow):
         fila_notas.addWidget(self.btn_notes_show)
         col_notas.addLayout(fila_notas)
 
-        from PySide6.QtWidgets import QTabWidget
+        # --- pestana de plantillas ---
+        from PySide6.QtWidgets import QTabWidget, QTreeWidget
+
+        caja_tpl = QWidget(self)
+        col_tpl = QVBoxLayout(caja_tpl)
+        col_tpl.setContentsMargins(4, 4, 4, 4)
+        self.tpl_tree = QTreeWidget(caja_tpl)
+        self.tpl_tree.setHeaderHidden(True)
+        self.tpl_tree.setRootIsDecorated(True)
+        self.tpl_tree.itemDoubleClicked.connect(lambda *_: self.use_selected_template())
+        self.tpl_tree.currentItemChanged.connect(lambda *_: self._update_template_buttons())
+        col_tpl.addWidget(self.tpl_tree)
+
+        fila1 = QHBoxLayout()
+        self.btn_tpl_use = QPushButton(tr("tpl_use"), caja_tpl)
+        self.btn_tpl_use.clicked.connect(self.use_selected_template)
+        self.btn_tpl_new = QPushButton(tr("tpl_new"), caja_tpl)
+        self.btn_tpl_new.clicked.connect(self.new_from_selected_template)
+        fila1.addWidget(self.btn_tpl_use)
+        fila1.addWidget(self.btn_tpl_new)
+        col_tpl.addLayout(fila1)
+
+        fila2 = QHBoxLayout()
+        self.btn_tpl_save = QPushButton(tr("tpl_save"), caja_tpl)
+        self.btn_tpl_save.clicked.connect(self.save_as_template)
+        self.btn_tpl_del = QPushButton(tr("tpl_delete"), caja_tpl)
+        self.btn_tpl_del.clicked.connect(self.delete_selected_template)
+        fila2.addWidget(self.btn_tpl_save)
+        fila2.addWidget(self.btn_tpl_del)
+        col_tpl.addLayout(fila2)
 
         self.side_tabs = QTabWidget(self)
         self.side_tabs.addTab(caja, tr("bookmarks_dock"))
         self.side_tabs.addTab(caja_notas, tr("notes_tab"))
+        self.side_tabs.addTab(caja_tpl, tr("templates_tab"))
 
         dock = QDockWidget(tr("side_dock"), self)
         dock.setObjectName("dock_bookmarks")
@@ -856,6 +891,7 @@ class MainWindow(QMainWindow):
         self.view.document.set_bookmarks(marcadores)
         self.refresh_bookmarks()
         self.refresh_notes()
+        self.refresh_templates()
         self.view.notify_modified()
 
     def remove_bookmark(self) -> None:
@@ -869,7 +905,121 @@ class MainWindow(QMainWindow):
         self.view.document.set_bookmarks(marcadores)
         self.refresh_bookmarks()
         self.refresh_notes()
+        self.refresh_templates()
         self.view.notify_modified()
+
+    def refresh_templates(self) -> None:
+        """Rehace el arbol del panel: primero las de serie, luego las tuyas."""
+        if not hasattr(self, "tpl_tree"):
+            return
+        from PySide6.QtWidgets import QTreeWidgetItem
+
+        self.tpl_tree.clear()
+        grupos = [(tr("tpl_included"), builtin_infos()),
+                  (tr("tpl_mine"), list_templates(self.templates_dir()))]
+        for titulo, plantillas in grupos:
+            if not plantillas:
+                continue
+            raiz = QTreeWidgetItem([titulo])
+            raiz.setFlags(Qt.ItemIsEnabled)          # el grupo no se elige
+            self.tpl_tree.addTopLevelItem(raiz)
+            por_tipo: dict[str, list] = {}
+            for info in plantillas:
+                por_tipo.setdefault(info.category, []).append(info)
+            for categoria in CATEGORIES:
+                lote = por_tipo.get(categoria)
+                if not lote:
+                    continue
+                rama = QTreeWidgetItem([tr(f"cat_{categoria}")])
+                rama.setFlags(Qt.ItemIsEnabled)
+                raiz.addChild(rama)
+                for info in lote:
+                    hoja = QTreeWidgetItem([
+                        tr("tpl_entry", name=info.name, pages=info.pages,
+                           count=info.annotations)
+                    ])
+                    hoja.setData(0, Qt.UserRole, info.path)
+                    hoja.setData(0, Qt.UserRole + 1, info.builtin)
+                    hoja.setToolTip(0, info.saved_at or info.name)
+                    rama.addChild(hoja)
+            raiz.setExpanded(True)
+            for i in range(raiz.childCount()):
+                raiz.child(i).setExpanded(True)
+        self._update_template_buttons()
+
+    def _selected_template(self):
+        """(ruta, es_de_serie) de la plantilla elegida, o None."""
+        item = self.tpl_tree.currentItem() if hasattr(self, "tpl_tree") else None
+        if item is None:
+            return None
+        ruta = item.data(0, Qt.UserRole)
+        if not ruta:
+            return None
+        return (str(ruta), bool(item.data(0, Qt.UserRole + 1)))
+
+    def _update_template_buttons(self) -> None:
+        elegida = self._selected_template()
+        hay_doc = self.view.has_document()
+        self.btn_tpl_use.setEnabled(elegida is not None and hay_doc)
+        self.btn_tpl_new.setEnabled(elegida is not None)
+        self.btn_tpl_save.setEnabled(hay_doc)
+        # las de serie no se borran: vienen con el programa
+        self.btn_tpl_del.setEnabled(elegida is not None and not elegida[1])
+
+    def _load_selected(self):
+        """Carga la plantilla elegida venga de donde venga."""
+        elegida = self._selected_template()
+        if elegida is None:
+            return None
+        ruta, de_serie = elegida
+        try:
+            if de_serie:
+                return load_builtin(ruta.split(":", 1)[1])
+            return load_template(ruta)
+        except TemplateError as exc:
+            QMessageBox.critical(self, __app_name__, str(exc))
+            return None
+
+    def use_selected_template(self) -> bool:
+        """Pone la plantilla encima del documento abierto."""
+        if not self.view.has_document():
+            QMessageBox.information(self, __app_name__, tr("tpl_none"))
+            return False
+        datos = self._load_selected()
+        if datos is None:
+            return False
+        nombre, _paginas, anotaciones = datos
+        colocadas = self.view.apply_template(anotaciones)
+        self.statusBar().showMessage(
+            tr("template_applied", name=nombre, count=colocadas,
+               page=self.view.current_page + 1),
+            6000,
+        )
+        return True
+
+    def new_from_selected_template(self) -> bool:
+        """Crea un documento nuevo a partir de la plantilla."""
+        datos = self._load_selected()
+        if datos is None:
+            return False
+        return self._document_from_template(*datos)
+
+    def delete_selected_template(self) -> bool:
+        elegida = self._selected_template()
+        if elegida is None or elegida[1]:
+            return False
+        ruta = elegida[0]
+        if QMessageBox.question(
+            self, __app_name__, tr("template_delete_ask", name=os.path.basename(ruta))
+        ) != QMessageBox.Yes:
+            return False
+        try:
+            delete_template(ruta)
+        except TemplateError as exc:
+            QMessageBox.critical(self, __app_name__, str(exc))
+            return False
+        self.refresh_templates()
+        return True
 
     def refresh_notes(self) -> None:
         """Rehace la lista de notas del documento.
@@ -1161,6 +1311,7 @@ class MainWindow(QMainWindow):
         self._build_thumbnails()
         self.refresh_bookmarks()
         self.refresh_notes()
+        self.refresh_templates()
         self._update_title()
         self._update_actions()
         self.statusBar().showMessage(tr("status_new"), 6000)
@@ -1336,12 +1487,20 @@ class MainWindow(QMainWindow):
         )
         if not ok or not nombre.strip():
             return False
+        etiquetas = [tr(f"cat_{c}") for c in CATEGORIES]
+        elegido, ok = QInputDialog.getItem(
+            self, tr("template_name_title"), tr("tpl_kind"), etiquetas, 0, False
+        )
+        if not ok:
+            return False
+        categoria = CATEGORIES[etiquetas.index(elegido)]
         try:
             ruta = save_template(
                 self._ensure_templates_dir(),
                 nombre,
                 anotaciones,
                 self.view.document.page_sizes(),
+                category=categoria,
             )
         except TemplateError as exc:
             QMessageBox.critical(self, __app_name__, str(exc))
@@ -1349,6 +1508,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(
             tr("template_saved", name=os.path.basename(ruta)), 5000
         )
+        self.refresh_templates()
         return True
 
     def apply_template(self, path: str) -> bool:
@@ -1375,6 +1535,10 @@ class MainWindow(QMainWindow):
         except TemplateError as exc:
             QMessageBox.critical(self, __app_name__, str(exc))
             return False
+        return self._document_from_template(nombre, paginas, anotaciones)
+
+    def _document_from_template(self, nombre, paginas, anotaciones) -> bool:
+        """Crea el documento. Lo comparten el menu y el panel de plantillas."""
         if not self._confirm_discard():
             return False
         anterior = self.view.document
@@ -1391,6 +1555,7 @@ class MainWindow(QMainWindow):
         self._build_thumbnails()
         self.refresh_bookmarks()
         self.refresh_notes()
+        self.refresh_templates()
         self._update_title()
         self._update_actions()
         self.statusBar().showMessage(tr("template_new_done", name=nombre), 6000)
@@ -1433,6 +1598,13 @@ class MainWindow(QMainWindow):
         if hasattr(self, "side_tabs"):
             self.side_tabs.setTabText(0, tr("bookmarks_dock"))
             self.side_tabs.setTabText(1, tr("notes_tab"))
+            self.side_tabs.setTabText(2, tr("templates_tab"))
+            for boton, clave in ((self.btn_tpl_use, "tpl_use"),
+                                 (self.btn_tpl_new, "tpl_new"),
+                                 (self.btn_tpl_save, "tpl_save"),
+                                 (self.btn_tpl_del, "tpl_delete")):
+                boton.setText(tr(clave))
+            self.refresh_templates()
             self.btn_notes_show.setText(tr("notes_show_done"))
             self.refresh_notes()
         if hasattr(self, "bookmark_dock"):
@@ -1441,6 +1613,7 @@ class MainWindow(QMainWindow):
             self.btn_bookmark_del.setText(tr("bookmark_remove"))
             self.refresh_bookmarks()
         self.refresh_notes()
+        self.refresh_templates()
         if hasattr(self, "thumb_dock"):
             self.thumb_dock.setWindowTitle(tr("pages_dock"))
         for nombre, act in getattr(self, "page_size_actions", {}).items():
@@ -1541,6 +1714,7 @@ class MainWindow(QMainWindow):
         self._build_thumbnails()
         self.refresh_bookmarks()
         self.refresh_notes()
+        self.refresh_templates()
         self._update_title()
         self._update_actions()
         self.statusBar().showMessage(tr("status_opened", path=path), 5000)

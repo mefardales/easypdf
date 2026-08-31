@@ -27,6 +27,11 @@ FORMAT_VERSION = 1
 
 EXTENSION = ".easypdf-plantilla.json"
 
+#: Tipos de plantilla. Sirven para ordenar el panel: una cosa es un documento
+#: entero y otra un membrete que se pone encima de lo que ya hay.
+CATEGORIES = ("document", "letterhead", "table", "form", "other")
+DEFAULT_CATEGORY = "other"
+
 
 class TemplateError(RuntimeError):
     """Error al leer o escribir una plantilla."""
@@ -41,6 +46,8 @@ class TemplateInfo:
     pages: int
     annotations: int
     saved_at: str = ""
+    category: str = "other"
+    builtin: bool = False
 
 
 def safe_filename(name: str) -> str:
@@ -122,6 +129,7 @@ def save_template(
     name: str,
     annotations: Iterable[Annotation],
     page_sizes: Sequence[tuple[float, float]] = (),
+    category: str = DEFAULT_CATEGORY,
 ) -> str:
     """Guarda una plantilla y devuelve la ruta del archivo."""
     nombre = name.strip()
@@ -131,6 +139,7 @@ def save_template(
     contenido = {
         "version": FORMAT_VERSION,
         "name": nombre,
+        "category": category if category in CATEGORIES else DEFAULT_CATEGORY,
         "saved_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
         "pages": [{"width": float(w), "height": float(h)} for w, h in page_sizes],
         "annotations": [annotation_to_dict(a) for a in annotations if not a.is_empty()],
@@ -187,6 +196,7 @@ def list_templates(directory: str) -> list[TemplateInfo]:
                     pages=len(datos.get("pages", [])),
                     annotations=len(datos.get("annotations", [])),
                     saved_at=str(datos.get("saved_at", "")),
+                    category=str(datos.get("category") or DEFAULT_CATEGORY),
                 )
             )
         except (OSError, json.JSONDecodeError):
@@ -224,3 +234,87 @@ __all__ = [
     "shift_to_page",
     "EXTENSION",
 ]
+
+
+# ---------------------------------------------------------------- de serie
+A4 = (595.0, 842.0)
+
+
+def _texto(x, y, ancho, alto, texto, tam=12.0, negrita=False,
+           align=Align.LEFT, color=(0.0, 0.0, 0.0)) -> Annotation:
+    return Annotation(
+        kind=Kind.TEXT, page=0, rect=(x, y, x + ancho, y + alto), text=texto,
+        font_size=tam, bold=negrita, align=align, color=color, width=0.0,
+    )
+
+
+def builtin_templates() -> list[tuple[str, str, list[tuple[float, float]], list[Annotation]]]:
+    """Plantillas que trae el programa: (nombre, tipo, paginas, anotaciones).
+
+    Estan hechas con las mismas anotaciones que crearia el usuario, asi que
+    una vez cargadas se pueden mover y editar como cualquier otra cosa.
+    """
+    linea = lambda y: Annotation(  # noqa: E731 - lectura mas corta
+        kind=Kind.LINE, page=0, p1=(56.0, y), p2=(539.0, y),
+        color=(0.72, 0.74, 0.78), width=0.8,
+    )
+
+    membrete = [
+        _texto(56, 48, 300, 26, "NOMBRE DE LA EMPRESA", 15, True),
+        _texto(56, 72, 300, 16, "Direccion - Telefono - Correo", 9,
+               color=(0.42, 0.45, 0.5)),
+        linea(96.0),
+        _texto(56, 790, 483, 16, "Pagina 1", 9, align=Align.CENTER,
+               color=(0.42, 0.45, 0.5)),
+    ]
+
+    carta = membrete[:3] + [
+        _texto(56, 130, 483, 20, "Fecha:", 11),
+        _texto(56, 158, 483, 20, "Para:", 11),
+        _texto(56, 186, 483, 20, "Asunto:", 11, True),
+        linea(212.0),
+        _texto(56, 236, 483, 400, "", 11),
+    ]
+
+    acta = membrete[:3] + [
+        _texto(56, 128, 483, 24, "ACTA DE REUNION", 14, True, Align.CENTER),
+        _texto(56, 166, 240, 18, "Fecha:", 10),
+        _texto(300, 166, 239, 18, "Lugar:", 10),
+        _texto(56, 190, 483, 18, "Asistentes:", 10),
+        linea(216.0),
+        _texto(56, 228, 483, 18, "Acuerdos", 11, True),
+        Annotation(kind=Kind.TABLE, page=0, rect=(56.0, 252.0, 539.0, 392.0),
+                   rows=5, cols=3, cells=["Acuerdo", "Responsable", "Fecha"] + [""] * 12,
+                   align=Align.LEFT, width=0.8, color=(0.2, 0.22, 0.26)),
+    ]
+
+    tabla = [
+        _texto(56, 56, 483, 24, "Titulo del cuadro", 13, True),
+        Annotation(kind=Kind.TABLE, page=0, rect=(56.0, 92.0, 539.0, 372.0),
+                   rows=10, cols=4, cells=["Concepto", "Cantidad", "Precio", "Total"] + [""] * 36,
+                   align=Align.LEFT, width=0.8, color=(0.2, 0.22, 0.26)),
+    ]
+
+    return [
+        ("Membrete", "letterhead", [A4], membrete),
+        ("Carta", "document", [A4], carta),
+        ("Acta de reunion", "document", [A4], acta),
+        ("Cuadro de datos", "table", [A4], tabla),
+    ]
+
+
+def builtin_infos() -> list[TemplateInfo]:
+    """Las de serie, con el mismo aspecto que las guardadas por el usuario."""
+    return [
+        TemplateInfo(name=nombre, path=f"builtin:{nombre}", pages=len(paginas),
+                     annotations=len(anns), category=tipo, builtin=True)
+        for nombre, tipo, paginas, anns in builtin_templates()
+    ]
+
+
+def load_builtin(name: str):
+    """Devuelve (nombre, paginas, anotaciones) de una plantilla de serie."""
+    for nombre, _tipo, paginas, anns in builtin_templates():
+        if nombre == name:
+            return (nombre, list(paginas), [a.copy() for a in anns])
+    raise TemplateError(f"No existe la plantilla incluida {name!r}")
