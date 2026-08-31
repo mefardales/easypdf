@@ -437,6 +437,20 @@ Sitemap: {DOMAIN}/sitemap.xml
 """
     with open(os.path.join(SITE, "sitemap.xml"), "w", encoding="utf-8") as fh:
         fh.write(sitemap)
+    # Archivo que consulta el programa instalado para saber si hay version
+    # nueva. Sale de la misma fuente que los enlaces de descarga, asi que no
+    # hay nada que actualizar a mano.
+    ultima = {
+        "version": VERSION,
+        "url": DOMAIN,
+        "setup": FILES["setup"],
+        "portable": FILES["portable"],
+        "linux": FILES["linux"],
+    }
+    with open(os.path.join(SITE, "latest.json"), "w", encoding="utf-8") as fh:
+        json.dump(ultima, fh, ensure_ascii=False, indent=2)
+    print(f"Escrito latest.json (version {VERSION})")
+
     print("Escritos robots.txt y sitemap.xml")
     return 0
 

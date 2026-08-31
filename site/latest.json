@@ -1,0 +1,7 @@
+{
+  "version": "1.2.0",
+  "url": "https://easypdf.surf",
+  "setup": "https://github.com/mefardales/easypdf/releases/download/v1.2.0/EasyPDF-1.2.0-Setup.exe",
+  "portable": "https://github.com/mefardales/easypdf/releases/download/v1.2.0/EasyPDF-1.2.0-windows-x64-portable.zip",
+  "linux": "https://github.com/mefardales/easypdf/releases/download/v1.2.0/EasyPDF-1.2.0-linux-x64.tar.xz"
+}
