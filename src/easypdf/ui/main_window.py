@@ -1408,7 +1408,17 @@ class MainWindow(QMainWindow):
         base = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
         if not base:  # pragma: no cover - sistemas raros
             base = os.path.join(os.path.expanduser("~"), ".easypdf")
-        return os.path.join(base, "plantillas")
+        carpeta = os.path.join(base, "Templates")
+        # La carpeta se llamaba "plantillas". Si existe y todavia no hay una
+        # con el nombre nuevo, se renombra: asi no se pierde nada de lo que
+        # el usuario tuviera guardado.
+        antigua = os.path.join(base, "plantillas")
+        if os.path.isdir(antigua) and not os.path.exists(carpeta):
+            try:
+                os.rename(antigua, carpeta)
+            except OSError:  # pragma: no cover - permisos raros
+                return antigua
+        return carpeta
 
     def _refresh_templates_menu(self) -> None:
         menu = self.templates_menu

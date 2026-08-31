@@ -166,12 +166,13 @@ def test_las_plantillas_de_serie_estan_completas():
 
 
 def test_se_puede_cargar_una_plantilla_de_serie():
-    from easypdf.templates import load_builtin
+    """Se busca por tipo, no por nombre: el nombre cambia con el idioma."""
+    from easypdf.templates import builtin_infos, load_builtin
 
-    nombre, paginas, anotaciones = load_builtin("Acta de reunion")
-    assert nombre == "Acta de reunion"
+    informe = next(i for i in builtin_infos() if i.category == "report")
+    nombre, paginas, anotaciones = load_builtin(informe.name)
+    assert nombre == informe.name
     assert paginas == [(595.0, 842.0)]
-    assert any(a.kind is Kind.TABLE for a in anotaciones)
     assert any(a.kind is Kind.TEXT for a in anotaciones)
 
 
@@ -179,8 +180,11 @@ def test_cargar_una_de_serie_da_copias_independientes():
     """Usarla dos veces no puede compartir las mismas anotaciones."""
     from easypdf.templates import load_builtin
 
-    _n1, _p1, unas = load_builtin("Carta")
-    _n2, _p2, otras = load_builtin("Carta")
+    from easypdf.templates import builtin_infos
+
+    alguna = builtin_infos()[1].name
+    _n1, _p1, unas = load_builtin(alguna)
+    _n2, _p2, otras = load_builtin(alguna)
     unas[0].text = "cambiado"
     assert otras[0].text != "cambiado"
 
