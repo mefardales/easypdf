@@ -70,6 +70,12 @@ TEXTS: dict[str, dict[str, str]] = {
             "highlight, ink and polygon), so they look the same in Adobe Reader, Edge or "
             "Firefox. Tables are stored as their grid plus the text of each cell, and images "
             "are embedded in the page itself so they always print.</p>"
+            "<h3>New versions</h3>"
+            "<p>The program checks the official site now and then and tells you when a "
+            "newer version is out. From that notice you can <b>download and install</b> it "
+            "without leaving the app: it picks the right package for your system, checks "
+            "the download against the published checksum, and on Windows runs the "
+            "installer. Under <b>Help</b> you can check by hand or turn the check off.</p>"
         ),
         # --- nombres cortos ---
         "font_sans": "Sans",
@@ -236,6 +242,32 @@ TEXTS: dict[str, dict[str, str]] = {
         "update_none": "You have the latest version ({version}).",
         "update_failed": "Could not check for updates.",
         "update_checking": "Checking for updates...",
+        "update_download": "Download and install",
+        "update_downloading": "Downloading {name}",
+        "update_progress": "{done} MB of {total} MB",
+        "update_progress_unknown": "{done} MB downloaded",
+        "update_verifying": "Checking the download...",
+        "update_ready_install": (
+            "The download is ready. EasyPDF will close so the installer "
+            "can replace it."
+        ),
+        "update_ready_file": (
+            "Saved to:<br><b>{path}</b><br>Unpack it over your current copy "
+            "to update."
+        ),
+        "update_install_now": "Install now",
+        "update_open_folder": "Open the folder",
+        "update_download_failed": "The download failed: {error}",
+        "update_no_asset": (
+            "There is no automatic download for this system yet. "
+            "The website has all the packages."
+        ),
+        "update_cancel": "Cancel",
+        "update_close": "Close",
+        "update_av_note": (
+            "The installer is not signed yet, so Windows or your antivirus "
+            "may warn about it. It is the same file published on easypdf.surf."
+        ),
         "cursor_pos": "{x} x {y} {unit}",
         "rulers": "&Rulers",
         "ruler_unit_menu": "Ruler &units",
@@ -395,6 +427,13 @@ TEXTS: dict[str, dict[str, str]] = {
             "resaltado, tinta y poligono), asi que se ven igual en Adobe Reader, Edge o "
             "Firefox. Las tablas se guardan como su rejilla mas el texto de cada celda, y las "
             "imagenes se incrustan en la propia pagina para que se impriman siempre.</p>"
+            "<h3>Versiones nuevas</h3>"
+            "<p>El programa mira de vez en cuando la web oficial y avisa cuando sale una "
+            "version mas nueva. Desde ese aviso se puede <b>descargar e instalar</b> sin "
+            "salir de la aplicacion: coge el paquete que le toca a tu sistema, comprueba "
+            "que la descarga coincide con la publicada y, en Windows, arranca el "
+            "instalador. En el menu <b>Ayuda</b> puedes buscarlas a mano o apagar la "
+            "comprobacion.</p>"
         ),
         "font_sans": "Sans",
         "font_serif": "Serif",
@@ -556,6 +595,33 @@ TEXTS: dict[str, dict[str, str]] = {
         "update_none": "Ya tienes la ultima version ({version}).",
         "update_failed": "No se ha podido comprobar si hay actualizaciones.",
         "update_checking": "Buscando actualizaciones...",
+        "update_download": "Descargar e instalar",
+        "update_downloading": "Descargando {name}",
+        "update_progress": "{done} MB de {total} MB",
+        "update_progress_unknown": "{done} MB descargados",
+        "update_verifying": "Comprobando la descarga...",
+        "update_ready_install": (
+            "La descarga esta lista. EasyPDF se cerrara para que el "
+            "instalador la sustituya."
+        ),
+        "update_ready_file": (
+            "Guardado en:<br><b>{path}</b><br>Descomprimelo encima de tu copia "
+            "actual para actualizar."
+        ),
+        "update_install_now": "Instalar ahora",
+        "update_open_folder": "Abrir la carpeta",
+        "update_download_failed": "La descarga ha fallado: {error}",
+        "update_no_asset": (
+            "Para este sistema todavia no hay descarga automatica. "
+            "En la pagina web estan todos los paquetes."
+        ),
+        "update_cancel": "Cancelar",
+        "update_close": "Cerrar",
+        "update_av_note": (
+            "El instalador todavia no esta firmado, asi que Windows o el "
+            "antivirus pueden avisar. Es el mismo archivo que se publica "
+            "en easypdf.surf."
+        ),
         "cursor_pos": "{x} x {y} {unit}",
         "rulers": "&Reglas",
         "ruler_unit_menu": "&Unidades de la regla",

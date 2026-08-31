@@ -2,8 +2,8 @@
 # Mantener la version sincronizada con src/easypdf/__init__.py
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 4, 0, 0),
-    prodvers=(1, 4, 0, 0),
+    filevers=(1, 5, 0, 0),
+    prodvers=(1, 5, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -19,12 +19,12 @@ VSVersionInfo(
           [
             StringStruct('CompanyName', 'easypdf.surf'),
             StringStruct('FileDescription', 'easypdf.surf - Lector y anotador de PDF'),
-            StringStruct('FileVersion', '1.4.0.0'),
+            StringStruct('FileVersion', '1.5.0.0'),
             StringStruct('InternalName', 'EasyPDF'),
             StringStruct('LegalCopyright', 'Licencia GNU AGPL v3 o posterior'),
             StringStruct('OriginalFilename', 'EasyPDF.exe'),
             StringStruct('ProductName', 'easypdf.surf'),
-            StringStruct('ProductVersion', '1.4.0.0'),
+            StringStruct('ProductVersion', '1.5.0.0'),
           ],
         )
       ]

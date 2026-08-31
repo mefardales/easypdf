@@ -151,6 +151,10 @@ TEXTS = {
              "from your antivirus quarantine, and check it arrived intact with "
              "the .sha256 file next to the download. The whole source code is "
              "public, so anyone can inspect it."),
+            ("How do I get new versions?",
+             "The program checks on its own and tells you when there is one. "
+             "From that notice you can download and install it without leaving "
+             "the app. You can also turn the check off in the Help menu."),
             ("Does it work offline?", "Yes. You only need a connection to download it once."),
             ("Are my documents uploaded anywhere?", "No. Everything happens on your computer."),
             ("What if I do not like it?", "Uninstall it like any other program, from Settings."),
@@ -248,6 +252,10 @@ TEXTS = {
              "desde la cuarentena del antivirus, y comprobar que llego intacto con "
              "el archivo .sha256 que hay junto a la descarga. El codigo es publico, "
              "asi que cualquiera puede revisarlo."),
+            ("Como me llegan las versiones nuevas?",
+             "El programa lo mira solo y avisa cuando hay una. Desde ese aviso "
+             "se descarga y se instala sin salir de la aplicacion. Y si "
+             "prefieres que no lo mire, se apaga en el menu Ayuda."),
             ("Funciona sin internet?", "Si. Solo hace falta conexion para descargarlo la primera vez."),
             ("Mis documentos se suben a algun sitio?", "No. Todo ocurre en tu ordenador."),
             ("Y si no me gusta?", "Se desinstala como cualquier otro programa, desde Configuracion."),
@@ -304,7 +312,10 @@ def build_page(lang: str) -> str:
         f"          <summary>{esc(pregunta)}</summary>\n"
         f"          <p>{esc(respuesta)}</p>\n"
         "        </details>"
-        for pregunta, respuesta in t["faq"][:4]
+        # Van todas, no las cuatro primeras: los datos estructurados de abajo
+        # declaran la lista entera, y Google pide que lo declarado se vea en
+        # la pagina. Como son <details> plegados, no alargan nada.
+        for pregunta, respuesta in t["faq"]
     )
 
     datos_app = {
