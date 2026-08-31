@@ -729,32 +729,40 @@ def test_los_tamanos_de_pagina_se_traducen(ventana):
     set_language("en")
 
 
-def test_soltar_en_el_hueco_entre_miniaturas_no_manda_la_pagina_al_final(ventana, qapp):
-    """Entre dos miniaturas hay un hueco de separacion.
+def test_soltar_donde_qt_no_ve_miniatura_no_manda_la_pagina_al_final(ventana, qapp):
+    """El fallo original: si indexAt() no devolvia nada, drop_row daba la
+    ultima posicion y la pagina se iba al final de todas.
 
-    Soltar justo ahi es el gesto natural para decir "ponla aqui", pero
-    indexAt() no devuelve nada en ese punto y antes se daba la posicion por
-    perdida mandando la pagina al final de todas.
+    No se usan las medidas de los elementos, que cambian de un sistema a
+    otro: se toma un punto claramente por encima de la primera miniatura,
+    donde ninguna plataforma ve nada.
     """
     from PySide6.QtCore import QPoint
 
     lista = ventana.thumb_list
     assert lista.count() >= 3
-    r0 = lista.visualRect(lista.model().index(0, 0))
-    r1 = lista.visualRect(lista.model().index(1, 0))
     ultima = lista.count() - 1
 
-    # El punto justo entre las dos miniaturas. No se afirma si Qt ve ahi una
-    # miniatura o no: eso depende de las metricas de cada plataforma. Lo que
-    # importa es donde acaba la pagina.
-    hueco = QPoint(r0.center().x(), (r0.bottom() + r1.top()) // 2)
-    destino = lista.drop_row(hueco)
-    assert destino == 1, f"el hueco deberia dar la posicion 1, dio {destino}"
-    assert destino != ultima or ultima == 1
+    r0 = lista.visualRect(lista.model().index(0, 0))
+    encima = QPoint(r0.center().x(), max(0, r0.top() - 40))
+    assert not lista.indexAt(encima).isValid()     # aqui no hay ninguna
 
-    # y por encima de la primera, tampoco puede irse al final
-    encima = QPoint(r0.center().x(), max(0, r0.top() - 3))
-    assert lista.drop_row(encima) == 0
+    destino = lista.drop_row(encima)
+    assert destino == 0, f"por encima de la primera deberia dar 0, dio {destino}"
+    assert destino != ultima
+
+
+def test_la_miniatura_mas_cercana_se_busca_por_geometria(ventana):
+    """La parte que arregla el fallo, sin depender de donde caiga el raton."""
+    from PySide6.QtCore import QPoint
+
+    lista = ventana.thumb_list
+    r0 = lista.visualRect(lista.model().index(0, 0))
+    r1 = lista.visualRect(lista.model().index(1, 0))
+
+    assert lista.nearest_row(QPoint(r0.center().x(), r0.top() - 50)) == 0
+    assert lista.nearest_row(r0.center()) == 0
+    assert lista.nearest_row(r1.center()) == 1
 
 
 def test_el_destino_al_soltar_nunca_retrocede_al_bajar_el_raton(ventana):
