@@ -81,6 +81,12 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           New-Item -ItemType Directory -Force -Path build | Out-Null
+          # Fuera los binarios de otras versiones: build/ solo tiene lo que se
+          # ofrece ahora. Si no, se acumulan y acaban colandose en la release,
+          # porque el flujo de publicacion sube build/*.sha256 entero.
+          Get-ChildItem build -File |
+            Where-Object { $_.Name -like "EasyPDF-*" -and $_.Name -notlike "EasyPDF-$env:VERSION-*" } |
+            ForEach-Object { Write-Host "Quitando $($_.Name)"; Remove-Item $_.FullName -Force }
           Copy-Item dist/installer/*.exe build/ -Force
           $zip = "build/EasyPDF-$env:VERSION-windows-x64-portable.zip"
           Remove-Item $zip -ErrorAction SilentlyContinue
