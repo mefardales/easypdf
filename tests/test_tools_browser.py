@@ -208,6 +208,53 @@ def test_every_page_comes_out_as_a_picture(phone, samples, tmp_path):
     assert abs(picture.width - 1240) < 30               # A4 at the default 150 dpi
 
 
+def test_pages_can_be_reordered_by_dragging_the_grip(phone, samples, tmp_path):
+    """Dragging is what people expect; the arrows are the fallback, not the tool."""
+    import pymupdf
+
+    page = phone
+    page.goto(f"{page.site}/tools/organize-pdf/", wait_until="networkidle")
+    page.set_input_files("#file", [str(samples / "four.pdf")])
+    page.wait_for_selector("#go:not([disabled])")
+    page.wait_for_timeout(600)
+
+    grip = page.locator(".card").nth(0).locator(".grip").bounding_box()
+    third = page.locator(".card").nth(2).bounding_box()
+    page.mouse.move(grip["x"] + grip["width"] / 2, grip["y"] + grip["height"] / 2)
+    page.mouse.down()
+    page.mouse.move(third["x"] + third["width"] / 2, third["y"] + third["height"] / 2,
+                    steps=12)
+    page.mouse.up()
+    page.wait_for_timeout(200)
+
+    page.click("#go")
+    page.wait_for_selector("#done:not([hidden]) a.dl", timeout=90000)
+    with page.expect_download() as caught:
+        page.locator("#done a.dl").first.click()
+    out = pathlib.Path(tmp_path) / caught.value.suggested_filename
+    caught.value.save_as(out)
+    with contextlib.closing(pymupdf.open(out)) as doc:
+        order = [doc[i].get_text().strip() for i in range(doc.page_count)]
+    assert order[:3] == ["Page 2", "Page 3", "Page 1"], order
+
+
+def test_finishing_clears_the_form_and_offers_what_is_next(phone, samples):
+    """A .drop of its own sets display, and a class beats a bare [hidden], so
+    the form used to stay on screen behind the result."""
+    page = phone
+    page.goto(f"{page.site}/tools/merge-pdf/", wait_until="networkidle")
+    page.set_input_files("#file", [str(samples / "a.pdf"), str(samples / "b.pdf")])
+    page.wait_for_selector("#go:not([disabled])")
+    page.click("#go")
+    page.wait_for_selector("#done:not([hidden]) a.dl", timeout=90000)
+
+    assert page.locator("#drop").is_hidden(), "the drop zone is still on screen"
+    assert page.locator(".actbar").is_hidden()
+    assert page.locator("#files").is_hidden()
+    assert page.locator(".again").count() == 1          # start over
+    assert page.locator(".next a").count() == 5         # the other five tools
+
+
 def test_the_spanish_pages_speak_spanish(phone):
     phone.goto(f"{phone.site}/es/tools/merge-pdf/", wait_until="networkidle")
     assert phone.locator("h1").inner_text() == "Unir PDF"
@@ -238,7 +285,7 @@ def test_it_installs_and_keeps_working_with_no_connection(phone, samples):
     cached = []
     for _ in range(40):
         cached = page.evaluate("""async () => {
-            const c = await caches.open('easypdf-tools-en-v1');
+            const c = await caches.open('easypdf-v1');
             return (await c.keys()).map(r => new URL(r.url).pathname);
         }""")
         if "/tools/app.js" in cached and "/tools/vendor/pdf-lib.min.js" in cached:
@@ -260,14 +307,14 @@ def test_it_installs_and_keeps_working_with_no_connection(phone, samples):
 
 
 def test_the_two_languages_do_not_wipe_each_other(phone, samples):
-    """Each language has its own worker. When one cleaned up "every cache that
-    is not mine" it threw away the other one's, so a visitor who used both
-    lost offline support over and over."""
+    """There is now one worker for the whole site. When there were two, each
+    cleaned up "every cache that is not mine" and threw away the other's, so a
+    visitor who used both lost offline support over and over."""
     page = phone
 
     def english_cache():
         return page.evaluate("""async () => {
-            const c = await caches.open('easypdf-tools-en-v1');
+            const c = await caches.open('easypdf-v1');
             return (await c.keys()).map(r => new URL(r.url).pathname);
         }""")
 
@@ -283,7 +330,7 @@ def test_the_two_languages_do_not_wipe_each_other(phone, samples):
         page.wait_for_timeout(250)
     assert "/tools/vendor/pdf-lib.min.js" in english_cache()
 
-    # Now go to the Spanish app, which starts its own worker.
+    # Now go to the Spanish side, which the same worker serves.
     page.goto(f"{page.site}/es/tools/merge-pdf/", wait_until="networkidle")
     page.evaluate("async () => await navigator.serviceWorker.ready")
     page.wait_for_timeout(1200)

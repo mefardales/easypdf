@@ -15,6 +15,9 @@ html[data-theme="dark"]{
   --ok:#5cc78d; --bad:#f2857c; --warn:#e0b558;
 }
 *{box-sizing:border-box}
+/* .drop and .card set display, and a class beats a bare attribute selector,
+   so without this the hidden ones stayed on screen. */
+[hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);
   font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;
@@ -54,13 +57,20 @@ h1{margin:0 0 8px;font-size:27px;line-height:1.2;letter-spacing:-.5px;font-weigh
 .privacy svg{flex:none;color:var(--ok)}
 @media (min-width:760px){h1{font-size:33px}.head{padding:34px 0 22px}}
 
-/* --- drop zone --- */
-.drop{margin:18px 0 0;border:2px dashed var(--line);border-radius:10px;background:var(--panel);
-  padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .12s,background .12s}
+/* --- drop zone: the biggest thing on the page, like every tool site --- */
+.drop{margin:20px 0 0;border:2px dashed var(--line);border-radius:14px;background:var(--panel);
+  padding:34px 20px;text-align:center;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:min(52vh,360px);transition:border-color .12s,background .12s}
 .drop:hover,.drop.over{border-color:var(--accent);background:var(--bg)}
-.drop svg{color:var(--muted);margin-bottom:10px}
-.drop b{display:block;font-size:17px;font-weight:640;margin-bottom:4px}
-.drop span{font-size:14px;color:var(--muted)}
+.drop.over{border-style:solid}
+.drop svg{color:var(--accent);margin-bottom:14px}
+.drop .pick-btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  background:var(--accent);color:var(--accent-fg);border:0;border-radius:8px;
+  padding:0 26px;min-height:54px;font:inherit;font-size:17px;font-weight:660;
+  cursor:pointer;pointer-events:none}
+.drop:hover .pick-btn{background:var(--accent-hover)}
+.drop span{display:block;font-size:14.5px;color:var(--muted);margin-top:13px}
 .drop input{display:none}
 
 /* --- controls --- */
@@ -101,15 +111,22 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
   display:grid;place-items:center}
 .card .acts button:hover{background:#fff}
 .card .acts button:disabled{opacity:.4;cursor:default}
-.card .pick{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;
-  border:2px solid #fff;background:rgba(0,0,0,.35);display:grid;place-items:center;
-  color:#fff;font-size:14px;cursor:pointer;padding:0}
-.card.on .pick{background:var(--accent);border-color:#fff}
+.card .grip{position:absolute;top:6px;left:6px;width:30px;height:30px;border-radius:7px;
+  border:0;background:rgba(255,255,255,.92);color:#3d4654;display:grid;place-items:center;
+  cursor:grab;padding:0;touch-action:none;font-size:13px;line-height:1}
+.card .grip:active{cursor:grabbing}
+.card.dragging{opacity:.5}
+.card.drop-here{outline:2px solid var(--accent);outline-offset:-2px}
 
 /* --- file list (merge) --- */
 .files{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
 .file{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);
   border-radius:8px;background:var(--panel)}
+.file.dragging{opacity:.5}
+.file.drop-here{outline:2px solid var(--accent);outline-offset:-1px}
+.file .grip{flex:none;min-width:34px;min-height:38px;border:0;background:none;color:var(--muted);
+  cursor:grab;touch-action:none;font-size:13px;padding:0}
+.file .grip:active{cursor:grabbing}
 .file .nm{flex:1;min-width:0;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .file .sz{font-size:13px;color:var(--muted);flex:none}
 .file button{min-width:38px;min-height:38px;border:1px solid var(--line);background:var(--bg);
@@ -137,15 +154,34 @@ input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
 @media (prefers-reduced-motion:reduce){.go .sp{animation-duration:2s}}
 
 /* --- result --- */
-.done{margin:18px 0 0;padding:16px;border:1px solid var(--line);border-radius:10px;
-  background:var(--panel)}
-.done h2{margin:0 0 6px;font-size:16px;font-weight:660}
-.done p{margin:0 0 12px;font-size:14.5px;color:var(--fg-2)}
-.dl{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--accent-fg);
-  padding:11px 20px;border-radius:6px;font-size:15.5px;font-weight:620;min-height:46px}
+.done{margin:20px 0 0;padding:28px 20px 24px;border:1px solid var(--line);border-radius:14px;
+  background:var(--panel);text-align:center}
+.done .tick{width:56px;height:56px;margin:0 auto 14px;border-radius:50%;
+  background:var(--ok);color:#fff;display:grid;place-items:center}
+.done h2{margin:0 0 6px;font-size:21px;font-weight:680;letter-spacing:-.3px}
+.done p{margin:0 0 18px;font-size:15px;color:var(--fg-2)}
+.dl{display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  background:var(--accent);color:var(--accent-fg);
+  padding:0 28px;min-height:54px;border-radius:8px;font-size:17px;font-weight:660}
 .dl:hover{background:var(--accent-hover)}
-.dl+.dl{margin-left:8px}
-.outs{display:flex;flex-wrap:wrap;gap:8px}
+.dl .sz{font-weight:500;opacity:.8;font-size:14.5px}
+.outs{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.again{display:inline-flex;align-items:center;gap:7px;margin-top:16px;
+  font-size:14.5px;color:var(--fg-2);background:none;border:0;font:inherit;cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px}
+.again:hover{color:var(--fg)}
+
+/* --- what else you can do, at the end and at the foot of every tool --- */
+.next{margin:34px 0 0;padding-top:26px;border-top:1px solid var(--line-soft)}
+.next h2{margin:0 0 14px;font-size:15px;font-weight:660;color:var(--fg-2)}
+.next ul{list-style:none;margin:0;padding:0;display:grid;gap:9px;
+  grid-template-columns:1fr}
+@media (min-width:620px){.next ul{grid-template-columns:1fr 1fr}}
+@media (min-width:900px){.next ul{grid-template-columns:1fr 1fr 1fr}}
+.next a{display:flex;align-items:center;gap:11px;padding:13px 14px;border:1px solid var(--line);
+  border-radius:9px;font-size:14.5px;font-weight:560}
+.next a:hover{border-color:var(--accent);background:var(--panel)}
+.next svg{flex:none;color:var(--accent)}
 
 /* --- hub --- */
 .tools{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:12px;

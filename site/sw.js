@@ -1,13 +1,18 @@
-/* Service worker for the easypdf.surf tools.
+/* Service worker for easypdf.surf.
  *
- * It exists so the tools keep working with no connection: once a tool has
- * been opened, its page and the libraries it uses stay on the device. Nothing
- * is ever sent anywhere - this only caches what the browser already fetched.
+ * It exists so the site and the tools keep working with no connection: once
+ * a page has been opened, it and the libraries it uses stay on the device.
+ * Nothing is ever sent anywhere - this only caches what the browser already
+ * fetched.
+ *
+ * One worker for the whole site, at the root: its scope covers /es/ and
+ * /tools/ as well, so there is a single cache rather than one per language
+ * quietly deleting the others.
  */
 // Each language has its own worker, so each needs its own cache name AND its
 // own prefix: cleaning up "everything that is not mine" would otherwise mean
 // the Spanish app wiping the English one every time it started, and back.
-var PREFIX = "easypdf-tools-es-";
+var PREFIX = "easypdf-";
 var CACHE = PREFIX + "v1";
 
 // The shell is small, so it is fetched up front; the styles and the script
@@ -16,9 +21,11 @@ var CACHE = PREFIX + "v1";
 // visitors only need one of them, so each is kept the first time a tool
 // actually loads it.
 var SHELL = [
-  "./",
+  "/",
+  "/tools/",
   "/tools/app.css",
-  "/tools/app.js"
+  "/tools/app.js",
+  "/easypdf.png"
 ];
 
 self.addEventListener("install", function (event) {

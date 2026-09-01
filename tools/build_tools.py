@@ -111,8 +111,12 @@ TEXTS = {
         "hub_more": "The easypdf.surf application writes on top of your PDFs, fills "
                     "in forms, erases what is underneath and prints. It is free too.",
         "hub_more_cta": "Download the application",
+        "next_title": "Something else with your PDF",
         "js": {
             "page": "Page",
+            "download": "Download",
+            "again": "Do another one",
+            "drag": "Drag to reorder",
             "reading": "Reading the file...",
             "working": "Working...",
             "rendering": "Page {0} of {1}...",
@@ -280,8 +284,12 @@ TEXTS["es"] = {
     "hub_more": "El programa easypdf.surf escribe encima de tus PDF, rellena "
                 "formularios, borra lo que hay debajo e imprime. Tambien es gratis.",
     "hub_more_cta": "Descargar el programa",
+    "next_title": "Otra cosa con tu PDF",
     "js": {
         "page": "Pagina",
+        "download": "Descargar",
+        "again": "Hacer otro",
+        "drag": "Arrastra para reordenar",
         "reading": "Leyendo el archivo...",
         "working": "Trabajando...",
         "rendering": "Pagina {0} de {1}...",
@@ -425,18 +433,23 @@ ORDER = ["merge-pdf", "split-pdf", "organize-pdf", "delete-pages",
 
 # -------------------------------------------------------------------- bodies
 def _drop(t: dict, accept: str, multiple: bool) -> str:
+    """The drop zone, which is deliberately the biggest thing on the page.
+
+    The button inside it is not a real control: the whole box is the target,
+    so a thumb landing anywhere on it opens the file picker.
+    """
     more = " multiple" if multiple else ""
     return f"""  <div class="drop" id="drop" tabindex="0" role="button"
        aria-label="{esc(t['drop_b'])}">
     {UPLOAD_ICON}
-    <b>{esc(t['drop_b'])}</b>
+    <span class="pick-btn">{esc(t['drop_b'])}</span>
     <span>{esc(t['drop_s'])}</span>
     <input type="file" id="file" accept="{accept}"{more}>
   </div>"""
 
 
 def _actions(t: dict) -> str:
-    return f"""  <div class="actbar">
+    return f"""  <div class="actbar" hidden>
     <div class="in">
       <span class="st" id="status" role="status" aria-live="polite"></span>
       <button class="go" id="go" type="button" disabled>
@@ -461,6 +474,28 @@ def _seg(seg_id: str, attr: str, options: list[tuple[str, str, bool]]) -> str:
         for value, label, on in options
     )
     return f'<div class="seg" id="{seg_id}" role="group">{buttons}</div>'
+
+
+def _other_tools(lang: str, slug: str, texts: dict) -> str:
+    """The other five tools, so finishing one leads somewhere.
+
+    Someone who has just split a PDF very often wants to merge the pieces
+    back, and hunting for the menu again is friction nobody needs.
+    """
+    rows = []
+    for other in ORDER:
+        if other == slug:
+            continue
+        rows.append(
+            f'      <li><a href="{_url(lang, other)}">{icon(other, 19)}'
+            f'{esc(texts["tools"][other]["name"])}</a></li>'
+        )
+    return f"""  <section class="next">
+    <h2>{esc(texts['next_title'])}</h2>
+    <ul>
+{chr(10).join(rows)}
+    </ul>
+  </section>"""
 
 
 def body(slug: str, t: dict) -> str:
@@ -584,6 +619,21 @@ def _crumb(lang: str, texts: dict, slug: str | None) -> str:
     return '<p class="crumb">' + " / ".join(parts) + "</p>"
 
 
+def _breadcrumbs(lang: str, texts: dict, slug: str | None) -> dict:
+    home = DOMAIN + ("/" if lang == "en" else "/es/")
+    trail = [(texts["crumb_home"], home), (texts["crumb_tools"], DOMAIN + _url(lang))]
+    if slug is not None:
+        trail.append((texts["tools"][slug]["name"], DOMAIN + _url(lang, slug)))
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": i, "name": name, "item": url}
+            for i, (name, url) in enumerate(trail, start=1)
+        ],
+    }
+
+
 def _json_ld(lang: str, texts: dict, slug: str | None) -> str:
     if slug is None:
         data = {
@@ -592,6 +642,19 @@ def _json_ld(lang: str, texts: dict, slug: str | None) -> str:
             "name": texts["hub_h1"],
             "description": texts["hub_description"],
             "url": DOMAIN + _url(lang),
+            "inLanguage": lang,
+            "mainEntity": {
+                "@type": "ItemList",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": i,
+                        "name": texts["tools"][item]["name"],
+                        "url": DOMAIN + _url(lang, item),
+                    }
+                    for i, item in enumerate(ORDER, start=1)
+                ],
+            },
         }
     else:
         t = texts["tools"][slug]
@@ -608,7 +671,7 @@ def _json_ld(lang: str, texts: dict, slug: str | None) -> str:
             "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
             "inLanguage": lang,
         }
-    return json.dumps(data, ensure_ascii=False)
+    return json.dumps([data, _breadcrumbs(lang, texts, slug)], ensure_ascii=False)
 
 
 def page(template, lang: str, slug: str | None) -> str:
@@ -620,14 +683,14 @@ def page(template, lang: str, slug: str | None) -> str:
         h1, lede = texts["hub_h1"], texts["hub_lede"]
         page_body = hub_body(lang, texts)
         tool_id = "hub"
-        sw = "./sw.js"
+        sw = "/sw.js"
     else:
         t = texts["tools"][slug]
         title, description = t["title"], t["description"]
         h1, lede = t["h1"], t["lede"]
-        page_body = body(slug, t)
+        page_body = body(slug, t) + "\n\n" + _other_tools(lang, slug, texts)
         tool_id = slug
-        sw = "../sw.js"
+        sw = "/sw.js"
 
     return template.safe_substitute(
         lang=lang,
@@ -639,7 +702,7 @@ def page(template, lang: str, slug: str | None) -> str:
         alt_es=DOMAIN + _url("es", slug),
         domain=DOMAIN,
         repo=REPO,
-        manifest=_url(lang) + "manifest.webmanifest",
+        manifest="/manifest.webmanifest",
         sw=sw,
         tool=tool_id,
         skip=esc(texts["skip"]),
@@ -689,32 +752,8 @@ def build() -> None:
                 fh.write(page(template, lang, slug))
             written += 1
 
-        # Each language needs its own worker and manifest: a service worker
-        # only reaches pages at or below its own path, so /es/tools/ cannot be
-        # served by the one at /tools/. They point at the same shared assets.
-        if lang != "en":
-            folder = os.path.join(SITE, _url(lang).strip("/"))
-            shared = open(os.path.join(SITE, "tools", "sw.js"), encoding="utf-8").read()
-            with open(os.path.join(folder, "sw.js"), "w", encoding="utf-8") as fh:
-                fh.write(shared.replace('var PREFIX = "easypdf-tools-en-"',
-                                        f'var PREFIX = "easypdf-tools-{lang}-"'))
-            manifest = json.load(
-                open(os.path.join(SITE, "tools", "manifest.webmanifest"), encoding="utf-8")
-            )
-            manifest["id"] = _url(lang)
-            manifest["name"] = "Herramientas de easypdf.surf"
-            manifest["short_name"] = "PDF"
-            manifest["description"] = TEXTS["es"]["hub_description"]
-            manifest["icons"] = [
-                dict(item, src="/tools/" + item["src"]) for item in manifest["icons"]
-            ]
-            manifest["shortcuts"] = [
-                {"name": TEXTS["es"]["tools"][slug]["name"], "url": slug + "/"}
-                for slug in ("merge-pdf", "split-pdf", "images-to-pdf")
-            ]
-            with open(os.path.join(folder, "manifest.webmanifest"), "w", encoding="utf-8") as fh:
-                json.dump(manifest, fh, ensure_ascii=False, indent=2)
-                fh.write("\n")
+        # Nothing per language any more: one worker and one manifest at the
+        # root cover the whole site, /es/ and /tools/ included.
     print(f"Wrote {written} tools pages")
 
 

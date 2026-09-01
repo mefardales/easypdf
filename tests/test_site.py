@@ -39,6 +39,19 @@ def test_no_placeholder_is_left_unfilled():
         assert not left, f"{page.name} still carries placeholders: {sorted(set(left))}"
 
 
+def test_the_sitemap_does_not_claim_everything_changed_today():
+    """A lastmod that is always "now" is noise: search engines learn to ignore
+    it, and it also made a rebuild differ from the committed site for no
+    reason. The date only moves when the page really changes."""
+    sitemap = (ROOT / "site" / "sitemap.xml").read_text(encoding="utf-8")
+    before = re.findall(r"<lastmod>([^<]+)</lastmod>", sitemap)
+    subprocess.run([sys.executable, str(ROOT / "tools" / "build_site.py")],
+                   capture_output=True, cwd=str(ROOT), timeout=120, check=True)
+    after = re.findall(r"<lastmod>([^<]+)</lastmod>",
+                       (ROOT / "site" / "sitemap.xml").read_text(encoding="utf-8"))
+    assert before == after, "rebuilding moved the dates without anything changing"
+
+
 def test_every_template_placeholder_is_given_a_value(tmp_path):
     """Regenerating must reproduce the committed pages exactly."""
     before = {page: page.read_text(encoding="utf-8") for page in _pages()}

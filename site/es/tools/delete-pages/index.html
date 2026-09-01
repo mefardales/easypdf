@@ -12,7 +12,7 @@
 <link rel="alternate" hreflang="x-default" href="https://easypdf.surf/tools/delete-pages/">
 <link rel="icon" href="/easypdf.png" type="image/png">
 <link rel="apple-touch-icon" href="/tools/icon-192.png">
-<link rel="manifest" href="/es/tools/manifest.webmanifest">
+<link rel="manifest" href="/manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="PDF tools">
 <meta property="og:type" content="website">
@@ -26,10 +26,10 @@
 <meta name="twitter:title" content="Borrar paginas de un PDF gratis - easypdf.surf">
 <meta name="twitter:description" content="Quita de un PDF las paginas que no quieres. Gratis, en tu navegador, sin subir nada.">
 <meta name="twitter:image" content="https://easypdf.surf/screenshot.png">
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Borrar paginas", "description": "Quita de un PDF las paginas que no quieres. Gratis, en tu navegador, sin subir nada.", "url": "https://easypdf.surf/es/tools/delete-pages/", "applicationCategory": "UtilitiesApplication", "browserRequirements": "Requires JavaScript", "operatingSystem": "Any", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "inLanguage": "es"}</script>
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "WebApplication", "name": "Borrar paginas", "description": "Quita de un PDF las paginas que no quieres. Gratis, en tu navegador, sin subir nada.", "url": "https://easypdf.surf/es/tools/delete-pages/", "applicationCategory": "UtilitiesApplication", "browserRequirements": "Requires JavaScript", "operatingSystem": "Any", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "inLanguage": "es"}, {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Inicio", "item": "https://easypdf.surf/es/"}, {"@type": "ListItem", "position": 2, "name": "Herramientas", "item": "https://easypdf.surf/es/tools/"}, {"@type": "ListItem", "position": 3, "name": "Borrar paginas", "item": "https://easypdf.surf/es/tools/delete-pages/"}]}]</script>
 <link rel="stylesheet" href="/tools/app.css">
 </head>
-<body data-tool="delete-pages" data-base="/tools/" data-sw="../sw.js">
+<body data-tool="delete-pages" data-base="/tools/" data-sw="/sw.js">
 <a class="skip" href="#main">Saltar al contenido</a>
 
 <header>
@@ -70,7 +70,7 @@
   <div class="drop" id="drop" tabindex="0" role="button"
        aria-label="Elige un PDF">
     <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"/></svg>
-    <b>Elige un PDF</b>
+    <span class="pick-btn">Elige un PDF</span>
     <span>o sueltalo aqui</span>
     <input type="file" id="file" accept="application/pdf,.pdf">
   </div>
@@ -79,7 +79,7 @@
   </div>
   <ul class="grid" id="grid" hidden></ul>
   <div class="done" id="done" hidden></div>
-  <div class="actbar">
+  <div class="actbar" hidden>
     <div class="in">
       <span class="st" id="status" role="status" aria-live="polite"></span>
       <button class="go" id="go" type="button" disabled>
@@ -87,6 +87,17 @@
       </button>
     </div>
   </div>
+
+  <section class="next">
+    <h2>Otra cosa con tu PDF</h2>
+    <ul>
+      <li><a href="/es/tools/merge-pdf/"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v6"/><path d="M3 13v6a2 2 0 0 0 2 2h3"/><rect x="11" y="7" width="10" height="10" rx="2"/><path d="M8 12h3"/></svg>Unir PDF</a></li>
+      <li><a href="/es/tools/split-pdf/"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.6"/><rect x="3" y="13" width="8" height="8" rx="1.6"/><path d="M14 7h7M14 17h7M18 4v6M18 14v6"/></svg>Dividir PDF</a></li>
+      <li><a href="/es/tools/organize-pdf/"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="16" rx="1.6"/><rect x="14" y="4" width="7" height="16" rx="1.6"/><path d="m11.4 9 1.6 1.6-1.6 1.6"/></svg>Girar y reordenar</a></li>
+      <li><a href="/es/tools/images-to-pdf/"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="9" height="9" rx="1.6"/><circle cx="5.6" cy="8.2" r="1"/><path d="m3 12.6 2.6-2.6 3 3"/><path d="M14 12h5"/><path d="m16.6 9.4 2.6 2.6-2.6 2.6"/><path d="M13.5 4.5h6a1.5 1.5 0 0 1 1.5 1.5"/><path d="M21 18a1.5 1.5 0 0 1-1.5 1.5h-6"/></svg>Imagenes a PDF</a></li>
+      <li><a href="/es/tools/pdf-to-image/"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 4.5h-5A1.5 1.5 0 0 0 3 6v12a1.5 1.5 0 0 0 1.5 1.5h5"/><path d="M6 8h2M6 11h2"/><path d="M10 12h3.4"/><path d="m11.6 9.4 2.6 2.6-2.6 2.6"/><rect x="14.5" y="5" width="7" height="7" rx="1.4"/><circle cx="16.9" cy="7.6" r=".9"/><path d="m14.9 10.9 2.2-2.2 2.4 2.4"/></svg>PDF a JPG</a></li>
+    </ul>
+  </section>
 
   <noscript><p class="noscript">Estas herramientas funcionan en tu navegador, asi que necesitan JavaScript activado. En cualquier caso no se envia nada a ningun sitio.</p></noscript>
 </main>
@@ -97,7 +108,7 @@
   <p>Hecho con <a href="/tools/vendor/pdf-lib.LICENSE.md">pdf-lib</a> (MIT) y <a href="/tools/vendor/pdfjs.LICENSE">pdf.js</a> (Apache 2.0), servidos desde este mismo sitio.</p>
 </footer>
 
-<script>window.T = {"page": "Pagina", "reading": "Leyendo el archivo...", "working": "Trabajando...", "rendering": "Pagina {0} de {1}...", "done": "Listo", "done_title": "Listo", "done_merge": "Tus PDF, uno detras de otro en el orden de arriba.", "done_split": "Las paginas que pediste, en un solo PDF.", "done_split_many": "{0} PDF, uno por pagina, juntos en un zip.", "done_organize": "Las paginas en el orden nuevo, ya giradas.", "done_delete": "{0} paginas fuera.", "done_images": "Tus imagenes, una por pagina.", "done_image_one": "La pagina como imagen.", "done_image_many": "{0} imagenes, juntas en un zip.", "need_two": "Anade al menos dos PDF.", "n_files": "{0} archivos", "n_images": "{0} imagenes", "n_pages": "se quedan {0} paginas", "n_pages_doc": "{0} paginas", "remove": "Quitar", "rotate": "Girar", "move_left": "Mover antes", "move_right": "Mover despues", "move_up": "Subir", "move_down": "Bajar", "err_read": "No se ha podido leer el archivo.", "err_lib": "Algo no ha cargado. Comprueba la conexion y vuelve a intentarlo.", "err_pdf": "Esto no parece un PDF que se pueda leer.", "err_locked": "Ese PDF tiene contrasena. Abrelo antes con el programa.", "err_not_pdf": "Solo archivos PDF, por favor.", "err_not_image": "Solo imagenes JPG o PNG, por favor.", "err_range": "'{0}' no es un rango de paginas.", "err_no_pages": "Ese rango no deja ninguna pagina.", "err_all_gone": "Deja al menos una pagina."};</script>
+<script>window.T = {"page": "Pagina", "download": "Descargar", "again": "Hacer otro", "drag": "Arrastra para reordenar", "reading": "Leyendo el archivo...", "working": "Trabajando...", "rendering": "Pagina {0} de {1}...", "done": "Listo", "done_title": "Listo", "done_merge": "Tus PDF, uno detras de otro en el orden de arriba.", "done_split": "Las paginas que pediste, en un solo PDF.", "done_split_many": "{0} PDF, uno por pagina, juntos en un zip.", "done_organize": "Las paginas en el orden nuevo, ya giradas.", "done_delete": "{0} paginas fuera.", "done_images": "Tus imagenes, una por pagina.", "done_image_one": "La pagina como imagen.", "done_image_many": "{0} imagenes, juntas en un zip.", "need_two": "Anade al menos dos PDF.", "n_files": "{0} archivos", "n_images": "{0} imagenes", "n_pages": "se quedan {0} paginas", "n_pages_doc": "{0} paginas", "remove": "Quitar", "rotate": "Girar", "move_left": "Mover antes", "move_right": "Mover despues", "move_up": "Subir", "move_down": "Bajar", "err_read": "No se ha podido leer el archivo.", "err_lib": "Algo no ha cargado. Comprueba la conexion y vuelve a intentarlo.", "err_pdf": "Esto no parece un PDF que se pueda leer.", "err_locked": "Ese PDF tiene contrasena. Abrelo antes con el programa.", "err_not_pdf": "Solo archivos PDF, por favor.", "err_not_image": "Solo imagenes JPG o PNG, por favor.", "err_range": "'{0}' no es un rango de paginas.", "err_no_pages": "Ese rango no deja ninguna pagina.", "err_all_gone": "Deja al menos una pagina."};</script>
 <script src="/tools/app.js" defer></script>
 </body>
 </html>

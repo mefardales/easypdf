@@ -82,6 +82,9 @@ TEXTS = {
         "skip": "Skip to content",
         "nav_features": "Features",
         "nav_tools": "Tools",
+        "tools_title": "Free PDF tools, right in your browser",
+        "tools_sub": "No account and no upload: your file never leaves your device.",
+        "tools_more": "See all the tools",
         "nav_download": "Downloads",
         "nav_cta": "Get it",
         "nav_how": "How it works",
@@ -184,6 +187,9 @@ TEXTS = {
         "skip": "Ir al contenido",
         "nav_features": "Funciones",
         "nav_tools": "Herramientas",
+        "tools_title": "Herramientas PDF gratis, en tu navegador",
+        "tools_sub": "Sin cuentas y sin subir nada: tu archivo no sale de tu dispositivo.",
+        "tools_more": "Ver todas las herramientas",
         "nav_download": "Descargas",
         "nav_cta": "Descargar",
         "nav_how": "Como funciona",
@@ -288,6 +294,20 @@ def esc(text: str) -> str:
     return html.escape(text, quote=True)
 
 
+def _tools_items(lang: str) -> str:
+    """The six browser tools as cards, taken straight from build_tools.
+
+    Built from the same data the tool pages use, so a tool cannot be added
+    there and forgotten here.
+    """
+    texts = build_tools.TEXTS[lang]
+    return "\n".join(
+        f'      <li><a href="{build_tools._url(lang, slug)}">'
+        f'{build_tools.icon(slug, 21)}<span>{esc(texts["tools"][slug]["name"])}</span></a></li>'
+        for slug in build_tools.ORDER
+    )
+
+
 def build_page(lang: str) -> str:
     t = TEXTS[lang]
     other = TEXTS[t["other_lang"]]
@@ -372,6 +392,10 @@ def build_page(lang: str) -> str:
         nav_features=esc(t["nav_features"]),
         nav_tools=esc(t["nav_tools"]),
         tools_url=build_tools._url(lang),
+        tools_title=esc(t["tools_title"]),
+        tools_sub=esc(t["tools_sub"]),
+        tools_more=esc(t["tools_more"]),
+        tools_items=_tools_items(lang),
         nav_download=esc(t["nav_download"]),
         nav_cta=esc(t["nav_cta"]),
         other_lang=other["lang"],
@@ -408,6 +432,39 @@ def build_page(lang: str) -> str:
     )
 
 
+#: When each URL last really changed. Kept in the repository so the sitemap
+#: does not claim every page was updated today on every single build - search
+#: engines learn to ignore a lastmod that is always now, and it also made the
+#: generated site differ from the committed one for no reason.
+LASTMOD_FILE = os.path.join(ROOT, "site", ".lastmod.json")
+
+
+def _lastmod(pages: dict[str, str], today: str) -> dict[str, str]:
+    """Return the date to publish for each URL, given its current content."""
+    import hashlib
+
+    try:
+        with open(LASTMOD_FILE, encoding="utf-8") as fh:
+            known = json.load(fh)
+    except (OSError, ValueError):
+        known = {}
+
+    dates = {}
+    for url, content in pages.items():
+        digest = hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
+        before = known.get(url)
+        if before and before.get("hash") == digest:
+            dates[url] = before["date"]          # unchanged: keep the old date
+        else:
+            dates[url] = today
+        known[url] = {"hash": digest, "date": dates[url]}
+
+    with open(LASTMOD_FILE, "w", encoding="utf-8") as fh:
+        json.dump(known, fh, indent=1, sort_keys=True)
+        fh.write("\n")
+    return dates
+
+
 def main() -> int:
     hoy = datetime.date.today().isoformat()
     for folder in ("es",):
@@ -418,6 +475,20 @@ def main() -> int:
         with open(target, "w", encoding="utf-8") as fh:
             fh.write(build_page(lang))
         print(f"Wrote {target}")
+
+    build_tools.build()
+
+    # Every URL the sitemap will carry, with the page it points at, so a date
+    # can be worked out from what actually changed.
+    pages = {}
+    for t in TEXTS.values():
+        path = "/" + t["path"]
+        pages[path] = open(os.path.join(SITE, t["path"], "index.html"),
+                           encoding="utf-8").read()
+    for path in build_tools.urls():
+        pages[path] = open(os.path.join(SITE, path.strip("/"), "index.html"),
+                           encoding="utf-8").read()
+    dates = _lastmod(pages, hoy)
 
     robots = f"""User-agent: *
 Allow: /
@@ -430,7 +501,7 @@ Sitemap: {DOMAIN}/sitemap.xml
     urls = "\n".join(
         f"""  <url>
     <loc>{DOMAIN}/{t['path']}</loc>
-    <lastmod>{hoy}</lastmod>
+    <lastmod>{dates['/' + t['path']]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>{'1.0' if lang == 'en' else '0.9'}</priority>
     <xhtml:link rel="alternate" hreflang="en" href="{DOMAIN}/"/>
@@ -447,7 +518,7 @@ Sitemap: {DOMAIN}/sitemap.xml
         urls += f"""
   <url>
     <loc>{DOMAIN}{path}</loc>
-    <lastmod>{hoy}</lastmod>
+    <lastmod>{dates[path]}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <xhtml:link rel="alternate" hreflang="en" href="{DOMAIN}{english}"/>
@@ -477,7 +548,6 @@ Sitemap: {DOMAIN}/sitemap.xml
     print(f"Wrote latest.json (version {VERSION})")
 
     print("Wrote robots.txt and sitemap.xml")
-    build_tools.build()
     return 0
 
 

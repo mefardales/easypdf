@@ -46,10 +46,7 @@ services:
       - path: /*.webmanifest
         name: Content-Type
         value: application/manifest+json
-      - path: /tools/sw.js
-        name: Cache-Control
-        value: no-cache
-      - path: /es/tools/sw.js
+      - path: /sw.js
         name: Cache-Control
         value: no-cache
 

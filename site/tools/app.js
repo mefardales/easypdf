@@ -49,20 +49,45 @@
     var a = el("a", "dl");
     a.href = url;
     a.download = name;
-    a.append(document.createTextNode("↓ " + name), el("span", "sz", " "));
-    a.querySelector(".sz").textContent = " (" + size(blob.size) + ")";
+    a.append(document.createTextNode("↓ " + T.download),
+             el("span", "sz", " " + size(blob.size)));
     return a;
   }
+  var TICK = '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" ' +
+    'stroke="currentColor" stroke-width="2.6" stroke-linecap="round" ' +
+    'stroke-linejoin="round" aria-hidden="true"><path d="m5 13 5 5L19 7"/></svg>';
+
   function results(title, note, nodes) {
+    // Everything that was on the way in gets out of the way: what matters now
+    // is the file, not the form that produced it.
+    ["#drop", "#ctl", "#grid", "#files"].forEach(function (sel) {
+      var node = $(sel);
+      if (node) node.hidden = true;
+    });
+    var bar = $(".actbar");
+    if (bar) bar.hidden = true;
+
     var box = $("#done");
     box.innerHTML = "";
-    box.append(el("h2", null, title));
+    var tick = el("div", "tick");
+    tick.innerHTML = TICK;
+    box.append(tick, el("h2", null, title));
     if (note) box.append(el("p", null, note));
     var outs = el("div", "outs");
     nodes.forEach(function (n) { outs.append(n); });
     box.append(outs);
+
+    var again = el("button", "again", T.again);
+    again.type = "button";
+    again.addEventListener("click", function () { location.reload(); });
+    box.append(again);
+
     box.hidden = false;
-    box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Hand the file over without making them hunt for the button. If the
+    // browser will not have it, the button is right there anyway.
+    try { nodes[0].click(); } catch (e) { /* the button is still there */ }
   }
 
   // ------------------------------------------------------------------ files
@@ -204,6 +229,64 @@
     return new Blob(parts.concat(central, [end]), { type: "application/zip" });
   }
 
+  // ------------------------------------------------------------- reordering
+  // Dragging by a grip rather than by the whole card, on purpose: with the
+  // whole card draggable, a finger trying to scroll a list of thirty pages
+  // picks one up instead. The grip is the only thing with touch-action:none,
+  // so everywhere else still scrolls.
+  function makeSortable(container, itemSelector, onMoved) {
+    var dragged = null, over = null;
+
+    function itemFrom(node) {
+      while (node && node !== container) {
+        if (node.matches && node.matches(itemSelector)) return node;
+        node = node.parentNode;
+      }
+      return null;
+    }
+
+    container.addEventListener("pointerdown", function (event) {
+      var grip = event.target.closest && event.target.closest(".grip");
+      if (!grip) return;
+      dragged = itemFrom(grip);
+      if (!dragged) return;
+      event.preventDefault();
+      grip.setPointerCapture(event.pointerId);
+      dragged.classList.add("dragging");
+    });
+
+    container.addEventListener("pointermove", function (event) {
+      if (!dragged) return;
+      event.preventDefault();
+      // The pointer is captured, so ask the document what is under it.
+      var under = itemFrom(document.elementFromPoint(event.clientX, event.clientY));
+      if (under === over) return;
+      if (over) over.classList.remove("drop-here");
+      over = under && under !== dragged ? under : null;
+      if (over) over.classList.add("drop-here");
+    });
+
+    function finish() {
+      if (!dragged) return;
+      dragged.classList.remove("dragging");
+      if (over) {
+        over.classList.remove("drop-here");
+        var items = Array.prototype.slice.call(container.children);
+        onMoved(items.indexOf(dragged), items.indexOf(over));
+      }
+      dragged = null;
+      over = null;
+    }
+    container.addEventListener("pointerup", finish);
+    container.addEventListener("pointercancel", finish);
+  }
+
+  function moveInArray(list, from, to) {
+    if (from < 0 || to < 0 || from === to) return false;
+    list.splice(to, 0, list.splice(from, 1)[0]);
+    return true;
+  }
+
   // ------------------------------------------------------------ page ranges
   // "1-3, 7, 12-" over a document of `total` pages, as zero-based indexes.
   function parseRange(text, total) {
@@ -246,6 +329,10 @@
   }
 
   function ready(on, note) {
+    // The bar only appears once there is something to act on: a dead grey
+    // button on an empty page tells nobody anything.
+    var bar = $(".actbar");
+    if (bar) bar.hidden = false;
     $("#go").disabled = !on;
     say(note || "");
   }
@@ -306,6 +393,7 @@
     Array.prototype.forEach.call(grid.children, function (li, i) {
       var acts = el("div", "acts");
       if (kind === "organize") {
+        li.querySelector(".sheet").append(grip());
         acts.append(
           btn("←", T.move_left, function () { move(i, -1); }),
           btn("↻", T.rotate, function () { rotate(i); }),
@@ -316,7 +404,25 @@
       }
       li.querySelector(".sheet").append(acts);
     });
+    if (kind === "organize") {
+      makeSortable(grid, ".card", function (from, to) {
+        if (!moveInArray(state.pages, from, to)) return;
+        var node = grid.children[from];
+        grid.insertBefore(node, from < to ? grid.children[to].nextSibling
+                                          : grid.children[to]);
+        reindex();
+        refresh();
+      });
+    }
     refresh();
+  }
+
+  function grip() {
+    var button = el("button", "grip", "⠿");
+    button.type = "button";
+    button.title = T.drag;
+    button.setAttribute("aria-label", T.drag);
+    return button;
   }
   function btn(label, title, fn) {
     var b = el("button", null, label);
@@ -392,15 +498,17 @@
       ul.hidden = false;
       state.files.forEach(function (f, i) {
         var li = el("li", "file");
-        li.append(el("span", "nm", f.name), el("span", "sz", size(f.size)));
-        li.append(
-          btn("↑", T.move_up, function () { swap(i, -1); }),
-          btn("↓", T.move_down, function () { swap(i, 1); }),
-          btn("✕", T.remove, function () { state.files.splice(i, 1); listFiles(); })
-        );
-        li.querySelectorAll("button")[0].disabled = i === 0;
-        li.querySelectorAll("button")[1].disabled = i === state.files.length - 1;
+        li.append(grip(), el("span", "nm", f.name), el("span", "sz", size(f.size)));
+        var up = btn("↑", T.move_up, function () { swap(i, -1); });
+        var down = btn("↓", T.move_down, function () { swap(i, 1); });
+        li.append(up, down,
+                  btn("✕", T.remove, function () { state.files.splice(i, 1); listFiles(); }));
+        up.disabled = i === 0;
+        down.disabled = i === state.files.length - 1;
         ul.append(li);
+      });
+      makeSortable(ul, ".file", function (from, to) {
+        if (moveInArray(state.files, from, to)) listFiles();
       });
       ready(state.files.length >= 2,
             state.files.length < 2 ? T.need_two : T.n_files.replace("{0}", state.files.length));
@@ -620,9 +728,12 @@
         );
         acts.children[0].disabled = i === 0;
         acts.children[2].disabled = i === state.files.length - 1;
-        sheet.append(acts);
+        sheet.append(grip(), acts);
         li.append(sheet, el("div", "num", f.name));
         grid.append(li);
+      });
+      makeSortable(grid, ".card", function (from, to) {
+        if (moveInArray(state.files, from, to)) listImages();
       });
       ready(state.files.length > 0, T.n_images.replace("{0}", state.files.length));
     }

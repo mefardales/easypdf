@@ -6,13 +6,18 @@
 <title>$title</title>
 <meta name="description" content="$description">
 <meta name="keywords" content="$keywords">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1216" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
 <link rel="canonical" href="$base">
 <link rel="alternate" hreflang="en" href="$domain/">
 <link rel="alternate" hreflang="es" href="$domain/es/">
 <link rel="alternate" hreflang="x-default" href="$domain/">
-<link rel="icon" href="${prefix}easypdf.png" type="image/png">
-<link rel="apple-touch-icon" href="${prefix}easypdf.png">
+<link rel="icon" href="/easypdf.png" type="image/png">
+<link rel="apple-touch-icon" href="/tools/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="easypdf">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="easypdf.surf">
 <meta property="og:locale" content="$locale">
@@ -20,10 +25,15 @@
 <meta property="og:title" content="$title">
 <meta property="og:description" content="$description">
 <meta property="og:image" content="$domain/screenshot.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="860">
+<meta property="og:image:alt" content="$alt">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="$title">
 <meta name="twitter:description" content="$description">
 <meta name="twitter:image" content="$domain/screenshot.png">
+<meta name="twitter:image:alt" content="$alt">
 <script type="application/ld+json">$json_app</script>
 <script type="application/ld+json">$json_faq</script>
 <style>
@@ -70,7 +80,19 @@
   .cta-sm{margin-left:8px;background:var(--accent);color:var(--accent-fg);
     padding:8px 15px;border-radius:4px;font-size:14.5px;font-weight:600}
   .cta-sm:hover{background:var(--accent-hover)}
-  @media (max-width:640px){.nl{display:none}}
+  /* On a phone the in-page anchors go (you can just scroll), but Tools does
+     not: it is a different page and the only way to reach it. */
+  @media (max-width:700px){
+    .nl{display:none}
+    .nl-keep{display:inline-flex;align-items:center;height:34px;padding:0 12px;
+      border:1px solid var(--line);border-radius:4px;font-weight:560;color:var(--fg)}
+    .cta-sm{margin-left:6px;padding:8px 13px}
+    .bar{gap:6px}
+    .brand span{display:none}
+  }
+  @media (max-width:380px){
+    .cta-sm{display:none}
+  }
 
   /* --- hero --- */
   .hero{padding:56px 24px 36px;max-width:760px;margin:0 auto 0 0}
@@ -94,6 +116,27 @@
     h1{font-size:31px;letter-spacing:-.5px}
     .sub{font-size:16.5px}
   }
+
+  /* --- free tools, right under the hero: on a phone this is what most
+         visitors actually came for, and it must not need any scrolling --- */
+  .tools-strip{margin:0 0 6px;padding:22px 24px 26px;border-top:1px solid var(--line-soft);
+    border-bottom:1px solid var(--line-soft);background:var(--panel)}
+  .tools-strip .in{max-width:1020px;margin:0 auto}
+  .tools-strip h2{margin:0 0 4px;font-size:19px;letter-spacing:-.3px;font-weight:660}
+  .tools-strip p{margin:0 0 16px;font-size:14.5px;color:var(--muted)}
+  .tools-strip ul{list-style:none;margin:0;padding:0;display:grid;gap:9px;
+    grid-template-columns:1fr 1fr}
+  @media (min-width:620px){.tools-strip ul{grid-template-columns:repeat(3,1fr)}}
+  @media (min-width:900px){.tools-strip ul{grid-template-columns:repeat(6,1fr)}}
+  .tools-strip ul a{display:flex;flex-direction:column;align-items:center;gap:8px;
+    padding:15px 9px;background:var(--bg);border:1px solid var(--line);border-radius:9px;
+    font-size:13.5px;font-weight:560;text-align:center;line-height:1.3;min-height:88px;
+    justify-content:center}
+  .tools-strip ul a:hover{border-color:var(--accent);color:var(--accent)}
+  .tools-strip svg{color:var(--accent);flex:none}
+  .tools-more{display:inline-block;margin-top:14px;font-size:14.5px;color:var(--accent);
+    font-weight:560}
+  .tools-more:hover{text-decoration:underline}
 
   /* --- screenshot --- */
   .shot{margin:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;
@@ -152,8 +195,14 @@
   footer{border-top:1px solid var(--line);margin-top:46px;padding:24px 0 32px}
   .foot{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;
     font-size:13.5px;color:var(--muted)}
-  .foot nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:20px}
+  .foot nav{margin-left:auto;display:flex;flex-wrap:wrap;gap:4px 16px}
+  /* A footer link is still something a thumb has to hit. */
+  .foot a{display:inline-flex;align-items:center;min-height:34px;padding:0 2px}
   .foot a:hover{color:var(--fg-2)}
+  @media (max-width:700px){
+    .foot{gap:4px 18px}
+    .foot nav{margin-left:0}
+  }
 </style>
 </head>
 <body>
@@ -166,7 +215,7 @@
     </a>
     <nav>
       <a class="nl" href="#features">$nav_features</a>
-      <a class="nl" href="$tools_url">$nav_tools</a>
+      <a class="nl nl-keep" href="$tools_url">$nav_tools</a>
       <a class="nl" href="#downloads">$nav_download</a>
       <a class="ib" href="$domain/$other_path" hreflang="$other_lang" lang="$other_lang"
          title="$other_name">$OTHER_LANG</a>
@@ -198,10 +247,25 @@
   </div>
 </div>
 
+<section class="tools-strip" id="tools">
+  <div class="in">
+    <h2>$tools_title</h2>
+    <p>$tools_sub</p>
+    <ul>
+$tools_items
+    </ul>
+    <a class="tools-more" href="$tools_url">$tools_more</a>
+  </div>
+</section>
+
 <div class="wrap">
   <figure class="shot">
     <div class="chrome"><i></i><i></i><i></i><b>easypdf.surf $version</b></div>
-    <img src="${prefix}screenshot.png" width="1280" height="860" alt="$alt">
+    <picture>
+      <source srcset="/screenshot.webp" type="image/webp">
+      <img src="/screenshot.png" width="1280" height="860" alt="$alt"
+           loading="lazy" decoding="async">
+    </picture>
   </figure>
 </div>
 
@@ -237,6 +301,14 @@ $faq
 
 <script>
 (function () {
+  // Installable, and it keeps working with no connection. Registered here so
+  // it is armed from the landing page, not only from a tool.
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function () {});
+    });
+  }
+
   var raiz = document.documentElement, boton = document.getElementById("theme");
   function pintar(modo) {
     raiz.setAttribute("data-theme", modo);

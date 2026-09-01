@@ -86,8 +86,8 @@ Six of the things people need most often also run at
 merge, split, rotate and reorder, delete pages, images to PDF and PDF to image.
 
 They run entirely in the browser — the file is never uploaded anywhere — and
-they install on a phone as an app that keeps working with no connection. The
-source is in `site/tools/`, built by `tools/build_tools.py`.
+the whole site installs on a phone as an app that keeps working with no
+connection. The source is in `site/tools/`, built by `tools/build_tools.py`.
 
 ## Screenshot
 

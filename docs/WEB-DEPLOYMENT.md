@@ -22,15 +22,17 @@ A few things worth knowing before changing them:
   (`pdf-lib` and `pdf.js`) are vendored under `site/tools/vendor/` rather than
   pulled from a CDN, so no third party ever sees a document — and there is a
   test that fails if a page starts loading a script from somewhere else.
-- **Each language has its own service worker**, at `/tools/sw.js` and
-  `/es/tools/sw.js`, because a worker only reaches pages at or below its own
-  path. They share the assets under `/tools/` but keep separate caches, each
-  cleaning up only its own older versions.
+- **One service worker for the whole site**, at `/sw.js`. Its scope is `/`, so
+  it covers `/es/` and `/tools/` as well. There used to be one per language
+  and each cleaned up "every cache that is not mine", which meant they took
+  turns wiping each other; there is a test for that now.
 - **Bumping the cache version.** After changing `app.js` or `app.css`, raise
-  the version in `site/tools/sw.js` (`PREFIX + "v1"`) so returning visitors get
-  the new files instead of the cached ones.
-- `render.yaml` serves `/tools/vendor/*` as immutable for a year and the
-  workers with `no-cache`, which is what makes an update actually arrive.
+  the version in `site/sw.js` (`PREFIX + "v1"`) so returning visitors get the
+  new files instead of the cached ones.
+- `render.yaml` serves `/tools/vendor/*` as immutable for a year and `/sw.js`
+  with `no-cache`, which is what makes an update actually arrive.
+- **One manifest**, at `/manifest.webmanifest`, scope `/`. Installing from
+  anywhere on the site gives the landing page and the tools together.
 
 ## The numbers on the front page
 
@@ -91,6 +93,14 @@ What the page already carries:
 - `robots.txt` and `sitemap.xml` with both URLs.
 - Semantic HTML, a single `h1`, alt text on the images and a skip-to-content
   link.
+
+- A `lastmod` in the sitemap that only moves when the page really changed.
+  It used to be rebuilt as "today" on every run; search engines learn to
+  ignore a date that is always now, and it made a rebuild differ from the
+  committed site for no reason. The hashes live in `site/.lastmod.json`.
+- `BreadcrumbList` on every tool page, an `ItemList` of the tools on the hub,
+  `max-image-preview:large`, `og:image` dimensions and alt text, and the
+  screenshot served as WebP with a PNG fallback.
 
 After the first deployment it is worth registering the domain with
 [Google Search Console](https://search.google.com/search-console) and submitting
