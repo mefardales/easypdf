@@ -1,4 +1,4 @@
-# Dependencias de ejecucion de EasyPDF.
-# PySide6-Essentials basta: no hacen falta QtWebEngine ni QtQuick.
+# EasyPDF runtime dependencies.
+# PySide6-Essentials is enough: QtWebEngine and QtQuick are not needed.
 PySide6-Essentials>=6.6
 PyMuPDF>=1.24

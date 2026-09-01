@@ -1,4 +1,4 @@
-name: Pruebas
+name: Tests
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Pruebas (${{ matrix.os }}, Python ${{ matrix.python }})
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     strategy:
@@ -30,7 +30,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: pip
 
-      - name: Bibliotecas de sistema para Qt (Linux)
+      - name: System libraries for Qt (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
@@ -40,15 +40,15 @@ jobs:
             libxcb-keysyms1 libxcb-shape0 libxcb-randr0 libxcb-render-util0 \
             libxcb-xinerama0 libxcb-xkb1
 
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Estilo (ruff)
+      - name: Style (ruff)
         run: ruff check src tests tools
 
-      - name: Pruebas
+      - name: Tests
         env:
           QT_QPA_PLATFORM: offscreen
         run: pytest -q

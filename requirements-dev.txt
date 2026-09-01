@@ -1,6 +1,6 @@
 -r requirements.txt
 
-# Pruebas, estilo y empaquetado
+# Tests, style and packaging
 pytest>=7.4
 pytest-timeout>=2.3
 ruff>=0.4

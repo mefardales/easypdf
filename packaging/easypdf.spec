@@ -1,12 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""Receta de PyInstaller para EasyPDF.
+"""The PyInstaller recipe for EasyPDF.
 
-Se ejecuta desde la raiz del repositorio:
+Run it from the root of the repository:
 
     pyinstaller packaging/easypdf.spec --noconfirm
 
-Genera dist/EasyPDF/EasyPDF.exe (carpeta unica, que arranca mas rapido y da
-menos falsos positivos de antivirus que un unico .exe comprimido).
+It produces dist/EasyPDF/EasyPDF.exe (a single folder, which starts faster and
+draws fewer antivirus false positives than one compressed .exe).
 """
 
 import os
@@ -18,7 +18,7 @@ ICON = os.path.join(ROOT, "assets", "easypdf.ico")
 PNG = os.path.join(ROOT, "assets", "easypdf.png")
 VERSION_FILE = os.path.join(SPECPATH, "version_info.txt")
 
-# Modulos de Qt y otras dependencias que EasyPDF no usa: fuera del paquete.
+# Qt modules and other dependencies EasyPDF does not use: left out of the package.
 EXCLUDES = [
     "tkinter",
     "unittest",
@@ -70,7 +70,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
-    console=False,          # aplicacion de ventana: sin consola negra
+    console=False,          # a windowed application: no black console
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

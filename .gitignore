@@ -12,15 +12,15 @@ env/
 .coverage
 htmlcov/
 
-# Compilacion
-# Nota: build/ NO se ignora, ahi viven los ejecutables publicados.
-# El directorio de trabajo de PyInstaller es .pyinstaller/ (--workpath).
+# Builds
+# Note: build/ is NOT ignored, the published executables live there.
+# PyInstaller's working directory is .pyinstaller/ (--workpath).
 .pyinstaller/
 dist/
 *.spec.bak
 packaging/Output/
 
-# Editores / SO
+# Editors / OS
 .vscode/
 .idea/
 .DS_Store

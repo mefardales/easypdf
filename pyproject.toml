@@ -5,18 +5,19 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "easypdf"
 version = "1.6.2"
-description = "easypdf.surf: lector de PDF sencillo con anotaciones (cuadros, lineas, texto) e impresion"
+description = "easypdf.surf: a simple PDF reader with annotations (boxes, lines, text) and printing"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "AGPL-3.0-or-later" }
 authors = [{ name = "EasyPDF contributors" }]
-keywords = ["pdf", "lector", "anotaciones", "viewer", "annotations", "qt"]
+keywords = ["pdf", "reader", "viewer", "annotations", "annotate", "qt"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: X11 Applications :: Qt",
     "Environment :: Win32 (MS Windows)",
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Natural Language :: English",
     "Natural Language :: Spanish",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
@@ -40,7 +41,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mefardales/easypdf"
+Homepage = "https://easypdf.surf"
 Source = "https://github.com/mefardales/easypdf"
 Issues = "https://github.com/mefardales/easypdf/issues"
 
@@ -56,8 +57,8 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-# Si una prueba se cuelga (por ejemplo esperando a la cola de impresion del
-# sistema), se corta sola en lugar de bloquear la integracion continua.
+# If a test hangs (waiting on the system's print queue, say) it is cut off on
+# its own instead of blocking continuous integration.
 timeout = 180
 filterwarnings = ["ignore::DeprecationWarning"]
 

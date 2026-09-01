@@ -1,12 +1,12 @@
-name: Compilar Windows
+name: Build Windows
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
     inputs:
-      publicar_en_build:
-        description: "Guardar el instalador y la version portable en la carpeta build/ del repositorio"
+      store_in_build:
+        description: "Store the installer and the portable version in the repository's build/ folder"
         type: boolean
         default: true
 
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build:
-    name: EasyPDF.exe + instalador
+    name: EasyPDF.exe + installer
     runs-on: windows-latest
     timeout-minutes: 40
 
@@ -27,7 +27,7 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Leer la version
+      - name: Read the version
         id: version
         shell: pwsh
         run: |
@@ -35,58 +35,58 @@ jobs:
           "version=$v" >> $env:GITHUB_OUTPUT
           Write-Host "Version: $v"
 
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      # El wheel de PyInstaller trae un bootloader ya compilado, identico en
-      # todas las aplicaciones hechas con PyInstaller. Los antivirus firman
-      # contra ese binario porque tambien lo usa el malware, y cualquier
-      # programa legitimo hereda la deteccion. Compilarlo aqui desde el codigo
-      # fuente es el remedio que recomienda la propia documentacion de
-      # PyInstaller: el bootloader deja de coincidir con esas firmas.
-      # No sustituye a firmar el ejecutable, que es la solucion de verdad.
-      - name: Compilar el bootloader de PyInstaller desde fuente
+      # The PyInstaller wheel ships an already-compiled bootloader, identical
+      # across every application built with PyInstaller. Antivirus vendors sign
+      # against that binary because malware uses it too, and any legitimate
+      # program inherits the detection. Building it here from source is the
+      # remedy PyInstaller's own documentation recommends: the bootloader stops
+      # matching those signatures. It is no substitute for signing the
+      # executable, which is the real fix.
+      - name: Build the PyInstaller bootloader from source
         run: |
           pip install --upgrade --force-reinstall --no-binary pyinstaller pyinstaller
           python -c "import PyInstaller, pathlib; print('bootloader:', pathlib.Path(PyInstaller.__file__).parent / 'bootloader')"
 
-      - name: Generar el icono
+      - name: Build the icon
         run: python tools/make_icon.py
 
-      - name: Pruebas
+      - name: Tests
         env:
           QT_QPA_PLATFORM: offscreen
         run: pytest -q
 
-      - name: Empaquetar con PyInstaller
+      - name: Package with PyInstaller
         run: pyinstaller packaging/easypdf.spec --noconfirm --clean --workpath .pyinstaller
 
-      - name: Comprobar que el ejecutable existe
+      - name: Check the executable exists
         shell: pwsh
         run: |
-          if (-not (Test-Path "dist/EasyPDF/EasyPDF.exe")) { throw "No se genero el .exe" }
+          if (-not (Test-Path "dist/EasyPDF/EasyPDF.exe")) { throw "The .exe was not built" }
           Get-Item "dist/EasyPDF/EasyPDF.exe" | Format-List Name, Length
 
-      - name: Instalar Inno Setup
+      - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
 
-      - name: Compilar el instalador
+      - name: Build the installer
         run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\installer.iss'
 
-      - name: Preparar la carpeta build/
+      - name: Prepare the build/ folder
         shell: pwsh
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           New-Item -ItemType Directory -Force -Path build | Out-Null
-          # Fuera los binarios de otras versiones: build/ solo tiene lo que se
-          # ofrece ahora. Si no, se acumulan y acaban colandose en la release,
-          # porque el flujo de publicacion sube build/*.sha256 entero.
+          # Out with the binaries of other versions: build/ only holds what is
+          # on offer now. Otherwise they pile up and end up sneaking into the
+          # release, because the publish workflow uploads all of build/*.sha256.
           Get-ChildItem build -File |
             Where-Object { $_.Name -like "EasyPDF-*" -and $_.Name -notlike "EasyPDF-$env:VERSION-*" } |
-            ForEach-Object { Write-Host "Quitando $($_.Name)"; Remove-Item $_.FullName -Force }
+            ForEach-Object { Write-Host "Removing $($_.Name)"; Remove-Item $_.FullName -Force }
           Copy-Item dist/installer/*.exe build/ -Force
           $zip = "build/EasyPDF-$env:VERSION-windows-x64-portable.zip"
           Remove-Item $zip -ErrorAction SilentlyContinue
@@ -105,31 +105,31 @@ jobs:
           path: build/*
           if-no-files-found: error
 
-      - name: Guardar los binarios en la rama principal
-        if: github.event_name == 'workflow_dispatch' && inputs.publicar_en_build
+      - name: Store the binaries on the main branch
+        if: github.event_name == 'workflow_dispatch' && inputs.store_in_build
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f build
           if git diff --cached --quiet; then
-            echo "Sin cambios en build/"
+            echo "No changes in build/"
             exit 0
           fi
-          git commit -m "Compilados de Windows ${{ steps.version.outputs.version }} en build/
+          git commit -m "Add the Windows ${{ steps.version.outputs.version }} builds to build/
 
-          Instalador y version portable generados por GitHub Actions en
+          Installer and portable version produced by GitHub Actions on
           windows-latest (run ${{ github.run_id }})."
-          # El icono se regenera en cada compilacion: se descartan esos
-          # cambios sueltos o el rebase se niega a continuar.
+          # The icon is regenerated on every build: those stray changes are
+          # discarded or the rebase refuses to carry on.
           git restore --worktree . || git checkout -- .
-          for intento in 1 2 3; do
+          for attempt in 1 2 3; do
             git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
-            sleep $((intento * 5))
+            sleep $((attempt * 5))
           done
           exit 1
 
-      - name: Publicar la release
+      - name: Publish the release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:

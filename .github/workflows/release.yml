@@ -1,14 +1,14 @@
-name: Publicar release
+name: Publish release
 
-# Crea la etiqueta y la release de GitHub con los archivos que ya estan en
-# build/. Ademas de dar una pagina de descargas ordenada, GitHub cuenta cuantas
-# veces se baja cada archivo, y ese numero es el que muestra la web.
+# Creates the tag and the GitHub release from the files already in build/. As
+# well as giving a tidy downloads page, GitHub counts how many times each file
+# is downloaded, and that number is what the site shows.
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version a publicar (sin la v)"
+        description: "Version to publish (without the v)"
         type: string
         default: "1.6.2"
 
@@ -16,36 +16,36 @@ permissions:
   contents: write
 
 jobs:
-  publicar:
-    name: Crear la release
+  publish:
+    name: Create the release
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main          # se publica siempre desde main
-          fetch-depth: 0     # hace falta historia para el rebase del push
+          ref: main          # releases always come from main
+          fetch-depth: 0     # the push rebase needs the history
 
-      - name: Comprobar que la version coincide con la del paquete
+      - name: Check the version matches the package
         run: |
           set -e
-          declarada=$(grep -oP '__version__\s*=\s*"\K[^"]+' src/easypdf/__init__.py)
-          if [ "$declarada" != "${{ inputs.version }}" ]; then
-            echo "La version pedida (${{ inputs.version }}) no coincide con la"
-            echo "del paquete ($declarada). Actualiza src/easypdf/__init__.py"
-            echo "antes de publicar, o la web enlazaria archivos que no existen."
+          declared=$(grep -oP '__version__\s*=\s*"\K[^"]+' src/easypdf/__init__.py)
+          if [ "$declared" != "${{ inputs.version }}" ]; then
+            echo "The version asked for (${{ inputs.version }}) does not match the"
+            echo "package one ($declared). Update src/easypdf/__init__.py before"
+            echo "publishing, or the site would link files that do not exist."
             exit 1
           fi
 
-      - name: Comprobar que estan los binarios
+      - name: Check the binaries are there
         run: |
           set -e
           ls -lh build/
-          for patron in "build/EasyPDF-${{ inputs.version }}-Setup.exe" \
+          for wanted in "build/EasyPDF-${{ inputs.version }}-Setup.exe" \
                         "build/EasyPDF-${{ inputs.version }}-windows-x64-portable.zip" \
                         "build/EasyPDF-${{ inputs.version }}-linux-x64.tar.xz"; do
-            [ -f "$patron" ] || { echo "Falta $patron"; exit 1; }
+            [ -f "$wanted" ] || { echo "$wanted is missing"; exit 1; }
           done
 
       - uses: softprops/action-gh-release@v2
@@ -56,43 +56,31 @@ jobs:
           prerelease: false
           generate_release_notes: false
           body: |
-            ## Novedades de la 1.6.2
+            ## What is new in ${{ inputs.version }}
 
-            **Salir de un elemento ya no lo deja sin seleccionar**
+            See the commit history for the full list of changes.
 
-            Se hacia un texto, se salia del cuadro y `Ctrl+C` no copiaba nada:
-            al salir se soltaba tambien la seleccion, asi que no habia nada que
-            copiar. Pasaba igual con las tablas, los cuadros y las flechas.
+            ## Downloads
 
-            - `Esc` termina lo que estes haciendo y vuelve a Seleccionar, pero
-              deja seleccionado lo que acabas de hacer. Copiar, mover o borrar
-              justo despues ya funciona.
-            - El primer clic fuera de un texto o de una celda sirve para salir
-              del cuadro y lo deja seleccionado. El segundo, en una zona vacia,
-              ya suelta la seleccion, como en cualquier programa.
-            - `Esc` sigue tirando el trazo que se este dibujando a medias.
-
-            ## Descargas
-
-            | Archivo | Para |
+            | File | For |
             |---|---|
-            | `EasyPDF-${{ inputs.version }}-Setup.exe` | Windows 10 y 11 - instalador, sin permisos de administrador |
-            | `EasyPDF-${{ inputs.version }}-windows-x64-portable.zip` | Windows - portable, no instala nada |
-            | `EasyPDF-${{ inputs.version }}-linux-x64.tar.xz` | Linux 64 bits - portable |
+            | `EasyPDF-${{ inputs.version }}-Setup.exe` | Windows 10 and 11 - installer, no administrator rights needed |
+            | `EasyPDF-${{ inputs.version }}-windows-x64-portable.zip` | Windows - portable, installs nothing |
+            | `EasyPDF-${{ inputs.version }}-linux-x64.tar.xz` | Linux 64 bit - portable |
 
-            Tambien en **https://easypdf.surf**
+            Also at **https://easypdf.surf**
 
-            Los archivos `.sha256` sirven para comprobar que la descarga llego intacta.
+            The `.sha256` files let you check the download arrived intact.
           files: |
             build/EasyPDF-${{ inputs.version }}-Setup.exe
             build/EasyPDF-${{ inputs.version }}-windows-x64-portable.zip
             build/EasyPDF-${{ inputs.version }}-linux-x64.tar.xz
             build/*.sha256
 
-      # La web enlaza los archivos de la release por su nombre, asi que se
-      # regenera aqui: si no, easypdf.surf seguiria ofreciendo la version
-      # anterior aunque esta ya este publicada.
-      - name: Actualizar los enlaces de descarga de la web
+      # The site links the release files by name, so it is regenerated here:
+      # otherwise easypdf.surf would go on offering the previous version even
+      # though this one is already published.
+      - name: Update the download links on the site
         run: |
           set -e
           python tools/build_site.py
@@ -100,9 +88,9 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add site/
-            git commit -m "Web: enlaces de descarga de la ${{ inputs.version }}"
+            git commit -m "Site: download links for ${{ inputs.version }}"
             git pull --rebase origin main
             git push origin HEAD:main
           else
-            echo "La web ya enlazaba esta version, no hay nada que subir."
+            echo "The site already linked this version, there is nothing to push."
           fi
