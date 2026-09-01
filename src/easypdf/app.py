@@ -1,4 +1,4 @@
-"""Punto de entrada de la aplicacion."""
+"""Application entry point."""
 
 from __future__ import annotations
 
@@ -14,10 +14,10 @@ from .config import APP, ORG
 
 
 def _set_windows_app_id() -> None:
-    """Agrupa la ventana bajo su propio icono en la barra de tareas de Windows."""
-    if sys.platform != "win32":  # pragma: no cover - solo Windows
+    """Group the window under its own icon in the Windows taskbar."""
+    if sys.platform != "win32":  # pragma: no cover - Windows only
         return
-    try:  # pragma: no cover - solo Windows
+    try:  # pragma: no cover - Windows only
         import ctypes
 
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
@@ -30,9 +30,9 @@ def _set_windows_app_id() -> None:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="easypdf",
-        description="EasyPDF: lector de PDF con anotaciones sencillas.",
+        description="easypdf.surf: PDF reader with simple annotations.",
     )
-    parser.add_argument("archivo", nargs="?", help="PDF que se abrira al arrancar")
+    parser.add_argument("file", nargs="?", help="PDF to open on start-up")
     parser.add_argument(
         "--version", action="version", version=f"{__app_name__} {__version__}"
     )
@@ -40,7 +40,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def create_application(argv: list[str] | None = None) -> QApplication:
-    """Crea (o reutiliza) la QApplication con la configuracion de EasyPDF."""
+    """Create (or reuse) the QApplication with easypdf.surf's settings."""
     app = QApplication.instance()
     if app is None:
         app = QApplication(argv if argv is not None else sys.argv)
@@ -55,11 +55,11 @@ def create_application(argv: list[str] | None = None) -> QApplication:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Arranca la interfaz grafica. Devuelve el codigo de salida."""
+    """Start the graphical interface. Returns the exit code."""
     argv = list(sys.argv if argv is None else argv)
     args = parse_args(argv[1:])
 
-    if hasattr(Qt, "AA_UseHighDpiPixmaps"):  # Qt 6 ya lo hace por defecto
+    if hasattr(Qt, "AA_UseHighDpiPixmaps"):  # Qt 6 already does this
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     _set_windows_app_id()
 
