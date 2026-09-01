@@ -1,7 +1,7 @@
-"""Piezas para montar formularios.
+"""Pieces for building forms.
 
-Nada de esto necesita interfaz: son anotaciones normales colocadas unas
-respecto a otras.
+None of this needs an interface: they are ordinary annotations placed
+relative to one another.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from easypdf.model import Kind
 
 @pytest.fixture(autouse=True)
 def known_language():
-    """Las pruebas no dependen del idioma del sistema."""
+    """The tests must not depend on the system's language."""
     previous = language()
     set_language("en")
     yield
@@ -25,14 +25,14 @@ def known_language():
 def test_every_piece_builds():
     for key in ELEMENTS:
         pieces = build(key, 100.0, 200.0)
-        assert pieces, f"{key} no ha creado nada"
+        assert pieces, f"{key} created nothing"
         for ann in pieces:
             assert isinstance(ann.kind, Kind)
-            assert not ann.is_empty(), f"{key} ha creado una anotacion vacia"
+            assert not ann.is_empty(), f"{key} created an empty annotation"
 
 
 def test_every_piece_starts_where_it_is_told():
-    """Se insertan en el sitio que elija el usuario, no en una esquina fija."""
+    """They go in wherever the user chooses, not in a fixed corner."""
     for key in ELEMENTS:
         pieces = build(key, 100.0, 200.0)
         x0 = min(min(a.bounds()[0], a.bounds()[2]) for a in pieces)
@@ -43,7 +43,7 @@ def test_every_piece_starts_where_it_is_told():
 
 def test_an_unknown_piece_complains():
     with pytest.raises(KeyError):
-        build("no-existe", 0.0, 0.0)
+        build("no-such-piece", 0.0, 0.0)
 
 
 def test_the_catalogue_is_grouped_and_translated():
@@ -63,19 +63,19 @@ def test_the_names_change_with_the_language():
 
 
 def test_the_content_follows_the_active_language_too():
-    """Lo que se escribe en el documento, no solo el nombre de la pieza."""
-    textos_en = [a.text for a in build("place_date", 0, 0) if a.kind is Kind.TEXT]
+    """What gets written into the document, not just the name of the piece."""
+    texts_en = [a.text for a in build("place_date", 0, 0) if a.kind is Kind.TEXT]
     set_language("es")
-    textos_es = [a.text for a in build("place_date", 0, 0) if a.kind is Kind.TEXT]
-    assert "Place:" in textos_en and "Date:" in textos_en
-    assert "Lugar:" in textos_es or "Fecha:" in textos_es
+    texts_es = [a.text for a in build("place_date", 0, 0) if a.kind is Kind.TEXT]
+    assert "Place:" in texts_en and "Date:" in texts_en
+    assert "Lugar:" in texts_es or "Fecha:" in texts_es
 
 
 def test_the_tick_box_is_a_square_with_its_label():
     pieces = build("checkbox", 0.0, 0.0)
     box = next(a for a in pieces if a.kind is Kind.RECT)
     x0, y0, x1, y1 = box.rect
-    assert (x1 - x0) == pytest.approx(y1 - y0), "la casilla tiene que ser cuadrada"
+    assert (x1 - x0) == pytest.approx(y1 - y0), "the tick box has to be square"
     assert any(a.kind is Kind.TEXT and a.text for a in pieces)
 
 
@@ -83,15 +83,15 @@ def test_the_tick_box_list_has_four():
     pieces = build("checklist", 0.0, 0.0)
     assert sum(1 for a in pieces if a.kind is Kind.RECT) == 4
     labels = [a.text for a in pieces if a.kind is Kind.TEXT]
-    assert len(labels) == 4 and len(set(labels)) == 4   # numeradas, no repetidas
+    assert len(labels) == 4 and len(set(labels)) == 4   # numbered, not repeated
 
 
 def test_the_table_comes_with_headers_and_empty_rows():
-    tabla = build("table", 0.0, 0.0)[0]
-    assert tabla.kind is Kind.TABLE
-    assert (tabla.rows, tabla.cols) == (4, 3)
-    assert all(tabla.cells[:3]), "la primera fila son las cabeceras"
-    assert not any(tabla.cells[3:]), "el resto se rellena a mano"
+    table = build("table", 0.0, 0.0)[0]
+    assert table.kind is Kind.TABLE
+    assert (table.rows, table.cols) == (4, 3)
+    assert all(table.cells[:3]), "the first row is the headers"
+    assert not any(table.cells[3:]), "the rest is filled in by hand"
 
 
 def test_the_requested_width_is_honoured():

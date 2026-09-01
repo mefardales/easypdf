@@ -1,4 +1,4 @@
-"""Pruebas de las plantillas reutilizables."""
+"""Tests of the reusable templates."""
 
 import json
 
@@ -78,26 +78,26 @@ def test_empty_annotations_are_not_saved(tmp_path):
 
 
 def test_a_broken_file_does_not_break_the_listing(tmp_path, annotations):
-    save_template(str(tmp_path), "Buena", annotations)
-    (tmp_path / ("rota" + EXTENSION)).write_text("{esto no es json", encoding="utf-8")
-    assert [t.name for t in list_templates(str(tmp_path))] == ["Buena"]
+    save_template(str(tmp_path), "Good", annotations)
+    (tmp_path / ("broken" + EXTENSION)).write_text("{this is not json", encoding="utf-8")
+    assert [t.name for t in list_templates(str(tmp_path))] == ["Good"]
     with pytest.raises(TemplateError):
-        load_template(str(tmp_path / ("rota" + EXTENSION)))
+        load_template(str(tmp_path / ("broken" + EXTENSION)))
 
 
 def test_safe_file_name():
     assert safe_filename("Factura / ACME: 2026") == "Factura ACME 2026"
-    assert safe_filename("   ") == "plantilla"
+    assert safe_filename("   ") == "template"
 
 
 def test_apply_starting_at_a_given_page(annotations):
-    movidas = shift_to_page(annotations, first_page=2, page_count=5)
-    assert [a.page for a in movidas] == [2, 2, 3, 3]
-    # no se sale del documento
+    moved = shift_to_page(annotations, first_page=2, page_count=5)
+    assert [a.page for a in moved] == [2, 2, 3, 3]
+    # it never runs off the end of the document
     assert [a.page for a in shift_to_page(annotations, 4, 5)] == [4, 4, 4, 4]
-    # y son copias: la plantilla original no se toca
+    # and they are copies: the original template is untouched
     assert annotations[0].page == 0
-    assert movidas[0].id != annotations[0].id
+    assert moved[0].id != annotations[0].id
 
 
 def test_without_a_name_it_is_not_saved(tmp_path, annotations):
@@ -106,7 +106,7 @@ def test_without_a_name_it_is_not_saved(tmp_path, annotations):
 
 
 def test_empty_list_when_there_is_no_folder(tmp_path):
-    assert list_templates(str(tmp_path / "no-existe")) == []
+    assert list_templates(str(tmp_path / "no-such-folder")) == []
 
 
 # --------------------------------------------------------------------------
@@ -135,7 +135,7 @@ def test_an_unknown_category_falls_into_other(tmp_path):
 
 
 def test_an_old_template_without_a_category_is_still_read(tmp_path):
-    """Los archivos guardados antes de que existieran los tipos valen igual."""
+    """Files saved before the categories existed still work."""
     import json
 
     from easypdf.templates import EXTENSION, list_templates
@@ -166,24 +166,24 @@ def test_the_builtin_templates_are_complete():
 
 
 def test_a_builtin_template_can_be_loaded():
-    """Se busca por tipo, no por nombre: el nombre cambia con el idioma."""
+    """It is looked up by category, not by name: the name follows the language."""
     from easypdf.templates import builtin_infos, load_builtin
 
-    informe = next(i for i in builtin_infos() if i.category == "report")
-    name, page_items, annotations = load_builtin(informe.name)
-    assert name == informe.name
+    report = next(i for i in builtin_infos() if i.category == "report")
+    name, page_items, annotations = load_builtin(report.name)
+    assert name == report.name
     assert page_items == [(595.0, 842.0)]
     assert any(a.kind is Kind.TEXT for a in annotations)
 
 
 def test_loading_a_builtin_gives_independent_copies():
-    """Usarla dos veces no puede compartir las mismas anotaciones."""
+    """Using one twice must not share the same annotations."""
     from easypdf.templates import builtin_infos, load_builtin
 
-    alguna = builtin_infos()[1].name
-    _n1, _p1, unas = load_builtin(alguna)
-    _n2, _p2, others = load_builtin(alguna)
-    unas[0].text = "cambiado"
+    some_name = builtin_infos()[1].name
+    _n1, _p1, ones = load_builtin(some_name)
+    _n2, _p2, others = load_builtin(some_name)
+    ones[0].text = "cambiado"
     assert others[0].text != "cambiado"
 
 
@@ -191,10 +191,10 @@ def test_asking_for_a_missing_builtin_complains():
     from easypdf.templates import TemplateError, load_builtin
 
     with pytest.raises(TemplateError):
-        load_builtin("no existe")
+        load_builtin("no such template")
 
 
-# -- portapapeles ---------------------------------------------------------
+# -- the clipboard --------------------------------------------------------
 def test_what_is_copied_comes_back_unchanged():
     from easypdf.ui.clipboard import decode, encode
 
@@ -213,31 +213,31 @@ def test_what_is_copied_comes_back_unchanged():
 def test_another_programs_text_is_not_read_as_annotations():
     from easypdf.ui.clipboard import decode
 
-    assert decode("una nota cualquiera") == []
+    assert decode("just some note") == []
     assert decode("") == []
-    assert decode('{"otra": "cosa"}') == []
+    assert decode('{"something": "else"}') == []
     assert decode('[1, 2, 3]') == []
 
 
 def test_one_broken_annotation_does_not_sink_the_rest():
-    """Si una entrada esta mal, se salta y se pegan las que si valen."""
+    """If one entry is bad, it is skipped and the good ones are still pasted."""
     import json
 
     from easypdf.ui.clipboard import decode, encode
 
     data = json.loads(encode([Annotation(kind=Kind.RECT, page=0)]))
-    data["annotations"].insert(0, {"kind": "esto-no-existe"})
-    read_ones = decode(json.dumps(data))
-    assert len(read_ones) == 1
-    assert read_ones[0].kind is Kind.RECT
+    data["annotations"].insert(0, {"kind": "no-such-kind"})
+    read_back = decode(json.dumps(data))
+    assert len(read_back) == 1
+    assert read_back[0].kind is Kind.RECT
 
 
 def test_copying_does_not_leave_the_program_crashing_on_exit(tmp_path):
-    """Un QMimeData creado en Python se lo quedan Qt y Python a la vez.
+    """A QMimeData built in Python is owned by Qt and by Python at once.
 
-    Los dos lo borran, y el programa se caia con un fallo de segmentacion al
-    cerrarse en cuanto se hubiera copiado algo. No se puede comprobar dentro
-    de este proceso: hay que abrir uno aparte y mirar como termina.
+    Both free it, and the program crashed with a segmentation fault on exit as
+    soon as anything had been copied. It cannot be checked inside this
+    process: a separate one has to be started and its exit watched.
     """
     import os
     import subprocess
@@ -245,8 +245,8 @@ def test_copying_does_not_leave_the_program_crashing_on_exit(tmp_path):
     import textwrap
 
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    guion = tmp_path / "copiar.py"
-    guion.write_text(textwrap.dedent(f"""
+    script = tmp_path / "copy_check.py"
+    script.write_text(textwrap.dedent(f"""
         import sys
         sys.path.insert(0, {os.path.join(root, "src")!r})
         from PySide6.QtWidgets import QApplication
@@ -256,9 +256,9 @@ def test_copying_does_not_leave_the_program_crashing_on_exit(tmp_path):
         copy_annotations([Annotation(kind=Kind.RECT, page=0, rect=(1.0, 2.0, 3.0, 4.0))])
         assert len(clipboard_annotations()) == 1
     """))
-    entorno = dict(os.environ, QT_QPA_PLATFORM="offscreen")
-    fin = subprocess.run([sys.executable, str(guion)], env=entorno,
-                         capture_output=True, timeout=120)
-    assert fin.returncode == 0, (
-        f"el proceso termino con {fin.returncode}: {fin.stderr.decode()[-400:]}"
+    env = dict(os.environ, QT_QPA_PLATFORM="offscreen")
+    result = subprocess.run([sys.executable, str(script)], env=env,
+                            capture_output=True, timeout=120)
+    assert result.returncode == 0, (
+        f"the process exited with {result.returncode}: {result.stderr.decode()[-400:]}"
     )

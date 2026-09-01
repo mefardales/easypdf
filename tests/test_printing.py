@@ -1,4 +1,4 @@
-"""Pruebas de la salida de impresion (imprimiendo a un PDF)."""
+"""Tests of the print output (printing to a PDF)."""
 
 import pymupdf
 import pytest
@@ -19,7 +19,7 @@ from easypdf.printing import (  # noqa: E402
 
 
 def _printer(path, dpi: int = 150) -> QPrinter:
-    """Impresora a un PDF. Con 150 ppp las pruebas son rapidas en cualquier SO."""
+    """A printer that writes a PDF. At 150 dpi the tests are quick on any OS."""
     printer = QPrinter(QPrinter.HighResolution)
     printer.setOutputFormat(QPrinter.PdfFormat)
     printer.setOutputFileName(str(path))
@@ -50,7 +50,7 @@ def test_printing_includes_the_annotations(qapp, tmp_path, sample_pdf_bytes):
     output = tmp_path / "con-anotacion.pdf"
     assert render_to_printer(data, _printer(output), pages=[0])
     pix = pymupdf.open(str(output))[0].get_pixmap()
-    # Debe haber pixeles claramente rojos en la hoja impresa.
+    # There must be clearly red pixels on the printed sheet.
     rojos = 0
     for offset in range(0, len(pix.samples) - 3, pix.n):
         r, g, b = pix.samples[offset], pix.samples[offset + 1], pix.samples[offset + 2]
@@ -67,12 +67,12 @@ def test_with_no_pages_it_does_not_print(qapp, tmp_path, sample_pdf_bytes):
 
 def test_page_scale_honours_the_caps():
     a4 = (595.0, 842.0)
-    # Hoja pequena: manda el ajuste a la hoja
+    # Small sheet: fitting to the sheet wins
     assert page_scale(*a4, 595.0, 842.0) == pytest.approx(1.0)
-    # Impresora de 1200 ppp: se limita a MAX_PRINT_DPI
+    # A 1200 dpi printer: capped at MAX_PRINT_DPI
     enorme = (595.0 * 1200 / 72, 842.0 * 1200 / 72)
     assert page_scale(*a4, *enorme) == pytest.approx(MAX_PRINT_DPI / 72.0)
-    # Un plano enorme (1x1,5 m) a 300 ppp serian 145 MP: se recorta la escala
+    # A huge plan (1x1.5 m) at 300 dpi would be 145 MP: the scale is trimmed
     plano = (2835.0, 4252.0)   # puntos PDF
     escala = page_scale(*plano, 2835.0 * 1200 / 72, 4252.0 * 1200 / 72)
     assert escala < MAX_PRINT_DPI / 72.0

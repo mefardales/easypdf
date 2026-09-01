@@ -1,4 +1,4 @@
-"""Pruebas de la traduccion modelo -> anotacion PDF."""
+"""Tests of the model -> PDF annotation translation."""
 
 import pymupdf
 import pytest
@@ -9,10 +9,10 @@ from easypdf.model import Align, Annotation, Font, Kind
 
 @pytest.fixture()
 def document():
-    """Documento de una pagina.
+    """A one page document.
 
-    Se conserva la referencia a la pagina: si PyMuPDF la libera, las
-    anotaciones creadas dejan de estar ligadas a ella.
+    The reference to the page is kept: if PyMuPDF frees it, the annotations
+    created stop being tied to it.
     """
     doc = pymupdf.open()
     page = doc.new_page()
@@ -55,26 +55,26 @@ def test_colours_and_opacity(document):
 def test_empty_ones_and_missing_pages_are_ignored(document):
     doc, _page = document
     annotations = [
-        Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 11, 11)),   # demasiado pequena
-        Annotation(kind=Kind.RECT, page=7, rect=(10, 10, 90, 90)),   # pagina inexistente
-        Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 90, 90)),   # valida
+        Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 11, 11)),   # too small
+        Annotation(kind=Kind.RECT, page=7, rect=(10, 10, 90, 90)),   # no such page
+        Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 90, 90)),   # valid
     ]
     assert apply_annotations(doc, annotations) == 1
 
 
 def test_a_rotated_page_keeps_the_position(document):
-    """Lo dibujado sobre una pagina girada se guarda donde el usuario lo ve."""
+    """What is drawn on a rotated page is stored where the user sees it."""
     doc, page = document
     page.set_rotation(90)
-    rect_visto = (100, 50, 300, 150)
+    seen_rect = (100, 50, 300, 150)
     apply_annotations(
         doc,
-        [Annotation(kind=Kind.RECT, page=0, rect=rect_visto, color=(1.0, 0.0, 0.0), width=4.0)],
+        [Annotation(kind=Kind.RECT, page=0, rect=seen_rect, color=(1.0, 0.0, 0.0), width=4.0)],
     )
     assert len(list(page.annots())) == 1
-    # El render es lo que ve el usuario: el trazo rojo cae en el borde pedido.
+    # The render is what the user sees: the red stroke lands on the edge asked for.
     pix = page.get_pixmap(annots=True)
-    x, y = int(rect_visto[0]) + 2, int(rect_visto[1]) + 1
+    x, y = int(seen_rect[0]) + 2, int(seen_rect[1]) + 1
     offset = y * pix.stride + x * pix.n
     rojo, verde, azul = pix.samples[offset], pix.samples[offset + 1], pix.samples[offset + 2]
     assert rojo > 180 and verde < 90 and azul < 90
@@ -89,7 +89,7 @@ def test_an_unknown_kind_fails(document):
 
 
 def test_the_arrow_carries_its_own_head(document):
-    """La punta es un triangulo propio: la estandar del PDF sale gigante."""
+    """The head is a triangle of our own: the PDF standard one comes out huge."""
     doc, page = document
     ann = Annotation(kind=Kind.ARROW, page=0, p1=(50, 50), p2=(250, 50), width=4.0)
     apply_annotations(doc, [ann])
@@ -98,29 +98,29 @@ def test_the_arrow_carries_its_own_head(document):
 
     from easypdf.model import arrow_head
 
-    _base, punta, left, right = arrow_head(ann.p1, ann.p2, ann.width)
-    length = punta[0] - _base[0]
+    _base, tip, left, right = arrow_head(ann.p1, ann.p2, ann.width)
+    length = tip[0] - _base[0]
     width = right[1] - left[1]
-    # con grosor 4 la punta estandar del PDF mediria unos 40 pt de largo
+    # at width 4 the PDF's standard head would be some 40 pt long
     assert 15 < length < 25
     assert abs(width) == pytest.approx(length, rel=0.1)
-    poligono = list(page.annots())[1]
-    assert poligono.colors["fill"] == [pytest.approx(c) for c in ann.color]
+    polygon = list(page.annots())[1]
+    assert polygon.colors["fill"] == [pytest.approx(c) for c in ann.color]
 
 
 def test_the_table_is_stored_as_a_grid_plus_texts(document):
     doc, page = document
-    tabla = Annotation(
+    table = Annotation(
         kind=Kind.TABLE, page=0, rect=(40, 40, 340, 160), rows=2, cols=3,
         cells=["Concepto", "Cantidad", "Importe", "Camisetas", "12", ""],
         font_size=10,
     )
-    apply_annotations(doc, [tabla])
+    apply_annotations(doc, [table])
     annotations = list(page.annots())
-    tipos = [a.type[1] for a in annotations]
-    # una tinta con toda la rejilla y un texto por celda con contenido
-    assert tipos[0] == "Ink"
-    assert tipos.count("FreeText") == 5
+    kinds = [a.type[1] for a in annotations]
+    # one ink with the whole grid, and one text per cell that has content
+    assert kinds[0] == "Ink"
+    assert kinds.count("FreeText") == 5
     contents = [a.info.get("content", "") for a in annotations if a.type[1] == "FreeText"]
     assert "Concepto" in contents and "12" in contents
 
@@ -149,14 +149,14 @@ def test_font_code(family, bold_flag, italic_flag, expected):
 
 
 def test_bold_and_italic_reach_the_pdf():
-    """PyMuPDF ignora las variantes en texto normal: hay que usar el enriquecido."""
+    """PyMuPDF ignores the variants in plain text: rich text has to be used."""
 
-    def tinta(**estilo):
+    def ink(**style):
         doc = pymupdf.open()
         page = doc.new_page(width=340, height=80)
         apply_annotations(doc, [Annotation(
             kind=Kind.TEXT, page=0, rect=(20, 20, 320, 70), text="Hamburguesa 123",
-            font_size=18, color=(0, 0, 0), width=0, **estilo,
+            font_size=18, color=(0, 0, 0), width=0, **style,
         )])
         pix = page.get_pixmap(annots=True)
         oscuros = sum(
@@ -165,10 +165,10 @@ def test_bold_and_italic_reach_the_pdf():
         doc.close()
         return oscuros
 
-    normal = tinta()
+    normal = ink()
     assert normal > 0
-    assert tinta(bold=True) > normal * 1.15
-    assert tinta(font=Font.MONO) != normal
+    assert ink(bold=True) > normal * 1.15
+    assert ink(font=Font.MONO) != normal
 
 
 def test_alignment_is_stored(document):
@@ -190,7 +190,7 @@ def test_the_image_is_embedded_in_the_page(document, sample_image_bytes):
     )])
     images = page.get_images()
     assert len(images) == 1
-    # la imagen no es una anotacion: se dibuja en la pagina y se imprime siempre
+    # the image is not an annotation: it is drawn on the page and always prints
     assert list(page.annots()) == []
 
 
@@ -201,12 +201,12 @@ def test_an_image_without_data_is_ignored(document):
     assert apply_annotations(doc, [ann]) == 0
 
 
-# -- la goma borra de verdad ---------------------------------------------
+# -- the eraser really erases --------------------------------------------
 def test_the_eraser_removes_the_text_from_the_file_not_just_covers_it():
-    """Pintar de blanco no vale: el texto tapado se seguia pudiendo copiar.
+    """Painting white is not enough: covered text could still be copied.
 
-    Quien borra un dato confidencial de un PDF se cree a salvo; si lo unico
-    que hay encima es pintura, cualquiera lo selecciona y lo lee.
+    Anyone rubbing a confidential figure out of a PDF believes it is gone; if
+    all that sits on top is paint, anybody can select it and read it.
     """
     doc = pymupdf.open()
     page = doc.new_page()
@@ -230,7 +230,7 @@ def test_the_eraser_removes_the_text_from_the_file_not_just_covers_it():
 
 
 def test_the_eraser_stroke_is_not_written_as_a_drawing():
-    """La goma hace su trabajo borrando; no se guarda como una raya blanca."""
+    """The eraser does its job by removing; it is not stored as a white line."""
     doc = pymupdf.open()
     doc.new_page().insert_text((72, 120), "algo", fontsize=14)
     data = doc.tobytes()
@@ -246,7 +246,7 @@ def test_the_eraser_stroke_is_not_written_as_a_drawing():
 
 
 def test_what_is_drawn_after_erasing_survives():
-    """Se borra primero y se dibuja despues: si no, la goma se lo llevaria."""
+    """Erasing comes first and drawing after: otherwise the eraser would take it."""
     doc = pymupdf.open()
     doc.new_page().insert_text((72, 120), "fuera", fontsize=14)
     data = doc.tobytes()
@@ -257,7 +257,7 @@ def test_what_is_drawn_after_erasing_survives():
                       strokes=[[(60.0, 115.0), (240.0, 115.0)]])
     box = Annotation(kind=Kind.RECT, page=0, rect=(60.0, 100.0, 240.0, 140.0))
     assert apply_annotations(doc, [eraser, box]) == 1
-    assert len(list(doc[0].annots())) == 1        # la caja, encima de lo borrado
+    assert len(list(doc[0].annots())) == 1        # the box, on top of what was erased
     doc.close()
 
 

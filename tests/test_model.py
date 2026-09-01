@@ -1,6 +1,6 @@
 import pytest
 
-"""Pruebas del modelo de anotaciones."""
+"""Tests of the annotation model."""
 
 from easypdf.model import Annotation, AnnotationStore, Kind
 
@@ -62,45 +62,45 @@ def test_every_kind_has_a_readable_label():
 
 
 def test_a_table_lays_out_its_cells():
-    tabla = Annotation(kind=Kind.TABLE, page=0, rect=(10, 20, 110, 80), rows=2, cols=4)
-    cells = tabla.cell_rects()
+    table = Annotation(kind=Kind.TABLE, page=0, rect=(10, 20, 110, 80), rows=2, cols=4)
+    cells = table.cell_rects()
     assert len(cells) == 8
     assert cells[0] == (10, 20, 35, 50)
     assert cells[-1] == (85, 50, 110, 80)
-    # el borde mas las separaciones interiores
-    assert len(tabla.grid_lines()) == (2 + 1) + (4 + 1)
+    # the border plus the inner dividers
+    assert len(table.grid_lines()) == (2 + 1) + (4 + 1)
 
 
 def test_a_table_fits_the_texts_to_the_cell_count():
-    tabla = Annotation(kind=Kind.TABLE, page=0, rows=2, cols=2, cells=["a", "b", "c", "d", "e"])
-    assert tabla.normalized_cells() == ["a", "b", "c", "d"]
-    tabla.cells = ["a"]
-    assert tabla.normalized_cells() == ["a", "", "", ""]
+    table = Annotation(kind=Kind.TABLE, page=0, rows=2, cols=2, cells=["a", "b", "c", "d", "e"])
+    assert table.normalized_cells() == ["a", "b", "c", "d"]
+    table.cells = ["a"]
+    assert table.normalized_cells() == ["a", "", "", ""]
 
 
 def test_the_arrow_head_grows_with_width_but_never_exceeds_the_line():
     from easypdf.model import arrow_head
 
-    base_fina, punta, left, right = arrow_head((0, 0), (100, 0), 1.0)
-    largo_fino = punta[0] - base_fina[0]
-    base_gruesa, punta, _, _ = arrow_head((0, 0), (100, 0), 6.0)
-    assert (punta[0] - base_gruesa[0]) > largo_fino
-    assert abs(left[1] - right[1]) == pytest.approx(largo_fino, rel=0.05)
-    # en una linea muy corta la punta no puede ser mas larga que la linea
-    base_corta, punta_corta, _, _ = arrow_head((0, 0), (6, 0), 6.0)
-    assert base_corta[0] >= 0.0
+    thin_base, tip, left, right = arrow_head((0, 0), (100, 0), 1.0)
+    thin_length = tip[0] - thin_base[0]
+    thick_base, tip, _, _ = arrow_head((0, 0), (100, 0), 6.0)
+    assert (tip[0] - thick_base[0]) > thin_length
+    assert abs(left[1] - right[1]) == pytest.approx(thin_length, rel=0.05)
+    # on a very short line the head cannot be longer than the line itself
+    short_base, _short_tip, _, _ = arrow_head((0, 0), (6, 0), 6.0)
+    assert short_base[0] >= 0.0
 
 
 # --------------------------------------------------------------------------
-# Giro de pagina
+# Page rotation
 # --------------------------------------------------------------------------
 
 def test_rotate_point_takes_the_corners_where_they_belong():
     from easypdf.model import rotate_point
 
     width, height = 600.0, 800.0
-    # Girando 90 grados en horario, la esquina superior izquierda pasa a ser
-    # la superior derecha de una pagina que ahora mide 800x600.
+    # Turning 90 degrees clockwise, the top left corner becomes the top right
+    # of a page that now measures 800x600.
     assert rotate_point((0.0, 0.0), 90, width, height) == (800.0, 0.0)
     assert rotate_point((600.0, 0.0), 90, width, height) == (800.0, 600.0)
     assert rotate_point((0.0, 0.0), 180, width, height) == (600.0, 800.0)
@@ -114,7 +114,7 @@ def test_four_ninety_degree_turns_return_the_point_home():
     point, width, height = (123.0, 456.0), 600.0, 800.0
     for _ in range(4):
         point = rotate_point(point, 90, width, height)
-        width, height = height, width          # la pagina cambia de orientacion
+        width, height = height, width          # the page changes orientation
     assert point == (123.0, 456.0)
     assert (width, height) == (600.0, 800.0)
 
@@ -142,13 +142,13 @@ def test_rotate_annotation_does_nothing_at_zero():
 
 
 # --------------------------------------------------------------------------
-# Alineacion con guias
+# Snapping to guides
 # --------------------------------------------------------------------------
 
 def test_snap_offset_sticks_to_the_nearest_guide():
     from easypdf.model import snap_offset
 
-    # el borde izquierdo esta a 2 de la guia 100
+    # the left edge is 2 away from the guide at 100
     assert snap_offset([98.0, 148.0, 198.0], [0.0, 100.0, 300.0], 6.0) == (2.0, 100.0)
 
 
@@ -161,10 +161,10 @@ def test_snap_offset_does_nothing_when_far_away():
 def test_snap_offset_picks_the_closest_guide_of_several():
     from easypdf.model import snap_offset
 
-    # 97 esta a 3 de 100 y a 3 de 94: gana la primera que empata por orden
+    # 97 is 3 from 100 and 3 from 94: on a tie the first one wins
     delta, guide = snap_offset([97.0], [100.0, 94.0], 6.0)
     assert guide == 100.0 and delta == 3.0
-    # y si una esta claramente mas cerca, gana esa
+    # and if one is clearly nearer, that one wins
     assert snap_offset([97.0], [100.0, 96.0], 6.0) == (-1.0, 96.0)
 
 
@@ -175,7 +175,7 @@ def test_snap_offset_leaves_what_is_already_aligned():
 
 
 def test_moving_an_annotation_drags_everything_it_is_made_of():
-    """El rectangulo no basta: las lineas viven en sus extremos y la tinta en sus trazos."""
+    """The rectangle is not enough: lines live in their ends and ink in its strokes."""
     from easypdf.model import move_annotation
 
     ann = Annotation(

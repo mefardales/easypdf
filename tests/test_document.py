@@ -1,4 +1,4 @@
-"""Pruebas de la capa de documento."""
+"""Tests of the document layer."""
 
 import pymupdf
 import pytest
@@ -119,7 +119,7 @@ def test_add_duplicate_and_delete_pages(sample_pdf_bytes):
     assert doc.page_count == 3
     assert doc.add_blank_page(1) == 1
     assert doc.page_count == 4
-    assert "Pagina" not in doc.page_text(1)          # la nueva esta en blanco
+    assert "Pagina" not in doc.page_text(1)          # the new one is blank
     assert doc.duplicate_page(0) == 1
     assert doc.page_count == 5
     assert doc.page_text(0) == doc.page_text(1)
@@ -177,7 +177,7 @@ def test_rotating_a_page_changes_its_orientation():
     assert document.page_size(0) == (height, width)
 
     document.set_page_rotation(0, 180)
-    assert document.page_size(0) == (width, height)   # 180 no cambia el tamano
+    assert document.page_size(0) == (width, height)   # 180 does not change the size
 
     document.set_page_rotation(0, 0)
     assert document.page_rotation(0) == 0
@@ -214,7 +214,7 @@ def test_bookmarks_survive_saving(tmp_path):
     assert stored.bookmarks() == [("Resumen", 0), ("Anexo", 2)]
     stored.close()
 
-    # y cualquier lector los ve, porque son el indice estandar del PDF
+    # and any reader sees them, because they are the PDF's standard outline
     crudo = pymupdf.open(str(target))
     assert len(crudo.get_toc()) == 2
     crudo.close()
@@ -247,6 +247,7 @@ def test_take_notes_removes_the_notes_only_once(tmp_path):
     assert (page_item, text) == (0, "Ojo aqui")
     assert (round(x), round(y)) == (100, 100)
 
-    # ya no quedan en el documento: las lleva EasyPDF, y si no se duplicarian
+    # they are no longer in the document: EasyPDF carries them, otherwise they
+    # would end up duplicated
     assert document.take_notes() == []
     document.close()
