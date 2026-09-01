@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Genera assets/easypdf.ico y assets/easypdf.png.
+"""Builds assets/easypdf.ico and assets/easypdf.png.
 
-Hay dos fuentes posibles:
+There are two possible sources:
 
-1. **Tu propio dibujo**: deja una imagen cuadrada (idealmente 512x512 PNG con
-   fondo transparente) en ``assets/easypdf-original.png`` y se usara esa.
-2. **El icono dibujado por codigo** en ``easypdf.ui.icons`` (opcion por
-   defecto si no existe el archivo anterior).
+1. **Your own drawing**: leave a square image (ideally a 512x512 PNG with a
+   transparent background) at ``assets/easypdf-original.png`` and that is used.
+2. **The icon drawn in code** in ``easypdf.ui.icons`` (the default when the
+   file above is not there).
 
-En ambos casos la ventana, el ejecutable y el instalador acaban compartiendo
-exactamente la misma imagen.
+Either way the window, the executable and the installer end up sharing exactly
+the same image.
 
-Uso:  python tools/make_icon.py
+Usage:  python tools/make_icon.py
 """
 
 from __future__ import annotations
@@ -25,23 +25,23 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-#: Se toman los mismos tamanos que usa la ventana de la aplicacion.
+#: The same sizes the application window uses.
 SIZES = (16, 24, 32, 48, 64, 128, 256)
 
-#: Imagen propia opcional que tiene prioridad sobre el dibujo por codigo.
+#: Optional image of your own, which takes precedence over the drawn icon.
 SOURCE_NAME = "easypdf-original.png"
 
 
 def _squared(image):
-    """Centra la imagen en un lienzo cuadrado transparente."""
+    """Centre the image on a transparent square canvas."""
     from PIL import Image
 
     if image.width == image.height:
         return image
     side = max(image.width, image.height)
-    lienzo = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-    lienzo.paste(image, ((side - image.width) // 2, (side - image.height) // 2), image)
-    return lienzo
+    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    canvas.paste(image, ((side - image.width) // 2, (side - image.height) // 2), image)
+    return canvas
 
 
 def main() -> int:

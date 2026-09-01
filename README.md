@@ -78,7 +78,7 @@ idioma del sistema), sin cuentas, sin publicidad y sin conexion a internet.
 ## Capturas
 
 <p align="center">
-  <img src="docs/captura-principal.png" width="820" alt="Ventana principal de easypdf.surf">
+  <img src="docs/screenshot.png" width="820" alt="Ventana principal de easypdf.surf">
 </p>
 
 ## Guia rapida

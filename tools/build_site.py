@@ -330,7 +330,7 @@ def build_page(lang: str) -> str:
         "description": t["description"],
         "url": base,
         "downloadUrl": FILES["setup"],
-        "image": f"{DOMAIN}/captura.png",
+        "image": f"{DOMAIN}/screenshot.png",
         "license": "https://www.gnu.org/licenses/agpl-3.0.html",
         "isAccessibleForFree": True,
         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
@@ -411,7 +411,7 @@ def main() -> int:
         target = os.path.join(SITE, t["path"], "index.html")
         with open(target, "w", encoding="utf-8") as fh:
             fh.write(build_page(lang))
-        print(f"Escrito {target}")
+        print(f"Wrote {target}")
 
     robots = f"""User-agent: *
 Allow: /
@@ -452,9 +452,9 @@ Sitemap: {DOMAIN}/sitemap.xml
     }
     with open(os.path.join(SITE, "latest.json"), "w", encoding="utf-8") as fh:
         json.dump(last_tick, fh, ensure_ascii=False, indent=2)
-    print(f"Escrito latest.json (version {VERSION})")
+    print(f"Wrote latest.json (version {VERSION})")
 
-    print("Escritos robots.txt y sitemap.xml")
+    print("Wrote robots.txt and sitemap.xml")
     return 0
 
 

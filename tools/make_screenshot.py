@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Genera docs/captura-principal.png: la ventana de EasyPDF con un ejemplo.
+"""Builds docs/screenshot.png: the EasyPDF window with an example in it.
 
-Se dibuja siempre el mismo documento y las mismas anotaciones, asi que la
-captura del README se puede regenerar despues de cualquier cambio visual.
+The same document and the same annotations are drawn every time, so the
+README's screenshot can be regenerated after any visual change.
 
-Uso:  python tools/make_screenshot.py
+Usage:  python tools/make_screenshot.py
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-PARRAFOS = [
+PARAGRAPHS = [
     "Over the last quarter we reviewed the internal customer support procedures",
     "and cut the average response time by 34%. The team welcomed two new people",
     "and completed the training planned for the year.",
@@ -52,7 +52,7 @@ def build_sample_pdf(path: str, pages: int = 4) -> None:
             pymupdf.Point(72, 128), pymupdf.Point(523, 128), color=(0.8, 0.8, 0.8), width=1
         )
         y = 165
-        for line in PARRAFOS:
+        for line in PARAGRAPHS:
             page.insert_text((72, y), line, fontsize=11)
             y += 19
     doc.save(path)
@@ -71,20 +71,20 @@ def main() -> int:
     from easypdf.ui.page_view import Tool
 
     with tempfile.TemporaryDirectory() as tmp:
-        muestra = os.path.join(tmp, "informe.pdf")
-        build_sample_pdf(muestra)
+        sample = os.path.join(tmp, "report.pdf")
+        build_sample_pdf(sample)
 
         app = QApplication.instance() or QApplication([])
         window = MainWindow()
-        # Despues de crear la ventana: su __init__ aplica el idioma guardado en
-        # los ajustes del usuario, que aqui no interesa.
+        # After building the window: its __init__ applies the language stored
+        # in the user settings, which is of no interest here.
         set_language("en")
         window.retranslate()
         window.resize(1280, 860)
-        window.thumb_dock.setVisible(True)   # la captura siempre lo muestra
+        window.thumb_dock.setVisible(True)   # the screenshot always shows it
         window.show()
         QTest.qWaitForWindowExposed(window)
-        window.open_path(muestra)
+        window.open_path(sample)
         window.view.set_zoom(1.0)
         window.view.go_to_page(0)
         app.processEvents()
@@ -119,11 +119,11 @@ def main() -> int:
         QTest.qWait(800)
         app.processEvents()
 
-        target = os.path.join(ROOT, "docs", "captura-principal.png")
+        target = os.path.join(ROOT, "docs", "screenshot.png")
         os.makedirs(os.path.dirname(target), exist_ok=True)
         if not window.grab().save(target):
-            raise RuntimeError("no se pudo guardar la captura")
-        print(f"Escrito {target}")
+            raise RuntimeError("the screenshot could not be saved")
+        print(f"Wrote {target}")
 
         window._modified = False
         window.view.undo_stack.setClean()
