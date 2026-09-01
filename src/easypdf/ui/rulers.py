@@ -64,52 +64,52 @@ class Ruler(QWidget):
     # -- origen ----------------------------------------------------------
     def _origin_scene(self) -> float | None:
         """Coordenada de escena del cero: la esquina de la pagina actual."""
-        pagina = self._view.current_page_item()
-        if pagina is None:
+        page_item = self._view.current_page_item()
+        if page_item is None:
             return None
-        punto = pagina.scenePos()
-        return punto.x() if self._horizontal else punto.y()
+        point = page_item.scenePos()
+        return point.x() if self._horizontal else point.y()
 
     def value_at(self, pixel: float) -> float | None:
         """Medida (en la unidad activa) que corresponde a un pixel de la regla."""
-        origen = self._origin_scene()
-        if origen is None:
+        source = self._origin_scene()
+        if source is None:
             return None
         if self._horizontal:
-            escena = self._view.mapToScene(int(pixel), 0).x()
+            scene = self._view.mapToScene(int(pixel), 0).x()
         else:
-            escena = self._view.mapToScene(0, int(pixel)).y()
+            scene = self._view.mapToScene(0, int(pixel)).y()
         _menor, _mayor, por_unidad = self._step_pt()
-        return (escena - origen) / por_unidad
+        return (scene - source) / por_unidad
 
     # -- sacar guias -----------------------------------------------------
     def _valor_en_pagina(self, pos_global):
         """Coordenada de pagina que corresponde a un punto de la pantalla."""
-        vista = self._view
-        pagina = vista.current_page_item()
-        if pagina is None:
+        view = self._view
+        page_item = view.current_page_item()
+        if page_item is None:
             return None
-        en_vista = vista.viewport().mapFromGlobal(pos_global)
-        escena = vista.mapToScene(en_vista)
-        local = pagina.mapFromScene(escena)
+        en_vista = view.viewport().mapFromGlobal(pos_global)
+        scene = view.mapToScene(en_vista)
+        local = page_item.mapFromScene(scene)
         return local.y() if self._horizontal else local.x()
 
     def mousePressEvent(self, event) -> None:  # pragma: no cover - gesto de raton
         if event.button() != Qt.LeftButton:
             return
-        valor = self._valor_en_pagina(event.globalPosition().toPoint())
-        if valor is None:
+        value = self._valor_en_pagina(event.globalPosition().toPoint())
+        if value is None:
             return
         self._arrastrando = True
-        self._view.start_guide("h" if self._horizontal else "v", valor)
+        self._view.start_guide("h" if self._horizontal else "v", value)
         event.accept()
 
     def mouseMoveEvent(self, event) -> None:  # pragma: no cover - gesto de raton
         if not self._arrastrando:
             return
-        valor = self._valor_en_pagina(event.globalPosition().toPoint())
-        if valor is not None:
-            self._view.move_guide(valor)
+        value = self._valor_en_pagina(event.globalPosition().toPoint())
+        if value is not None:
+            self._view.move_guide(value)
         event.accept()
 
     def mouseReleaseEvent(self, event) -> None:  # pragma: no cover - gesto de raton
@@ -122,17 +122,17 @@ class Ruler(QWidget):
     # -- pintado ---------------------------------------------------------
     def paintEvent(self, event) -> None:  # pragma: no cover - dibujo
         painter = QPainter(self)
-        fondo = self.palette().window().color()
-        texto = self.palette().windowText().color()
-        painter.fillRect(self.rect(), fondo.lighter(104))
-        painter.setPen(QPen(fondo.darker(160), 1))
+        background = self.palette().window().color()
+        text = self.palette().windowText().color()
+        painter.fillRect(self.rect(), background.lighter(104))
+        painter.setPen(QPen(background.darker(160), 1))
         if self._horizontal:
             painter.drawLine(0, self.height() - 1, self.width(), self.height() - 1)
         else:
             painter.drawLine(self.width() - 1, 0, self.width() - 1, self.height())
 
-        origen = self._origin_scene()
-        if origen is None:
+        source = self._origin_scene()
+        if source is None:
             painter.end()
             return
 
@@ -141,12 +141,12 @@ class Ruler(QWidget):
             painter.end()
             return
         menor, mayor, por_unidad = self._step_pt()
-        largo = self.width() if self._horizontal else self.height()
+        length = self.width() if self._horizontal else self.height()
 
         # primer y ultimo valor visibles, en puntos PDF desde el origen
         desde = (self._view.mapToScene(0, 0).x() if self._horizontal
-                 else self._view.mapToScene(0, 0).y()) - origen
-        hasta = desde + largo / escala
+                 else self._view.mapToScene(0, 0).y()) - source
+        hasta = desde + length / escala
 
         fuente = QFont(painter.font())
         fuente.setPointSizeF(7.0)
@@ -154,41 +154,41 @@ class Ruler(QWidget):
 
         # si las marcas menores quedarian pegadas, solo se dibujan las mayores
         pintar_menores = menor * escala >= 3.0
-        paso = menor if pintar_menores else mayor
-        primera = int(desde // paso) - 1
-        ultima = int(hasta // paso) + 1
+        step = menor if pintar_menores else mayor
+        primera = int(desde // step) - 1
+        ultima = int(hasta // step) + 1
         for i in range(primera, ultima + 1):
-            valor_pt = i * paso
-            pixel = (valor_pt + origen)
+            valor_pt = i * step
+            pixel = (valor_pt + source)
             pixel = (self._view.mapFromScene(QPointF(pixel, 0)).x() if self._horizontal
                      else self._view.mapFromScene(QPointF(0, pixel)).y())
-            if pixel < -20 or pixel > largo + 20:
+            if pixel < -20 or pixel > length + 20:
                 continue
             es_mayor = abs((valor_pt / mayor) - round(valor_pt / mayor)) < 1e-6
-            alto = (self.height() if self._horizontal else self.width())
-            largo_marca = alto * (0.55 if es_mayor else 0.28)
-            painter.setPen(QPen(texto if es_mayor else texto.lighter(160), 1))
+            height = (self.height() if self._horizontal else self.width())
+            largo_marca = height * (0.55 if es_mayor else 0.28)
+            painter.setPen(QPen(text if es_mayor else text.lighter(160), 1))
             if self._horizontal:
-                painter.drawLine(int(pixel), int(alto - largo_marca), int(pixel), alto - 1)
+                painter.drawLine(int(pixel), int(height - largo_marca), int(pixel), height - 1)
             else:
-                painter.drawLine(int(alto - largo_marca), int(pixel), alto - 1, int(pixel))
+                painter.drawLine(int(height - largo_marca), int(pixel), height - 1, int(pixel))
             if es_mayor:
-                etiqueta = f"{round(valor_pt / por_unidad):g}"
-                painter.setPen(QPen(texto, 1))
+                label = f"{round(valor_pt / por_unidad):g}"
+                painter.setPen(QPen(text, 1))
                 if self._horizontal:
-                    painter.drawText(QRectF(pixel + 2, 0, 40, alto * 0.6),
-                                     Qt.AlignLeft | Qt.AlignVCenter, etiqueta)
+                    painter.drawText(QRectF(pixel + 2, 0, 40, height * 0.6),
+                                     Qt.AlignLeft | Qt.AlignVCenter, label)
                 else:
                     painter.save()
                     painter.translate(0, pixel - 2)
                     painter.rotate(-90)
-                    painter.drawText(QRectF(0, 0, 40, alto * 0.6),
-                                     Qt.AlignLeft | Qt.AlignVCenter, etiqueta)
+                    painter.drawText(QRectF(0, 0, 40, height * 0.6),
+                                     Qt.AlignLeft | Qt.AlignVCenter, label)
                     painter.restore()
 
         # Marcas de las guias ya colocadas, para saber donde estan sin
         # tener que mirar la pagina.
-        self._pintar_guias(painter, origen, escala, largo, por_unidad)
+        self._pintar_guias(painter, source, escala, length, por_unidad)
 
         # marca de donde esta el raton
         if self._mouse >= 0:
@@ -199,66 +199,66 @@ class Ruler(QWidget):
                 painter.drawLine(0, int(self._mouse), self.width(), int(self._mouse))
         painter.end()
 
-    def _guide_pixel(self, valor: float, origen: float) -> float:
+    def _guide_pixel(self, value: float, source: float) -> float:
         """Pixel de la regla que corresponde a una coordenada de pagina."""
-        escena = origen + valor
-        punto = QPointF(escena, 0) if self._horizontal else QPointF(0, escena)
-        p = self._view.mapFromScene(punto)
+        scene = source + value
+        point = QPointF(scene, 0) if self._horizontal else QPointF(0, scene)
+        p = self._view.mapFromScene(point)
         return p.x() if self._horizontal else p.y()
 
-    def _pintar_guias(self, painter, origen, escala, largo, por_unidad) -> None:
+    def _pintar_guias(self, painter, source, escala, length, por_unidad) -> None:
         """Dibuja donde cae cada guia, y la medida de la que se arrastra."""
-        vista = self._view
-        pagina = vista.current_page_item()
-        if pagina is None:
+        view = self._view
+        page_item = view.current_page_item()
+        if page_item is None:
             return
-        numero = vista.current_page
+        number = view.current_page
         # Una guia horizontal ("h") es una linea a lo ancho: su posicion se
         # lee en la regla vertical. Y al reves. Por eso el eje va cruzado.
         eje = "v" if self._horizontal else "h"
         # Las guias son de todo el documento: se ven en cualquier pagina.
-        colocadas = list(vista.rulers_guides.get(eje, []))
+        placed = list(view.rulers_guides.get(eje, []))
 
-        arrastrando = None
-        arrastre = getattr(vista, "_guide_drag", None)
-        if arrastre is not None and arrastre[0] == eje and arrastre[1] == numero:
-            arrastrando = arrastre[2]
-            indice = arrastre[3]
-            if indice is not None and 0 <= indice < len(colocadas):
-                colocadas.pop(indice)      # se dibuja en su sitio nuevo
+        dragging = None
+        drag = getattr(view, "_guide_drag", None)
+        if drag is not None and drag[0] == eje and drag[1] == number:
+            dragging = drag[2]
+            index = drag[3]
+            if index is not None and 0 <= index < len(placed):
+                placed.pop(index)      # se dibuja en su sitio nuevo
 
-        grosor = self.height() if self._horizontal else self.width()
-        for valor in colocadas:
-            pixel = self._guide_pixel(valor, origen)
-            if -4 <= pixel <= largo + 4:
+        thickness = self.height() if self._horizontal else self.width()
+        for value in placed:
+            pixel = self._guide_pixel(value, source)
+            if -4 <= pixel <= length + 4:
                 painter.setPen(QPen(QColor("#00a3c4"), 2))
                 if self._horizontal:
-                    painter.drawLine(int(pixel), 2, int(pixel), grosor - 2)
+                    painter.drawLine(int(pixel), 2, int(pixel), thickness - 2)
                 else:
-                    painter.drawLine(2, int(pixel), grosor - 2, int(pixel))
+                    painter.drawLine(2, int(pixel), thickness - 2, int(pixel))
 
-        if arrastrando is None:
+        if dragging is None:
             return
         # La que se esta moviendo: marca mas visible y su medida al lado,
         # para poder colocarla donde toca sin adivinar.
-        pixel = self._guide_pixel(arrastrando, origen)
+        pixel = self._guide_pixel(dragging, source)
         painter.setPen(QPen(QColor("#d81b1b"), 2))
         if self._horizontal:
-            painter.drawLine(int(pixel), 0, int(pixel), grosor)
+            painter.drawLine(int(pixel), 0, int(pixel), thickness)
         else:
-            painter.drawLine(0, int(pixel), grosor, int(pixel))
+            painter.drawLine(0, int(pixel), thickness, int(pixel))
 
-        etiqueta = f"{arrastrando / por_unidad:.1f}"
-        fondo = QColor("#d81b1b")
+        label = f"{dragging / por_unidad:.1f}"
+        background = QColor("#d81b1b")
         painter.setPen(Qt.NoPen)
-        painter.setBrush(fondo)
+        painter.setBrush(background)
         if self._horizontal:
-            caja = QRectF(min(pixel + 3, largo - 34), 1, 32, grosor - 2)
+            box = QRectF(min(pixel + 3, length - 34), 1, 32, thickness - 2)
         else:
-            caja = QRectF(1, min(pixel + 3, largo - 16), grosor - 2, 14)
-        painter.drawRect(caja)
+            box = QRectF(1, min(pixel + 3, length - 16), thickness - 2, 14)
+        painter.drawRect(box)
         painter.setPen(QPen(QColor("#ffffff")))
-        painter.drawText(caja, Qt.AlignCenter, etiqueta)
+        painter.drawText(box, Qt.AlignCenter, label)
 
 
 __all__ = ["Ruler", "RULER_SIZE", "PT_PER_MM", "PT_PER_IN"]

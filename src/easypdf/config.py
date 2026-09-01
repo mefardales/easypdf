@@ -1,7 +1,7 @@
-"""Preferencias persistentes de easypdf.surf (QSettings).
+"""Persistent preferences for easypdf.surf (QSettings).
 
-ORG y APP no cambian aunque cambie el nombre mostrado: son la ruta donde el
-sistema guarda los ajustes, y moverla haria perder las preferencias.
+ORG and APP never change even if the displayed name does: they are the path
+where the system stores the settings, and moving it would lose them.
 """
 
 from __future__ import annotations
@@ -15,19 +15,21 @@ APP = "EasyPDF"
 
 MAX_RECENT = 10
 
-#: Paleta rapida que se ofrece en la barra de herramientas.
+#: Quick palette offered in the toolbar. The first item of each pair is an
+#: i18n key, not a label: the menu showed "Rojo" and "Azul" even with the
+#: program in English.
 PALETTE: tuple[tuple[str, str], ...] = (
-    ("Rojo", "#d81b1b"),
-    ("Azul", "#1565c0"),
-    ("Verde", "#2e7d32"),
-    ("Naranja", "#ef6c00"),
-    ("Morado", "#6a1b9a"),
-    ("Negro", "#111111"),
-    ("Amarillo", "#ffd400"),
+    ("red", "#d81b1b"),
+    ("blue", "#1565c0"),
+    ("green", "#2e7d32"),
+    ("orange", "#ef6c00"),
+    ("purple", "#6a1b9a"),
+    ("black", "#111111"),
+    ("yellow", "#ffd400"),
 )
 
 DEFAULT_COLOR = "#d81b1b"
-DEFAULT_FILL = ""          # cadena vacia = sin relleno
+DEFAULT_FILL = ""          # empty string = no fill
 DEFAULT_HIGHLIGHT = "#ffd400"
 DEFAULT_WIDTH = 2.0
 DEFAULT_OPACITY = 1.0
@@ -39,12 +41,12 @@ MAX_ZOOM = 8.0
 
 
 class Settings:
-    """Envoltorio tipado sobre QSettings."""
+    """Typed wrapper around QSettings."""
 
     def __init__(self) -> None:
         self._s = QSettings(ORG, APP)
 
-    # -- generico --------------------------------------------------------
+    # -- generic ---------------------------------------------------------
     def value(self, key: str, default=None, type_=None):
         if type_ is None:
             return self._s.value(key, default)
@@ -56,7 +58,7 @@ class Settings:
     def sync(self) -> None:
         self._s.sync()
 
-    # -- archivos recientes ---------------------------------------------
+    # -- recent files ----------------------------------------------------
     def recent_files(self) -> list[str]:
         raw = self._s.value("files/recent", [])
         if isinstance(raw, str):
@@ -79,7 +81,7 @@ class Settings:
     def set_last_dir(self, path: str) -> None:
         self._s.setValue("files/last_dir", path)
 
-    # -- herramientas ----------------------------------------------------
+    # -- tools -----------------------------------------------------------
     def tool_color(self) -> str:
         return str(self._s.value("tools/color", DEFAULT_COLOR))
 
@@ -147,18 +149,18 @@ class Settings:
         self._s.setValue("tools/table_cols", int(value))
 
     def language(self) -> str:
-        """Idioma de la interfaz. Por defecto, el del sistema si lo tenemos."""
+        """Interface language. Defaults to the system one if we have it."""
         from PySide6.QtCore import QLocale
 
         from .i18n import system_language
 
-        guardado = self._s.value("ui/language")
-        return str(guardado) if guardado else system_language(QLocale.system().name())
+        stored = self._s.value("ui/language")
+        return str(stored) if stored else system_language(QLocale.system().name())
 
     def set_language(self, code: str) -> None:
         self._s.setValue("ui/language", code)
 
-    # -- ventana ---------------------------------------------------------
+    # -- window ----------------------------------------------------------
     def window_geometry(self) -> bytes | None:
         return self._s.value("window/geometry")
 

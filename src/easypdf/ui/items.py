@@ -237,14 +237,14 @@ class AnnotationItemMixin:
     # -- alineacion ------------------------------------------------------
     def snap_candidates(self) -> tuple[list[float], list[float]]:
         """Lineas a las que se puede alinear: la pagina y las demas anotaciones."""
-        pagina = self.parentItem()
-        if pagina is None:
+        page_item = self.parentItem()
+        if page_item is None:
             return ([], [])
-        caja = pagina.boundingRect()
+        box = page_item.boundingRect()
         # bordes y centro de la hoja
-        xs = [caja.left(), caja.center().x(), caja.right()]
-        ys = [caja.top(), caja.center().y(), caja.bottom()]
-        for otro in pagina.childItems():
+        xs = [box.left(), box.center().x(), box.right()]
+        ys = [box.top(), box.center().y(), box.bottom()]
+        for otro in page_item.childItems():
             if otro is self or not isinstance(otro, AnnotationItemMixin):
                 continue
             x0, y0, x1, y1 = otro.ann.bounds()
@@ -252,9 +252,9 @@ class AnnotationItemMixin:
             ys += [y0, (y0 + y1) / 2.0, y1]
         # y las guias que el usuario haya sacado de las reglas, que es
         # justamente para lo que las coloca
-        vista = self._view()
-        if vista is not None and hasattr(vista, "page_guides"):
-            propias = vista.page_guides(self.ann.page)
+        view = self._view()
+        if view is not None and hasattr(view, "page_guides"):
+            propias = view.page_guides(self.ann.page)
             xs += list(propias["v"])
             ys += list(propias["h"])
         return (xs, ys)
@@ -266,17 +266,17 @@ class AnnotationItemMixin:
         dispararia tambien al crear o cargar anotaciones, y dejaria guias
         pintadas en la pagina sin que nadie este moviendo nada.
         """
-        escena = self.scene()
-        if escena is None or escena.mouseGrabberItem() is not self:
+        scene = self.scene()
+        if scene is None or scene.mouseGrabberItem() is not self:
             return nueva_pos
         return self.compute_snap(nueva_pos)
 
     def compute_snap(self, nueva_pos):
         """Calculo del ajuste, sin mirar si hay un arrastre en curso."""
-        vista = self._view()
-        if vista is None or not getattr(vista, "snap_enabled", False):
+        view = self._view()
+        if view is None or not getattr(view, "snap_enabled", False):
             return nueva_pos
-        escala = max(vista.transform().m11(), 1e-6)
+        escala = max(view.transform().m11(), 1e-6)
         umbral = SNAP_PIXELS / escala
 
         # los bordes se calculan sobre el modelo, que siempre esta en
@@ -289,14 +289,14 @@ class AnnotationItemMixin:
         xs, ys = self.snap_candidates()
         ajuste_x, guia_x = snap_offset([x0, (x0 + x1) / 2.0, x1], xs, umbral)
         ajuste_y, guia_y = snap_offset([y0, (y0 + y1) / 2.0, y1], ys, umbral)
-        vista.show_guides(guia_x, guia_y, self.parentItem())
+        view.show_guides(guia_x, guia_y, self.parentItem())
         return QPointF(nueva_pos.x() + ajuste_x, nueva_pos.y() + ajuste_y)
 
     def _view(self):
-        escena = self.scene()
-        if escena is None:
+        scene = self.scene()
+        if scene is None:
             return None
-        vistas = escena.views()
+        vistas = scene.views()
         return vistas[0] if vistas else None
 
 
@@ -430,8 +430,8 @@ class LineItem(AnnotationItemMixin, QGraphicsLineItem):
         line = self.line()
         p1 = (line.x1(), line.y1())
         p2 = (line.x2(), line.y2())
-        _base, punta, izquierda, derecha = arrow_head(p1, p2, self.ann.width)
-        poligono = QPolygonF([QPointF(*punta), QPointF(*izquierda), QPointF(*derecha)])
+        _base, punta, left, right = arrow_head(p1, p2, self.ann.width)
+        poligono = QPolygonF([QPointF(*punta), QPointF(*left), QPointF(*right)])
         return poligono, QPointF(*arrow_line_end(p1, p2, self.ann.width))
 
     def boundingRect(self) -> QRectF:
@@ -555,9 +555,9 @@ class TextItem(AnnotationItemMixin, QGraphicsTextItem):
         self.setPos(x0, y0)
         self.setFont(annotation_font(ann))
         self.setDefaultTextColor(qcolor(ann.color))
-        opciones = self.document().defaultTextOption()
-        opciones.setAlignment(ALIGN_FLAGS.get(Align(ann.align), Qt.AlignLeft))
-        self.document().setDefaultTextOption(opciones)
+        options = self.document().defaultTextOption()
+        options.setAlignment(ALIGN_FLAGS.get(Align(ann.align), Qt.AlignLeft))
+        self.document().setDefaultTextOption(options)
         width = max(20.0, x1 - x0)
         self.setTextWidth(width)
         if self.toPlainText() != ann.text:
@@ -749,17 +749,17 @@ class ImageItem(AnnotationItemMixin, QGraphicsRectItem):
             r.setHeight(MIN_SIZE)
         # Las esquinas conservan la proporcion; los lados estiran libremente.
         if handle in ("tl", "tr", "bl", "br") and self.aspect > 0:
-            alto = r.width() / self.aspect
+            height = r.width() / self.aspect
             if "t" in handle:
-                r.setTop(r.bottom() - alto)
+                r.setTop(r.bottom() - height)
             else:
-                r.setHeight(alto)
+                r.setHeight(height)
         self.setPos(self.pos() + r.topLeft())
         self.setRect(0, 0, r.width(), r.height())
 
     def boundingRect(self) -> QRectF:
-        margen = self.handle_size() + 2.0
-        return self.rect().adjusted(-margen, -margen, margen, margen)
+        margin = self.handle_size() + 2.0
+        return self.rect().adjusted(-margin, -margin, margin, margin)
 
     def shape(self) -> QPainterPath:
         path = QPainterPath()
@@ -859,23 +859,23 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         self.finish_editing()
 
     def boundingRect(self) -> QRectF:
-        margen = max(self.pen().widthF(), self.handle_size()) + 2.0
-        return self.rect().adjusted(-margen, -margen, margen, margen)
+        margin = max(self.pen().widthF(), self.handle_size()) + 2.0
+        return self.rect().adjusted(-margin, -margin, margin, margin)
 
     def shape(self) -> QPainterPath:
         path = QPainterPath()
-        margen = self.handle_size()
-        path.addRect(self.rect().adjusted(-margen, -margen, margen, margen))
+        margin = self.handle_size()
+        path.addRect(self.rect().adjusted(-margin, -margin, margin, margin))
         return path
 
     # -- celdas ----------------------------------------------------------
     def _cached_font(self) -> QFont:
         """Fuente de la tabla, rehecha solo cuando cambia su estilo."""
         ann = self.ann
-        clave = (ann.font, ann.font_size, ann.bold, ann.italic)
-        if getattr(self, "_font_clave", None) != clave:
+        key = (ann.font, ann.font_size, ann.bold, ann.italic)
+        if getattr(self, "_font_clave", None) != key:
             self._font_cache = annotation_font(ann)
-            self._font_clave = clave
+            self._font_clave = key
         return self._font_cache
 
     def local_cell_rects(self) -> list[QRectF]:
@@ -885,45 +885,45 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         muchas filas eso se notaba al arrastrarla.
         """
         r = self.rect()
-        filas, columnas = max(1, self.ann.rows), max(1, self.ann.cols)
-        clave = (r.width(), r.height(), filas, columnas)
-        if getattr(self, "_rects_clave", None) != clave:
-            alto = r.height() / filas
-            ancho = r.width() / columnas
+        rows, columns = max(1, self.ann.rows), max(1, self.ann.cols)
+        key = (r.width(), r.height(), rows, columns)
+        if getattr(self, "_rects_clave", None) != key:
+            height = r.height() / rows
+            width = r.width() / columns
             self._rects_cache = [
-                QRectF(c * ancho, f * alto, ancho, alto)
-                for f in range(filas)
-                for c in range(columnas)
+                QRectF(c * width, f * height, width, height)
+                for f in range(rows)
+                for c in range(columns)
             ]
-            self._rects_clave = clave
+            self._rects_clave = key
         return self._rects_cache
 
     def cell_at(self, pos: QPointF) -> int:
-        for indice, celda in enumerate(self.local_cell_rects()):
-            if celda.contains(pos):
-                return indice
+        for index, cell in enumerate(self.local_cell_rects()):
+            if cell.contains(pos):
+                return index
         return -1
 
-    def edit_cell(self, indice: int) -> None:
+    def edit_cell(self, index: int) -> None:
         """Abre un editor de texto encima de la celda indicada."""
-        celdas = self.local_cell_rects()
-        if not (0 <= indice < len(celdas)):
+        cells = self.local_cell_rects()
+        if not (0 <= index < len(cells)):
             return
         self.finish_editing()
         self.notify_scene("begin_edit")
         self.notify_scene("text_editing_started")
         textos = self.ann.normalized_cells()
         editor = QGraphicsTextItem(self)
-        editor.setPlainText(textos[indice])
+        editor.setPlainText(textos[index])
         editor.setFont(annotation_font(self.ann))
         editor.setDefaultTextColor(qcolor(self.ann.color))
-        celda = celdas[indice]
+        cell = cells[index]
         # Mismo margen y misma alineacion que usa paint(): si no, el texto se
         # ve en un sitio mientras se escribe y salta a otro al terminar.
         alineacion = ALIGN_FLAGS.get(Align(self.ann.align), Qt.AlignLeft)
-        opciones = editor.document().defaultTextOption()
-        opciones.setAlignment(alineacion)
-        editor.document().setDefaultTextOption(opciones)
+        options = editor.document().defaultTextOption()
+        options.setAlignment(alineacion)
+        editor.document().setDefaultTextOption(options)
         editor.document().setDocumentMargin(0)
         # defaultTextOption no re-alinea los parrafos que ya existen, y el
         # texto se dibuja con la alineacion del bloque, no con la de la
@@ -932,8 +932,8 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         self._alineacion = alineacion
         self._realinear()
         editor.document().contentsChanged.connect(self._realinear)
-        editor.setTextWidth(max(10.0, celda.width() - 2 * CELL_PADDING))
-        editor.setPos(celda.topLeft() + QPointF(CELL_PADDING, CELL_PADDING))
+        editor.setTextWidth(max(10.0, cell.width() - 2 * CELL_PADDING))
+        editor.setPos(cell.topLeft() + QPointF(CELL_PADDING, CELL_PADDING))
         editor.setTextInteractionFlags(Qt.TextEditorInteraction)
         editor.setZValue(self.zValue() + 1)
         editor.setFlag(QGraphicsItem.ItemIsFocusable, True)
@@ -942,7 +942,7 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         cursor.select(cursor.SelectionType.Document)
         editor.setTextCursor(cursor)
         self._editor = editor
-        self._editing_cell = indice
+        self._editing_cell = index
         self.update()
 
     def _realinear(self) -> None:
@@ -965,13 +965,13 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
 
     def finish_editing(self) -> None:
         """Guarda lo escrito y cierra el editor."""
-        editor, indice = self._editor, self._editing_cell
+        editor, index = self._editor, self._editing_cell
         self._editor, self._editing_cell = None, -1
         if editor is None:
             return
         textos = self.ann.normalized_cells()
         try:
-            textos[indice] = editor.toPlainText()
+            textos[index] = editor.toPlainText()
             editor.setParentItem(None)
             if editor.scene() is not None:
                 editor.scene().removeItem(editor)
@@ -990,20 +990,20 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
 
     # -- eventos ---------------------------------------------------------
     def mouseDoubleClickEvent(self, event) -> None:
-        indice = self.cell_at(event.pos())
-        if indice >= 0:
-            self.edit_cell(indice)
+        index = self.cell_at(event.pos())
+        if index >= 0:
+            self.edit_cell(index)
             event.accept()
             return
         super().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event) -> None:
         if self.is_editing and event.key() in (Qt.Key_Escape, Qt.Key_Tab, Qt.Key_Backtab):
-            paso = {Qt.Key_Tab: 1, Qt.Key_Backtab: -1}.get(event.key(), 0)
-            destino = self._editing_cell + paso
+            step = {Qt.Key_Tab: 1, Qt.Key_Backtab: -1}.get(event.key(), 0)
+            target = self._editing_cell + step
             self.finish_editing()
-            if paso and 0 <= destino < self.ann.cell_count():
-                self.edit_cell(destino)
+            if step and 0 <= target < self.ann.cell_count():
+                self.edit_cell(target)
             event.accept()
             return
         super().keyPressEvent(event)
@@ -1023,31 +1023,31 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
 
         painter.setPen(self.pen())
         painter.setBrush(Qt.NoBrush)
-        filas, columnas = max(1, self.ann.rows), max(1, self.ann.cols)
+        rows, columns = max(1, self.ann.rows), max(1, self.ann.cols)
         painter.drawRect(rect)
-        for f in range(1, filas):
-            y = rect.top() + rect.height() * f / filas
+        for f in range(1, rows):
+            y = rect.top() + rect.height() * f / rows
             painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y))
-        for c in range(1, columnas):
-            x = rect.left() + rect.width() * c / columnas
+        for c in range(1, columns):
+            x = rect.left() + rect.width() * c / columns
             painter.drawLine(QPointF(x, rect.top()), QPointF(x, rect.bottom()))
 
         painter.setFont(self._cached_font())
         painter.setPen(QPen(qcolor(self.ann.color)))
         bandera = ALIGN_FLAGS.get(Align(self.ann.align), Qt.AlignLeft)
         visible = option.exposedRect if option is not None else None
-        for indice, (texto, celda) in enumerate(
+        for index, (text, cell) in enumerate(
             zip(self.ann.normalized_cells(), self.local_cell_rects())
         ):
-            if not texto or indice == self._editing_cell:
+            if not text or index == self._editing_cell:
                 continue
             # en una tabla larga solo se dibuja el texto de lo que se ve
-            if visible is not None and not visible.isEmpty() and not visible.intersects(celda):
+            if visible is not None and not visible.isEmpty() and not visible.intersects(cell):
                 continue
             painter.drawText(
-                celda.adjusted(CELL_PADDING, CELL_PADDING, -CELL_PADDING, -CELL_PADDING),
+                cell.adjusted(CELL_PADDING, CELL_PADDING, -CELL_PADDING, -CELL_PADDING),
                 int(bandera | Qt.AlignTop | Qt.TextWordWrap),
-                texto,
+                text,
             )
 
         if self.isSelected():
@@ -1075,10 +1075,10 @@ class NoteItem(AnnotationItemMixin, QGraphicsRectItem):
         self.setOpacity(self.ann.opacity)
 
     def _sync_model(self) -> None:
-        origen = self.pos()
+        source = self.pos()
         self.ann.rect = (
-            origen.x(), origen.y(),
-            origen.x() + NOTE_SIZE, origen.y() + NOTE_SIZE,
+            source.x(), source.y(),
+            source.x() + NOTE_SIZE, source.y() + NOTE_SIZE,
         )
 
     def handles(self) -> dict:
@@ -1086,16 +1086,16 @@ class NoteItem(AnnotationItemMixin, QGraphicsRectItem):
 
     def mouseDoubleClickEvent(self, event) -> None:
         """Abre el texto de la nota. Sin esto, pulsarla no hacia nada."""
-        vista = self._view()
-        if vista is not None and hasattr(vista, "noteCreated"):
-            vista.noteCreated.emit(self)
+        view = self._view()
+        if view is not None and hasattr(view, "noteCreated"):
+            view.noteCreated.emit(self)
             event.accept()
             return
         super().mouseDoubleClickEvent(event)
 
     def boundingRect(self) -> QRectF:
-        margen = self.handle_size() + 2.0
-        return self.rect().adjusted(-margen, -margen, margen, margen)
+        margin = self.handle_size() + 2.0
+        return self.rect().adjusted(-margin, -margin, margin, margin)
 
     def shape(self) -> QPainterPath:
         path = QPainterPath()
@@ -1107,17 +1107,17 @@ class NoteItem(AnnotationItemMixin, QGraphicsRectItem):
         rect = self.rect()
         color = qcolor(self.ann.color)
         # cuerpo de la nota con la esquina doblada
-        cuerpo = QPainterPath()
+        body = QPainterPath()
         pliegue = rect.width() * 0.34
-        cuerpo.moveTo(rect.left(), rect.top())
-        cuerpo.lineTo(rect.right(), rect.top())
-        cuerpo.lineTo(rect.right(), rect.bottom() - pliegue)
-        cuerpo.lineTo(rect.right() - pliegue, rect.bottom())
-        cuerpo.lineTo(rect.left(), rect.bottom())
-        cuerpo.closeSubpath()
+        body.moveTo(rect.left(), rect.top())
+        body.lineTo(rect.right(), rect.top())
+        body.lineTo(rect.right(), rect.bottom() - pliegue)
+        body.lineTo(rect.right() - pliegue, rect.bottom())
+        body.lineTo(rect.left(), rect.bottom())
+        body.closeSubpath()
         painter.setPen(QPen(color.darker(140), rect.width() * 0.06))
         painter.setBrush(QBrush(color))
-        painter.drawPath(cuerpo)
+        painter.drawPath(body)
         # la esquina doblada
         doblez = QPainterPath()
         doblez.moveTo(rect.right() - pliegue, rect.bottom())

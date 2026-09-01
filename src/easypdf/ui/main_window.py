@@ -41,7 +41,14 @@ from PySide6.QtWidgets import (
 
 from .. import __app_name__, __url__, __version__
 from ..config import PALETTE, Settings
-from ..document import DEFAULT_PAGE_SIZE, PAGE_SIZES, PasswordRequired, PdfDocument, PdfError
+from ..document import (
+    DEFAULT_PAGE_SIZE,
+    PAGE_SIZES,
+    PasswordRequired,
+    PdfDocument,
+    PdfError,
+    page_size_key,
+)
 from ..i18n import LANGUAGES, language, page_size_label, set_language, tr
 from ..model import Align, Font, Kind
 from ..printing import print_document, print_preview
@@ -271,13 +278,13 @@ class MainWindow(QMainWindow):
         # plataforma, y dos atajos iguales en la misma accion hacen que Qt los
         # considere ambiguos y no dispare ninguno.
         def _atajos(*candidatos):
-            vistos, salida = set(), []
+            seen, output = set(), []
             for sec in candidatos:
-                texto = QKeySequence(sec).toString()
-                if texto and texto not in vistos:
-                    vistos.add(texto)
-                    salida.append(QKeySequence(sec))
-            return salida
+                text = QKeySequence(sec).toString()
+                if text and text not in seen:
+                    seen.add(text)
+                    output.append(QKeySequence(sec))
+            return output
 
         self._sc_zoom_in = QAction(self)
         self._sc_zoom_in.setShortcuts(_atajos(QKeySequence.ZoomIn, "Ctrl++", "Ctrl+="))
@@ -354,11 +361,13 @@ class MainWindow(QMainWindow):
             Tool.NOTE: ("tool_note", "note", "N"),
             Tool.ERASER: ("tool_eraser", "eraser", "E"),
         }
-        for tool, (clave, icon_name, key) in self.tool_keys.items():
-            act = QAction(icons.icon(icon_name), tr(clave), self)
+        for tool, (text_key, icon_name, shortcut) in self.tool_keys.items():
+            act = QAction(icons.icon(icon_name), tr(text_key), self)
             act.setCheckable(True)
-            act.setShortcut(QKeySequence(key))
-            act.setStatusTip(tr("tool_status", name=tr(clave).replace("&", ""), key=key))
+            act.setShortcut(QKeySequence(shortcut))
+            act.setStatusTip(
+                tr("tool_status", name=tr(text_key).replace("&", ""), key=shortcut)
+            )
             act.triggered.connect(lambda checked=False, t=tool: self.select_tool(t))
             self.tool_group.addAction(act)
             self.tool_actions[tool] = act
@@ -409,21 +418,21 @@ class MainWindow(QMainWindow):
         self._action_keys[self.act_rulers] = ("rulers", None)
         view_menu.addAction(self.act_rulers)
 
-        unidades = view_menu.addMenu(tr("ruler_unit_menu"))
-        self._menu_keys[unidades] = "ruler_unit_menu"
+        units = view_menu.addMenu(tr("ruler_unit_menu"))
+        self._menu_keys[units] = "ruler_unit_menu"
         self.unit_group = QActionGroup(self)
         self.unit_group.setExclusive(True)
         self.unit_actions = {}
-        for codigo, clave in (("mm", "unit_mm"), ("cm", "unit_cm"),
+        for codigo, key in (("mm", "unit_mm"), ("cm", "unit_cm"),
                               ("in", "unit_in"), ("pt", "unit_pt")):
-            act = QAction(tr(clave), self)
+            act = QAction(tr(key), self)
             act.setCheckable(True)
             act.setChecked(codigo == "mm")
             act.triggered.connect(lambda checked=False, c=codigo: self.set_ruler_unit(c))
             self.unit_group.addAction(act)
-            unidades.addAction(act)
+            units.addAction(act)
             self.unit_actions[codigo] = act
-            self._action_keys[act] = (clave, None)
+            self._action_keys[act] = (key, None)
 
         self.act_snap = QAction(tr("snap"), self)
         self.act_snap.setCheckable(True)
@@ -472,17 +481,19 @@ class MainWindow(QMainWindow):
         self._menu_keys[tamano_menu] = "page_size_menu"
         self.page_size_group = QActionGroup(self)
         self.page_size_group.setExclusive(True)
-        elegido = self.settings.value("document/page_size", DEFAULT_PAGE_SIZE)
+        chosen = page_size_key(
+            self.settings.value("document/page_size", DEFAULT_PAGE_SIZE)
+        )
         self.page_size_actions = {}
-        for nombre in PAGE_SIZES:
-            act = QAction(page_size_label(nombre), self)
+        for name in PAGE_SIZES:
+            act = QAction(page_size_label(name), self)
             act.setCheckable(True)
-            act.setChecked(nombre == elegido)
-            act.triggered.connect(lambda checked=False, n=nombre: self._set_page_size(n))
+            act.setChecked(name == chosen)
+            act.triggered.connect(lambda checked=False, n=name: self._set_page_size(n))
             self.page_size_group.addAction(act)
             tamano_menu.addAction(act)
-            self.page_size_actions[nombre] = act
-        self.new_page_size = str(elegido)
+            self.page_size_actions[name] = act
+        self.new_page_size = str(chosen)
 
         doc_menu.addSeparator()
         self.templates_menu = QMenu(tr("templates"), self)
@@ -503,8 +514,8 @@ class MainWindow(QMainWindow):
         self.language_group = QActionGroup(self)
         self.language_group.setExclusive(True)
         self.language_actions = {}
-        for codigo, nombre in LANGUAGES.items():
-            act = QAction(nombre, self)
+        for codigo, name in LANGUAGES.items():
+            act = QAction(name, self)
             act.setCheckable(True)
             act.setChecked(codigo == language())
             act.triggered.connect(lambda checked=False, c=codigo: self.set_language(c))
@@ -642,12 +653,12 @@ class MainWindow(QMainWindow):
         self.align_group = QActionGroup(self)
         self.align_group.setExclusive(True)
         self.align_actions = {}
-        for alineacion, nombre in (
+        for alineacion, name in (
             (Align.LEFT, "align_left"),
             (Align.CENTER, "align_center"),
             (Align.RIGHT, "align_right"),
         ):
-            act = QAction(icons.icon(nombre), tr(f"act_align_{alineacion.name.lower()}"), self)
+            act = QAction(icons.icon(name), tr(f"act_align_{alineacion.name.lower()}"), self)
             act.setCheckable(True)
             act.triggered.connect(lambda checked=False, a=alineacion: self._set_align(a))
             self.align_group.addAction(act)
@@ -709,8 +720,8 @@ class MainWindow(QMainWindow):
             act.triggered.connect(lambda: slot(None))
             menu.addAction(act)
             menu.addSeparator()
-        for name, hexvalue in PALETTE:
-            act = QAction(_swatch(QColor(hexvalue)), name, self)
+        for key, hexvalue in PALETTE:
+            act = QAction(_swatch(QColor(hexvalue)), tr(f"color_{key}"), self)
             act.triggered.connect(lambda checked=False, h=hexvalue: slot(QColor(h)))
             menu.addAction(act)
         menu.addSeparator()
@@ -763,8 +774,8 @@ class MainWindow(QMainWindow):
         esquina = QWidget()
         esquina.setFixedSize(RULER_SIZE, RULER_SIZE)
 
-        caja = QWidget(self)
-        rejilla = QGridLayout(caja)
+        box = QWidget(self)
+        rejilla = QGridLayout(box)
         rejilla.setContentsMargins(0, 0, 0, 0)
         rejilla.setSpacing(0)
         rejilla.addWidget(esquina, 0, 0)
@@ -779,7 +790,7 @@ class MainWindow(QMainWindow):
         self.view.pageChanged.connect(lambda *_: self._update_rulers())
         self.view.mouseMovedOnPage.connect(self._on_mouse_on_page)
         self.view.guidesChanged.connect(self._on_guides_changed)
-        return caja
+        return box
 
     def _clear_guides(self) -> None:
         self.view.clear_all_guides()
@@ -788,15 +799,15 @@ class MainWindow(QMainWindow):
     def _on_guides_changed(self) -> None:
         """Repinta las reglas y ensena la medida de la guia que se mueve."""
         self._update_rulers()
-        arrastre = self.view._guide_drag
-        if arrastre is None:
+        drag = self.view._guide_drag
+        if drag is None:
             return
-        orientacion, _pagina, valor, _indice = arrastre
+        orientation, _pagina, value, _indice = drag
         # la guia horizontal se mide en la regla vertical
-        regla = self.ruler_v if orientacion == "h" else self.ruler_h
-        _menor, _mayor, por_unidad = regla._step_pt()
+        ruler = self.ruler_v if orientation == "h" else self.ruler_h
+        _menor, _mayor, por_unidad = ruler._step_pt()
         self.statusBar().showMessage(
-            tr("guide_at", value=f"{valor / por_unidad:.1f}", unit=regla.unit), 3000
+            tr("guide_at", value=f"{value / por_unidad:.1f}", unit=ruler.unit), 3000
         )
 
     def _update_rulers(self) -> None:
@@ -836,22 +847,22 @@ class MainWindow(QMainWindow):
             QWidget,
         )
 
-        caja = QWidget(self)
-        columna = QVBoxLayout(caja)
-        columna.setContentsMargins(4, 4, 4, 4)
-        self.bookmark_list = QListWidget(caja)
+        box = QWidget(self)
+        column = QVBoxLayout(box)
+        column.setContentsMargins(4, 4, 4, 4)
+        self.bookmark_list = QListWidget(box)
         self.bookmark_list.itemActivated.connect(self._go_to_bookmark)
         self.bookmark_list.itemClicked.connect(self._go_to_bookmark)
-        columna.addWidget(self.bookmark_list)
+        column.addWidget(self.bookmark_list)
 
-        botones = QHBoxLayout()
-        self.btn_bookmark_add = QPushButton(tr("bookmark_add"), caja)
+        buttons = QHBoxLayout()
+        self.btn_bookmark_add = QPushButton(tr("bookmark_add"), box)
         self.btn_bookmark_add.clicked.connect(self.add_bookmark)
-        self.btn_bookmark_del = QPushButton(tr("bookmark_remove"), caja)
+        self.btn_bookmark_del = QPushButton(tr("bookmark_remove"), box)
         self.btn_bookmark_del.clicked.connect(self.remove_bookmark)
-        botones.addWidget(self.btn_bookmark_add)
-        botones.addWidget(self.btn_bookmark_del)
-        columna.addLayout(botones)
+        buttons.addWidget(self.btn_bookmark_add)
+        buttons.addWidget(self.btn_bookmark_del)
+        column.addLayout(buttons)
 
         # --- pestana de notas ---
         caja_notas = QWidget(self)
@@ -917,7 +928,7 @@ class MainWindow(QMainWindow):
         col_el.addWidget(self.btn_el_insert)
 
         self.side_tabs = QTabWidget(self)
-        self.side_tabs.addTab(caja, tr("bookmarks_dock"))
+        self.side_tabs.addTab(box, tr("bookmarks_dock"))
         self.side_tabs.addTab(caja_notas, tr("notes_tab"))
         self.side_tabs.addTab(caja_el, tr("elements_tab"))
         self.side_tabs.addTab(caja_tpl, tr("templates_tab"))
@@ -940,51 +951,51 @@ class MainWindow(QMainWindow):
         if not hasattr(self, "bookmark_list"):
             return
         self.bookmark_list.clear()
-        documento = self.view.document
-        if documento is None:
+        document = self.view.document
+        if document is None:
             return
-        for titulo, pagina in documento.bookmarks():
+        for title, page_item in document.bookmarks():
             from PySide6.QtWidgets import QListWidgetItem
 
-            item = QListWidgetItem(tr("bookmark_entry", title=titulo, page=pagina + 1))
-            item.setData(Qt.UserRole, pagina)
-            item.setToolTip(titulo)
+            item = QListWidgetItem(tr("bookmark_entry", title=title, page=page_item + 1))
+            item.setData(Qt.UserRole, page_item)
+            item.setToolTip(title)
             self.bookmark_list.addItem(item)
 
     def _go_to_bookmark(self, item) -> None:
-        pagina = item.data(Qt.UserRole)
-        if pagina is not None:
-            self.view.go_to_page(int(pagina))
+        page_item = item.data(Qt.UserRole)
+        if page_item is not None:
+            self.view.go_to_page(int(page_item))
 
     def add_bookmark(self) -> None:
         """Marca la pagina actual con el nombre que elija el usuario."""
         if not self.view.has_document():
             return
-        pagina = self.view.current_page
-        propuesto = tr("bookmark_default", page=pagina + 1)
-        titulo, aceptado = QInputDialog.getText(
+        page_item = self.view.current_page
+        propuesto = tr("bookmark_default", page=page_item + 1)
+        title, accepted = QInputDialog.getText(
             self, tr("bookmarks_dock"), tr("bookmark_prompt"), text=propuesto
         )
-        if not aceptado or not titulo.strip():
+        if not accepted or not title.strip():
             return
-        marcadores = self.view.document.bookmarks()
-        marcadores.append((titulo.strip(), pagina))
-        marcadores.sort(key=lambda m: m[1])          # en orden de pagina
-        self.view.document.set_bookmarks(marcadores)
+        bookmarks = self.view.document.bookmarks()
+        bookmarks.append((title.strip(), page_item))
+        bookmarks.sort(key=lambda m: m[1])          # en orden de pagina
+        self.view.document.set_bookmarks(bookmarks)
         self.refresh_bookmarks()
         self.refresh_notes()
         self.refresh_templates()
         self.view.notify_modified()
 
     def remove_bookmark(self) -> None:
-        fila = self.bookmark_list.currentRow() if hasattr(self, "bookmark_list") else -1
-        if not self.view.has_document() or fila < 0:
+        row = self.bookmark_list.currentRow() if hasattr(self, "bookmark_list") else -1
+        if not self.view.has_document() or row < 0:
             return
-        marcadores = self.view.document.bookmarks()
-        if fila >= len(marcadores):
+        bookmarks = self.view.document.bookmarks()
+        if row >= len(bookmarks):
             return
-        del marcadores[fila]
-        self.view.document.set_bookmarks(marcadores)
+        del bookmarks[row]
+        self.view.document.set_bookmarks(bookmarks)
         self.refresh_bookmarks()
         self.refresh_notes()
         self.refresh_templates()
@@ -999,27 +1010,27 @@ class MainWindow(QMainWindow):
 
         if not hasattr(self, "el_tree"):
             return
-        recordado = self._elemento_elegido()
+        remembered = self._elemento_elegido()
         self.el_tree.clear()
         por_grupo: dict[str, list] = {c: [] for c in EL_CATEGORIES}
         for info in element_infos():
             por_grupo.setdefault(info.category, []).append(info)
-        for grupo in EL_CATEGORIES:
-            piezas = por_grupo.get(grupo) or []
-            if not piezas:
+        for group in EL_CATEGORIES:
+            pieces = por_grupo.get(group) or []
+            if not pieces:
                 continue
-            raiz = QTreeWidgetItem([tr(f"elcat_{grupo}")])
-            raiz.setFlags(Qt.ItemIsEnabled)
-            self.el_tree.addTopLevelItem(raiz)
-            for info in piezas:
-                hijo = QTreeWidgetItem([info.name])
-                hijo.setData(0, Qt.UserRole, info.key)
-                raiz.addChild(hijo)
-            raiz.setExpanded(True)
-            if recordado is not None:
-                for i in range(raiz.childCount()):
-                    if raiz.child(i).data(0, Qt.UserRole) == recordado:
-                        self.el_tree.setCurrentItem(raiz.child(i))
+            root = QTreeWidgetItem([tr(f"elcat_{group}")])
+            root.setFlags(Qt.ItemIsEnabled)
+            self.el_tree.addTopLevelItem(root)
+            for info in pieces:
+                child = QTreeWidgetItem([info.name])
+                child.setData(0, Qt.UserRole, info.key)
+                root.addChild(child)
+            root.setExpanded(True)
+            if remembered is not None:
+                for i in range(root.childCount()):
+                    if root.child(i).data(0, Qt.UserRole) == remembered:
+                        self.el_tree.setCurrentItem(root.child(i))
         self._update_element_buttons()
 
     def _elemento_elegido(self) -> str | None:
@@ -1037,14 +1048,14 @@ class MainWindow(QMainWindow):
         """Suelta la pieza elegida en la pagina que se esta viendo."""
         from ..elements import build
 
-        clave = self._elemento_elegido()
-        if clave is None or not self.view.has_document():
+        key = self._elemento_elegido()
+        if key is None or not self.view.has_document():
             return False
-        piezas = build(clave, 0.0, 0.0)
-        nombre = tr(f"el_{clave}")
-        if not self.view.insert_annotations(piezas, tr("cmd_element", name=nombre)):
+        pieces = build(key, 0.0, 0.0)
+        name = tr(f"el_{key}")
+        if not self.view.insert_annotations(pieces, tr("cmd_element", name=name)):
             return False
-        self.statusBar().showMessage(tr("status_element_added", name=nombre), 4000)
+        self.statusBar().showMessage(tr("status_element_added", name=name), 4000)
         return True
 
     def refresh_templates(self) -> None:
@@ -1054,16 +1065,16 @@ class MainWindow(QMainWindow):
         from PySide6.QtWidgets import QTreeWidgetItem
 
         self.tpl_tree.clear()
-        grupos = [(tr("tpl_included"), builtin_infos()),
+        groups = [(tr("tpl_included"), builtin_infos()),
                   (tr("tpl_mine"), list_templates(self.templates_dir()))]
-        for titulo, plantillas in grupos:
-            if not plantillas:
+        for title, templates in groups:
+            if not templates:
                 continue
-            raiz = QTreeWidgetItem([titulo])
-            raiz.setFlags(Qt.ItemIsEnabled)          # el grupo no se elige
-            self.tpl_tree.addTopLevelItem(raiz)
+            root = QTreeWidgetItem([title])
+            root.setFlags(Qt.ItemIsEnabled)          # el grupo no se elige
+            self.tpl_tree.addTopLevelItem(root)
             por_tipo: dict[str, list] = {}
-            for info in plantillas:
+            for info in templates:
                 por_tipo.setdefault(info.category, []).append(info)
             for categoria in CATEGORIES:
                 lote = por_tipo.get(categoria)
@@ -1071,19 +1082,19 @@ class MainWindow(QMainWindow):
                     continue
                 rama = QTreeWidgetItem([tr(f"cat_{categoria}")])
                 rama.setFlags(Qt.ItemIsEnabled)
-                raiz.addChild(rama)
+                root.addChild(rama)
                 for info in lote:
-                    hoja = QTreeWidgetItem([
+                    sheet = QTreeWidgetItem([
                         tr("tpl_entry", name=info.name, pages=info.pages,
                            count=info.annotations)
                     ])
-                    hoja.setData(0, Qt.UserRole, info.path)
-                    hoja.setData(0, Qt.UserRole + 1, info.builtin)
-                    hoja.setToolTip(0, info.saved_at or info.name)
-                    rama.addChild(hoja)
-            raiz.setExpanded(True)
-            for i in range(raiz.childCount()):
-                raiz.child(i).setExpanded(True)
+                    sheet.setData(0, Qt.UserRole, info.path)
+                    sheet.setData(0, Qt.UserRole + 1, info.builtin)
+                    sheet.setToolTip(0, info.saved_at or info.name)
+                    rama.addChild(sheet)
+            root.setExpanded(True)
+            for i in range(root.childCount()):
+                root.child(i).setExpanded(True)
         self._update_template_buttons()
 
     def _selected_template(self):
@@ -1091,30 +1102,30 @@ class MainWindow(QMainWindow):
         item = self.tpl_tree.currentItem() if hasattr(self, "tpl_tree") else None
         if item is None:
             return None
-        ruta = item.data(0, Qt.UserRole)
-        if not ruta:
+        path = item.data(0, Qt.UserRole)
+        if not path:
             return None
-        return (str(ruta), bool(item.data(0, Qt.UserRole + 1)))
+        return (str(path), bool(item.data(0, Qt.UserRole + 1)))
 
     def _update_template_buttons(self) -> None:
-        elegida = self._selected_template()
+        chosen = self._selected_template()
         hay_doc = self.view.has_document()
-        self.btn_tpl_use.setEnabled(elegida is not None and hay_doc)
-        self.btn_tpl_new.setEnabled(elegida is not None)
+        self.btn_tpl_use.setEnabled(chosen is not None and hay_doc)
+        self.btn_tpl_new.setEnabled(chosen is not None)
         self.btn_tpl_save.setEnabled(hay_doc)
         # las de serie no se borran: vienen con el programa
-        self.btn_tpl_del.setEnabled(elegida is not None and not elegida[1])
+        self.btn_tpl_del.setEnabled(chosen is not None and not chosen[1])
 
     def _load_selected(self):
         """Carga la plantilla elegida venga de donde venga."""
-        elegida = self._selected_template()
-        if elegida is None:
+        chosen = self._selected_template()
+        if chosen is None:
             return None
-        ruta, de_serie = elegida
+        path, de_serie = chosen
         try:
             if de_serie:
-                return load_builtin(ruta.split(":", 1)[1])
-            return load_template(ruta)
+                return load_builtin(path.split(":", 1)[1])
+            return load_template(path)
         except TemplateError as exc:
             QMessageBox.critical(self, __app_name__, str(exc))
             return None
@@ -1124,13 +1135,13 @@ class MainWindow(QMainWindow):
         if not self.view.has_document():
             QMessageBox.information(self, __app_name__, tr("tpl_none"))
             return False
-        datos = self._load_selected()
-        if datos is None:
+        data = self._load_selected()
+        if data is None:
             return False
-        nombre, _paginas, anotaciones = datos
-        colocadas = self.view.apply_template(anotaciones)
+        name, _paginas, annotations = data
+        placed = self.view.apply_template(annotations)
         self.statusBar().showMessage(
-            tr("template_applied", name=nombre, count=colocadas,
+            tr("template_applied", name=name, count=placed,
                page=self.view.current_page + 1),
             6000,
         )
@@ -1138,22 +1149,22 @@ class MainWindow(QMainWindow):
 
     def new_from_selected_template(self) -> bool:
         """Crea un documento nuevo a partir de la plantilla."""
-        datos = self._load_selected()
-        if datos is None:
+        data = self._load_selected()
+        if data is None:
             return False
-        return self._document_from_template(*datos)
+        return self._document_from_template(*data)
 
     def delete_selected_template(self) -> bool:
-        elegida = self._selected_template()
-        if elegida is None or elegida[1]:
+        chosen = self._selected_template()
+        if chosen is None or chosen[1]:
             return False
-        ruta = elegida[0]
+        path = chosen[0]
         if QMessageBox.question(
-            self, __app_name__, tr("template_delete_ask", name=os.path.basename(ruta))
+            self, __app_name__, tr("template_delete_ask", name=os.path.basename(path))
         ) != QMessageBox.Yes:
             return False
         try:
-            delete_template(ruta)
+            delete_template(path)
         except TemplateError as exc:
             QMessageBox.critical(self, __app_name__, str(exc))
             return False
@@ -1173,7 +1184,7 @@ class MainWindow(QMainWindow):
         ver_leidas = self.btn_notes_show.isChecked()
         self.notes_list.blockSignals(True)
         self.notes_list.clear()
-        pendientes = 0
+        pending = 0
         for ann in sorted(
             (a for a in self.view.store if a.kind is Kind.NOTE),
             key=lambda a: (a.page, a.rect[1], a.rect[0]),
@@ -1181,9 +1192,9 @@ class MainWindow(QMainWindow):
             if ann.done and not ver_leidas:
                 continue
             if not ann.done:
-                pendientes += 1
-            texto = (ann.text or "").strip().splitlines()
-            resumen = texto[0] if texto else tr("note_empty")
+                pending += 1
+            text = (ann.text or "").strip().splitlines()
+            resumen = text[0] if text else tr("note_empty")
             item = QListWidgetItem(tr("note_entry", page=ann.page + 1, text=resumen[:60]))
             item.setData(Qt.UserRole, ann.id)
             item.setToolTip(ann.text or "")
@@ -1195,11 +1206,11 @@ class MainWindow(QMainWindow):
                 item.setFont(fuente)
             self.notes_list.addItem(item)
         self.notes_list.blockSignals(False)
-        indice = self.side_tabs.indexOf(self.notes_list.parentWidget())
-        if indice >= 0:
-            etiqueta = tr("notes_tab")
+        index = self.side_tabs.indexOf(self.notes_list.parentWidget())
+        if index >= 0:
+            label = tr("notes_tab")
             self.side_tabs.setTabText(
-                indice, f"{etiqueta} ({pendientes})" if pendientes else etiqueta
+                index, f"{label} ({pending})" if pending else label
             )
 
     def _note_by_id(self, ann_id):
@@ -1414,14 +1425,14 @@ class MainWindow(QMainWindow):
             return False
         try:
             with open(path, "rb") as fh:
-                datos = fh.read()
+                data = fh.read()
         except OSError as exc:
             QMessageBox.warning(self, __app_name__, tr("image_unreadable", error=exc))
             return False
-        if QPixmap.fromImage(QImage.fromData(datos)).isNull():
+        if QPixmap.fromImage(QImage.fromData(data)).isNull():
             QMessageBox.warning(self, __app_name__, tr("image_invalid"))
             return False
-        self.view.style_defaults["image"] = (os.path.basename(path), datos)
+        self.view.style_defaults["image"] = (os.path.basename(path), data)
         self.settings.set_last_dir(os.path.dirname(path))
         return True
 
@@ -1437,8 +1448,8 @@ class MainWindow(QMainWindow):
         elif tool is Tool.TEXT:
             self.statusBar().showMessage(tr("hint_text"), 5000)
         elif tool is Tool.IMAGE:
-            nombre = (self.view.style_defaults.get("image") or ("", b""))[0]
-            self.statusBar().showMessage(tr("hint_image", name=nombre), 6000)
+            name = (self.view.style_defaults.get("image") or ("", b""))[0]
+            self.statusBar().showMessage(tr("hint_image", name=name), 6000)
         elif tool is Tool.TABLE:
             self.statusBar().showMessage(
                 tr("hint_table", rows=self.rows_spin.value(), cols=self.cols_spin.value()),
@@ -1446,18 +1457,18 @@ class MainWindow(QMainWindow):
             )
 
     # ------------------------------------------------------------------ archivos
-    def _set_page_size(self, nombre: str) -> None:
-        self.new_page_size = nombre
-        self.settings.set_value("document/page_size", nombre)
+    def _set_page_size(self, name: str) -> None:
+        self.new_page_size = name
+        self.settings.set_value("document/page_size", name)
 
     def new_document(self) -> None:
         """Crea un PDF vacio y lo abre."""
         if not self._confirm_discard():
             return
-        anterior = self.view.document
+        previous = self.view.document
         self.view.set_document(PdfDocument.blank(1, self.new_page_size))
-        if anterior is not None:
-            anterior.close()
+        if previous is not None:
+            previous.close()
         self._modified = False
         self.view.undo_stack.setClean()
         self._build_thumbnails()
@@ -1476,15 +1487,15 @@ class MainWindow(QMainWindow):
 
     def insert_page_here(self) -> None:
         if self.view.has_document():
-            destino = self.view.current_page + 1
-            self.view.add_page(destino, self.new_page_size)
-            self._after_page_change(destino)
+            target = self.view.current_page + 1
+            self.view.add_page(target, self.new_page_size)
+            self._after_page_change(target)
 
     def duplicate_current_page(self) -> None:
         if self.view.has_document():
-            actual = self.view.current_page
-            self.view.duplicate_page(actual)
-            self._after_page_change(actual + 1)
+            current = self.view.current_page
+            self.view.duplicate_page(current)
+            self._after_page_change(current + 1)
 
     def delete_current_page(self) -> None:
         if not self.view.has_document():
@@ -1492,25 +1503,25 @@ class MainWindow(QMainWindow):
         if self.view.page_count <= 1:
             QMessageBox.information(self, __app_name__, tr("last_page"))
             return
-        actual = self.view.current_page
-        anotaciones = len(self.view.items_on_page(actual))
-        aviso = tr("delete_page_ask", page=actual + 1, total=self.view.page_count)
-        if anotaciones:
-            aviso += tr("delete_page_annots", count=anotaciones)
-        aviso += tr("delete_page_undo")
-        if QMessageBox.question(self, __app_name__, aviso) != QMessageBox.Yes:
+        current = self.view.current_page
+        annotations = len(self.view.items_on_page(current))
+        notice = tr("delete_page_ask", page=current + 1, total=self.view.page_count)
+        if annotations:
+            notice += tr("delete_page_annots", count=annotations)
+        notice += tr("delete_page_undo")
+        if QMessageBox.question(self, __app_name__, notice) != QMessageBox.Yes:
             return
-        self.view.delete_page(actual)
-        self._after_page_change(min(actual, self.view.page_count - 1))
+        self.view.delete_page(current)
+        self._after_page_change(min(current, self.view.page_count - 1))
 
     def edit_note(self, item) -> None:
         """Pide (o cambia) el texto de una nota adhesiva."""
-        texto, aceptado = QInputDialog.getMultiLineText(
+        text, accepted = QInputDialog.getMultiLineText(
             self, tr("note_title"), tr("note_prompt"), item.ann.text or ""
         )
-        if not aceptado:
+        if not accepted:
             return
-        item.ann.text = texto.strip()
+        item.ann.text = text.strip()
         item.setToolTip(item.ann.text)
         item.update()
         self.view.notify_modified()
@@ -1532,23 +1543,23 @@ class MainWindow(QMainWindow):
 
     def rotate_current_page(self, delta: int) -> None:
         if self.view.has_document():
-            actual = self.view.current_page
-            self.view.rotate_page(actual, delta)
-            self._after_page_change(actual)
+            current = self.view.current_page
+            self.view.rotate_page(current, delta)
+            self._after_page_change(current)
 
     def move_current_page(self, delta: int) -> None:
         if not self.view.has_document():
             return
-        actual = self.view.current_page
-        destino = actual + delta
-        if 0 <= destino < self.view.page_count:
-            self.view.move_page(actual, destino)
-            self._after_page_change(destino)
+        current = self.view.current_page
+        target = current + delta
+        if 0 <= target < self.view.page_count:
+            self.view.move_page(current, target)
+            self._after_page_change(target)
 
-    def _after_page_change(self, pagina: int) -> None:
+    def _after_page_change(self, page_item: int) -> None:
         """Rehace las miniaturas y coloca la vista en la pagina indicada."""
         self._build_thumbnails()
-        self.view.go_to_page(max(0, min(pagina, self.view.page_count - 1)))
+        self.view.go_to_page(max(0, min(page_item, self.view.page_count - 1)))
         self._update_actions()
         self._update_title()
 
@@ -1560,83 +1571,83 @@ class MainWindow(QMainWindow):
         base = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
         if not base:  # pragma: no cover - sistemas raros
             base = os.path.join(os.path.expanduser("~"), ".easypdf")
-        carpeta = os.path.join(base, "Templates")
+        folder = os.path.join(base, "Templates")
         # La carpeta se llamaba "plantillas". Si existe y todavia no hay una
         # con el nombre nuevo, se renombra: asi no se pierde nada de lo que
         # el usuario tuviera guardado.
         antigua = os.path.join(base, "plantillas")
-        if os.path.isdir(antigua) and not os.path.exists(carpeta):
+        if os.path.isdir(antigua) and not os.path.exists(folder):
             try:
-                os.rename(antigua, carpeta)
+                os.rename(antigua, folder)
             except OSError:  # pragma: no cover - permisos raros
                 return antigua
-        return carpeta
+        return folder
 
     def _refresh_templates_menu(self) -> None:
         menu = self.templates_menu
         menu.clear()
-        guardar = QAction(tr("template_save"), self)
-        guardar.setStatusTip(tr("template_save_tip"))
-        guardar.triggered.connect(self.save_as_template)
-        guardar.setEnabled(self.view.has_document())
-        menu.addAction(guardar)
+        save_it = QAction(tr("template_save"), self)
+        save_it.setStatusTip(tr("template_save_tip"))
+        save_it.triggered.connect(self.save_as_template)
+        save_it.setEnabled(self.view.has_document())
+        menu.addAction(save_it)
         menu.addSeparator()
 
-        plantillas = list_templates(self.templates_dir())
-        if not plantillas:
-            vacio = QAction(tr("template_none"), self)
-            vacio.setEnabled(False)
-            menu.addAction(vacio)
+        templates = list_templates(self.templates_dir())
+        if not templates:
+            empty = QAction(tr("template_none"), self)
+            empty.setEnabled(False)
+            menu.addAction(empty)
         else:
-            nuevo = menu.addMenu(tr("template_new"))
-            aplicar = menu.addMenu(tr("template_apply"))
-            aplicar.setEnabled(self.view.has_document())
-            for plantilla in plantillas:
-                detalle = tr("template_detail", count=plantilla.annotations)
-                if plantilla.pages:
+            new_one = menu.addMenu(tr("template_new"))
+            apply_it = menu.addMenu(tr("template_apply"))
+            apply_it.setEnabled(self.view.has_document())
+            for template in templates:
+                detalle = tr("template_detail", count=template.annotations)
+                if template.pages:
                     detalle = tr(
                         "template_detail_pages",
-                        pages=plantilla.pages,
-                        count=plantilla.annotations,
+                        pages=template.pages,
+                        count=template.annotations,
                     )
-                act = QAction(f"{plantilla.name}  ({detalle})", self)
+                act = QAction(f"{template.name}  ({detalle})", self)
                 act.triggered.connect(
-                    lambda checked=False, p=plantilla.path: self.new_from_template(p)
+                    lambda checked=False, p=template.path: self.new_from_template(p)
                 )
-                nuevo.addAction(act)
+                new_one.addAction(act)
 
-                act2 = QAction(f"{plantilla.name}  ({detalle})", self)
+                act2 = QAction(f"{template.name}  ({detalle})", self)
                 act2.triggered.connect(
-                    lambda checked=False, p=plantilla.path: self.apply_template(p)
+                    lambda checked=False, p=template.path: self.apply_template(p)
                 )
-                aplicar.addAction(act2)
+                apply_it.addAction(act2)
 
-            borrar = menu.addMenu(tr("template_delete"))
-            for plantilla in plantillas:
-                act = QAction(plantilla.name, self)
+            erase_it = menu.addMenu(tr("template_delete"))
+            for template in templates:
+                act = QAction(template.name, self)
                 act.triggered.connect(
-                    lambda checked=False, p=plantilla: self.delete_template(p)
+                    lambda checked=False, p=template: self.delete_template(p)
                 )
-                borrar.addAction(act)
+                erase_it.addAction(act)
 
         menu.addSeparator()
-        carpeta = QAction(tr("template_folder"), self)
-        carpeta.triggered.connect(
+        folder = QAction(tr("template_folder"), self)
+        folder.triggered.connect(
             lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(self._ensure_templates_dir()))
         )
-        menu.addAction(carpeta)
+        menu.addAction(folder)
 
     def _ensure_templates_dir(self) -> str:
-        ruta = self.templates_dir()
-        os.makedirs(ruta, exist_ok=True)
-        return ruta
+        path = self.templates_dir()
+        os.makedirs(path, exist_ok=True)
+        return path
 
     def save_as_template(self) -> bool:
         """Guarda las anotaciones actuales como plantilla reutilizable."""
         if not self.view.has_document():
             return False
-        anotaciones = list(self.view.annotations())
-        if not anotaciones:
+        annotations = list(self.view.annotations())
+        if not annotations:
             QMessageBox.information(
                 self,
                 __app_name__,
@@ -1644,23 +1655,23 @@ class MainWindow(QMainWindow):
             )
             return False
         propuesto = os.path.splitext(self.view.document.name)[0]
-        nombre, ok = QInputDialog.getText(
+        name, ok = QInputDialog.getText(
             self, tr("template_name_title"), tr("template_name_label"), text=propuesto
         )
-        if not ok or not nombre.strip():
+        if not ok or not name.strip():
             return False
-        etiquetas = [tr(f"cat_{c}") for c in CATEGORIES]
-        elegido, ok = QInputDialog.getItem(
-            self, tr("template_name_title"), tr("tpl_kind"), etiquetas, 0, False
+        labels = [tr(f"cat_{c}") for c in CATEGORIES]
+        chosen, ok = QInputDialog.getItem(
+            self, tr("template_name_title"), tr("tpl_kind"), labels, 0, False
         )
         if not ok:
             return False
-        categoria = CATEGORIES[etiquetas.index(elegido)]
+        categoria = CATEGORIES[labels.index(chosen)]
         try:
-            ruta = save_template(
+            path = save_template(
                 self._ensure_templates_dir(),
-                nombre,
-                anotaciones,
+                name,
+                annotations,
                 self.view.document.page_sizes(),
                 category=categoria,
             )
@@ -1668,7 +1679,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, __app_name__, str(exc))
             return False
         self.statusBar().showMessage(
-            tr("template_saved", name=os.path.basename(ruta)), 5000
+            tr("template_saved", name=os.path.basename(path)), 5000
         )
         self.refresh_templates()
         return True
@@ -1678,40 +1689,40 @@ class MainWindow(QMainWindow):
         if not self.view.has_document():
             return False
         try:
-            nombre, _paginas, anotaciones = load_template(path)
+            name, _paginas, annotations = load_template(path)
         except TemplateError as exc:
             QMessageBox.critical(self, __app_name__, str(exc))
             return False
-        colocadas = self.view.apply_template(anotaciones)
+        placed = self.view.apply_template(annotations)
         self.statusBar().showMessage(
-            tr("template_applied", name=nombre, count=colocadas,
+            tr("template_applied", name=name, count=placed,
                page=self.view.current_page + 1),
             6000,
         )
-        return colocadas > 0
+        return placed > 0
 
     def new_from_template(self, path: str) -> bool:
         """Crea un documento nuevo con las paginas y anotaciones de la plantilla."""
         try:
-            nombre, paginas, anotaciones = load_template(path)
+            name, page_items, annotations = load_template(path)
         except TemplateError as exc:
             QMessageBox.critical(self, __app_name__, str(exc))
             return False
-        return self._document_from_template(nombre, paginas, anotaciones)
+        return self._document_from_template(name, page_items, annotations)
 
-    def _document_from_template(self, nombre, paginas, anotaciones) -> bool:
+    def _document_from_template(self, name, page_items, annotations) -> bool:
         """Crea el documento. Lo comparten el menu y el panel de plantillas."""
         if not self._confirm_discard():
             return False
-        anterior = self.view.document
-        tamano = paginas[0] if paginas else self.new_page_size
-        documento = PdfDocument.blank(1, tamano, title=f"{nombre}.pdf")
-        for ancho, alto in paginas[1:]:
-            documento.add_blank_page(size=(ancho, alto))
-        self.view.set_document(documento)
-        if anterior is not None:
-            anterior.close()
-        self.view.apply_template(anotaciones, first_page=0)
+        previous = self.view.document
+        size = page_items[0] if page_items else self.new_page_size
+        document = PdfDocument.blank(1, size, title=f"{name}.pdf")
+        for width, height in page_items[1:]:
+            document.add_blank_page(size=(width, height))
+        self.view.set_document(document)
+        if previous is not None:
+            previous.close()
+        self.view.apply_template(annotations, first_page=0)
         self._modified = False
         self.view.undo_stack.setClean()
         self._build_thumbnails()
@@ -1720,24 +1731,24 @@ class MainWindow(QMainWindow):
         self.refresh_templates()
         self._update_title()
         self._update_actions()
-        self.statusBar().showMessage(tr("template_new_done", name=nombre), 6000)
+        self.statusBar().showMessage(tr("template_new_done", name=name), 6000)
         self.documentChanged.emit()
         return True
 
-    def delete_template(self, plantilla) -> bool:
-        from ..templates import delete_template as borrar
+    def delete_template(self, template) -> bool:
+        from ..templates import delete_template as erase_it
 
-        respuesta = QMessageBox.question(
-            self, __app_name__, tr("template_delete_ask", name=plantilla.name)
+        response = QMessageBox.question(
+            self, __app_name__, tr("template_delete_ask", name=template.name)
         )
-        if respuesta != QMessageBox.Yes:
+        if response != QMessageBox.Yes:
             return False
         try:
-            borrar(plantilla.path)
+            erase_it(template.path)
         except TemplateError as exc:
             QMessageBox.critical(self, __app_name__, str(exc))
             return False
-        self.statusBar().showMessage(tr("template_deleted", name=plantilla.name), 4000)
+        self.statusBar().showMessage(tr("template_deleted", name=template.name), 4000)
         return True
 
     # ------------------------------------------------------------------ idioma
@@ -1752,26 +1763,26 @@ class MainWindow(QMainWindow):
 
     def retranslate(self) -> None:
         """Vuelve a poner todos los textos en el idioma activo."""
-        for act, (clave, tip) in self._action_keys.items():
-            act.setText(tr(clave, app=__app_name__))
-            act.setStatusTip(tr(tip) if tip else tr(clave, app=__app_name__))
-        for menu, clave in self._menu_keys.items():
-            menu.setTitle(tr(clave))
+        for act, (key, tip) in self._action_keys.items():
+            act.setText(tr(key, app=__app_name__))
+            act.setStatusTip(tr(tip) if tip else tr(key, app=__app_name__))
+        for menu, key in self._menu_keys.items():
+            menu.setTitle(tr(key))
         if hasattr(self, "side_tabs"):
             # Por indice de la pestana no: al anadir "Elementos" en medio,
             # el numero fijo acababa poniendole el nombre de otra.
-            for widget, clave in ((self.bookmark_list, "bookmarks_dock"),
+            for widget, key in ((self.bookmark_list, "bookmarks_dock"),
                                   (self.notes_list, "notes_tab"),
                                   (self.el_tree, "elements_tab"),
                                   (self.tpl_tree, "templates_tab")):
-                indice = self.side_tabs.indexOf(widget.parentWidget())
-                if indice >= 0:
-                    self.side_tabs.setTabText(indice, tr(clave))
-            for boton, clave in ((self.btn_tpl_use, "tpl_use"),
+                index = self.side_tabs.indexOf(widget.parentWidget())
+                if index >= 0:
+                    self.side_tabs.setTabText(index, tr(key))
+            for button, key in ((self.btn_tpl_use, "tpl_use"),
                                  (self.btn_tpl_new, "tpl_new"),
                                  (self.btn_tpl_save, "tpl_save"),
                                  (self.btn_tpl_del, "tpl_delete")):
-                boton.setText(tr(clave))
+                button.setText(tr(key))
             self.refresh_templates()
             self.btn_el_insert.setText(tr("el_insert"))
             self.el_hint.setText(tr("el_hint"))
@@ -1787,13 +1798,13 @@ class MainWindow(QMainWindow):
         self.refresh_templates()
         if hasattr(self, "thumb_dock"):
             self.thumb_dock.setWindowTitle(tr("pages_dock"))
-        for nombre, act in getattr(self, "page_size_actions", {}).items():
-            act.setText(page_size_label(nombre))
-        for tool, (clave, _icono, key) in self.tool_keys.items():
-            accion = self.tool_actions[tool]
-            accion.setText(tr(clave))
-            accion.setStatusTip(
-                tr("tool_status", name=tr(clave).replace("&", ""), key=key)
+        for name, act in getattr(self, "page_size_actions", {}).items():
+            act.setText(page_size_label(name))
+        for tool, (text_key, _icon, shortcut) in self.tool_keys.items():
+            action = self.tool_actions[tool]
+            action.setText(tr(text_key))
+            action.setStatusTip(
+                tr("tool_status", name=tr(text_key).replace("&", ""), key=shortcut)
             )
         self.act_undo.setText(tr("undo"))
         self.act_redo.setText(tr("redo"))
@@ -1801,8 +1812,8 @@ class MainWindow(QMainWindow):
         self.act_bold.setToolTip(tr("bold_tip"))
         self.act_italic.setText(tr("italic"))
         self.act_italic.setToolTip(tr("italic_tip"))
-        for alineacion, accion in self.align_actions.items():
-            accion.setText(tr(f"act_align_{alineacion.name.lower()}"))
+        for alineacion, action in self.align_actions.items():
+            action.setText(tr(f"act_align_{alineacion.name.lower()}"))
         self.act_close_search.setText(tr("search_close"))
         self.search_edit.setPlaceholderText(tr("search_placeholder"))
         self.color_button.setToolTip(tr("color_tip"))
@@ -1816,11 +1827,11 @@ class MainWindow(QMainWindow):
         self.lbl_font.setText(tr("font_size"))
         self.font_spin.setToolTip(tr("font_size_tip"))
         self.font_combo.setToolTip(tr("font_tip"))
-        indice = self.font_combo.currentIndex()
+        index = self.font_combo.currentIndex()
         self.font_combo.blockSignals(True)
-        for posicion, familia in enumerate((Font.SANS, Font.SERIF, Font.MONO)):
-            self.font_combo.setItemText(posicion, tr(f"font_{familia.name.lower()}"))
-        self.font_combo.setCurrentIndex(indice)
+        for position, familia in enumerate((Font.SANS, Font.SERIF, Font.MONO)):
+            self.font_combo.setItemText(position, tr(f"font_{familia.name.lower()}"))
+        self.font_combo.setCurrentIndex(index)
         self.font_combo.blockSignals(False)
         self.lbl_table.setText(tr("table_label"))
         self.rows_spin.setPrefix(tr("rows_prefix"))
@@ -2055,19 +2066,19 @@ class MainWindow(QMainWindow):
         if row >= 0 and row != self.view.current_page:
             self.view.go_to_page(row)
 
-    def _on_thumbnail_dropped(self, origen: int, destino: int) -> None:
+    def _on_thumbnail_dropped(self, source: int, target: int) -> None:
         """Reordena el documento tras arrastrar una miniatura."""
         if not self.view.has_document():
             return
-        if not (0 <= origen < self.view.page_count):
+        if not (0 <= source < self.view.page_count):
             return
-        destino = max(0, min(destino, self.view.page_count - 1))
-        if destino == origen:
+        target = max(0, min(target, self.view.page_count - 1))
+        if target == source:
             return
-        self.view.move_page(origen, destino)
-        self._after_page_change(destino)
+        self.view.move_page(source, target)
+        self._after_page_change(target)
         self.statusBar().showMessage(
-            tr("page_move_undo", origin=origen + 1, target=destino + 1), 6000
+            tr("page_move_undo", origin=source + 1, target=target + 1), 6000
         )
 
     def _thumbnail_menu(self, pos) -> None:
@@ -2077,26 +2088,26 @@ class MainWindow(QMainWindow):
         item = self.thumb_list.itemAt(pos)
         if item is None:
             return
-        pagina = self.thumb_list.row(item)
-        self.thumb_list.setCurrentRow(pagina)
-        menu, acciones = self.build_page_menu(pagina)
-        elegido = menu.exec(self.thumb_list.viewport().mapToGlobal(pos))
-        if elegido is not None:
-            self.run_page_action(acciones.get(elegido), pagina)
+        page_item = self.thumb_list.row(item)
+        self.thumb_list.setCurrentRow(page_item)
+        menu, acciones = self.build_page_menu(page_item)
+        chosen = menu.exec(self.thumb_list.viewport().mapToGlobal(pos))
+        if chosen is not None:
+            self.run_page_action(acciones.get(chosen), page_item)
 
-    def build_page_menu(self, pagina: int):
+    def build_page_menu(self, page_item: int):
         """Menu de una pagina. Separado del gesto para poder probarlo."""
         menu = QMenu(self)
         acciones = {}
 
-        def submenu_insertar(clave: str, texto: str) -> None:
+        def submenu_insertar(key: str, text: str) -> None:
             """Insertar una pagina, eligiendo su tamano en el momento."""
-            sub = menu.addMenu(texto)
+            sub = menu.addMenu(text)
             igual = sub.addAction(tr("size_same"))
-            acciones[igual] = f"{clave}:"          # sin tamano = como la vecina
+            acciones[igual] = f"{key}:"          # sin tamano = como la vecina
             sub.addSeparator()
-            for nombre in PAGE_SIZES:
-                acciones[sub.addAction(page_size_label(nombre))] = f"{clave}:{nombre}"
+            for name in PAGE_SIZES:
+                acciones[sub.addAction(page_size_label(name))] = f"{key}:{name}"
 
         submenu_insertar("insert_before", tr("page_insert_before"))
         submenu_insertar("insert_after", tr("page_insert_after"))
@@ -2107,55 +2118,55 @@ class MainWindow(QMainWindow):
         girar_der = menu.addAction(tr("page_rotate_right"))
         girar_180 = menu.addAction(tr("page_rotate_180"))
         menu.addSeparator()
-        arriba = menu.addAction(tr("page_up"))
-        abajo = menu.addAction(tr("page_down"))
-        arriba.setEnabled(pagina > 0)
-        abajo.setEnabled(pagina < self.view.page_count - 1)
+        top = menu.addAction(tr("page_up"))
+        bottom = menu.addAction(tr("page_down"))
+        top.setEnabled(page_item > 0)
+        bottom.setEnabled(page_item < self.view.page_count - 1)
         menu.addSeparator()
-        borrar = menu.addAction(tr("page_delete"))
-        borrar.setEnabled(self.view.page_count > 1)
+        erase_it = menu.addAction(tr("page_delete"))
+        erase_it.setEnabled(self.view.page_count > 1)
         acciones.update({
             duplicar: "duplicate",
             girar_izq: "rotate_left",
             girar_der: "rotate_right",
             girar_180: "rotate_180",
-            arriba: "up",
-            abajo: "down",
-            borrar: "delete",
+            top: "up",
+            bottom: "down",
+            erase_it: "delete",
         })
         return menu, acciones
 
-    def run_page_action(self, accion: str | None, pagina: int) -> None:
+    def run_page_action(self, action: str | None, page_item: int) -> None:
         """Ejecuta una de las opciones del menu de pagina."""
-        if accion is None or not self.view.has_document():
+        if action is None or not self.view.has_document():
             return
         # Las opciones de insertar llevan el tamano detras: "insert_after:A4".
         # Sin nada detras, la pagina nueva copia el tamano de la de al lado.
-        tamano = None
-        if ":" in accion:
-            accion, _, nombre = accion.partition(":")
-            tamano = nombre or None
-        if accion == "insert_before":
-            self.view.add_page(pagina, tamano)
-            self._after_page_change(pagina)
-        elif accion == "insert_after":
-            self.view.add_page(pagina + 1, tamano)
-            self._after_page_change(pagina + 1)
-        elif accion == "duplicate":
-            self.view.duplicate_page(pagina)
-            self._after_page_change(pagina + 1)
-        elif accion in ("rotate_left", "rotate_right", "rotate_180"):
-            grados = {"rotate_left": -90, "rotate_right": 90, "rotate_180": 180}[accion]
-            self.view.rotate_page(pagina, grados)
-            self._after_page_change(pagina)
-        elif accion == "up" and pagina > 0:
-            self.view.move_page(pagina, pagina - 1)
-            self._after_page_change(pagina - 1)
-        elif accion == "down" and pagina < self.view.page_count - 1:
-            self.view.move_page(pagina, pagina + 1)
-            self._after_page_change(pagina + 1)
-        elif accion == "delete":
-            self.view.go_to_page(pagina)
+        size = None
+        if ":" in action:
+            action, _, name = action.partition(":")
+            size = name or None
+        if action == "insert_before":
+            self.view.add_page(page_item, size)
+            self._after_page_change(page_item)
+        elif action == "insert_after":
+            self.view.add_page(page_item + 1, size)
+            self._after_page_change(page_item + 1)
+        elif action == "duplicate":
+            self.view.duplicate_page(page_item)
+            self._after_page_change(page_item + 1)
+        elif action in ("rotate_left", "rotate_right", "rotate_180"):
+            grados = {"rotate_left": -90, "rotate_right": 90, "rotate_180": 180}[action]
+            self.view.rotate_page(page_item, grados)
+            self._after_page_change(page_item)
+        elif action == "up" and page_item > 0:
+            self.view.move_page(page_item, page_item - 1)
+            self._after_page_change(page_item - 1)
+        elif action == "down" and page_item < self.view.page_count - 1:
+            self.view.move_page(page_item, page_item + 1)
+            self._after_page_change(page_item + 1)
+        elif action == "delete":
+            self.view.go_to_page(page_item)
             self.delete_current_page()
 
     # ------------------------------------------------------------------ busqueda
@@ -2171,8 +2182,8 @@ class MainWindow(QMainWindow):
         self.toolbar_search.setVisible(False)
         self.view.setFocus()
 
-    def _on_search_text_changed(self, texto: str) -> None:
-        if not texto.strip():
+    def _on_search_text_changed(self, text: str) -> None:
+        if not text.strip():
             self.view.clear_search()
             self.search_label.setText("  ")
 
@@ -2232,8 +2243,8 @@ class MainWindow(QMainWindow):
         seleccionar, asi que no hay nada que borrar ni que copiar. Antes DEL
         no hacia absolutamente nada y no habia forma de saber por que.
         """
-        clave = "status_no_selection" if self.view.tool is Tool.SELECT else "status_pick_select"
-        self.statusBar().showMessage(tr(clave), 4000)
+        key = "status_no_selection" if self.view.tool is Tool.SELECT else "status_pick_select"
+        self.statusBar().showMessage(tr(key), 4000)
 
     def delete_selection(self) -> None:
         if self.view.delete_selected():
@@ -2242,23 +2253,23 @@ class MainWindow(QMainWindow):
             self._sin_seleccion()
 
     def copy_selection(self) -> None:
-        cuantas = self.view.copy_selected()
-        if cuantas:
-            self.statusBar().showMessage(tr("status_copied", count=cuantas), 3000)
+        how_many = self.view.copy_selected()
+        if how_many:
+            self.statusBar().showMessage(tr("status_copied", count=how_many), 3000)
         else:
             self._sin_seleccion()
 
     def cut_selection(self) -> None:
-        cuantas = self.view.cut_selected()
-        if cuantas:
-            self.statusBar().showMessage(tr("status_cut", count=cuantas), 3000)
+        how_many = self.view.cut_selected()
+        if how_many:
+            self.statusBar().showMessage(tr("status_cut", count=how_many), 3000)
         else:
             self._sin_seleccion()
 
     def paste_clipboard(self) -> None:
-        cuantas = self.view.paste_clipboard()
-        if cuantas:
-            self.statusBar().showMessage(tr("status_pasted", count=cuantas), 3000)
+        how_many = self.view.paste_clipboard()
+        if how_many:
+            self.statusBar().showMessage(tr("status_pasted", count=how_many), 3000)
         else:
             self.statusBar().showMessage(tr("status_clipboard_empty"), 3000)
 
@@ -2407,20 +2418,20 @@ class MainWindow(QMainWindow):
         """Coloca una imagen del disco donde se haya soltado."""
         try:
             with open(path, "rb") as fh:
-                datos = fh.read()
+                data = fh.read()
         except OSError as exc:
             QMessageBox.warning(self, __app_name__, tr("image_unreadable", error=exc))
             return False
-        vista = self.view
+        view = self.view
         if window_pos is not None:
-            punto = vista.viewport().mapFrom(self, window_pos)
-            escena = vista.mapToScene(punto)
+            point = view.viewport().mapFrom(self, window_pos)
+            scene = view.mapToScene(point)
         else:
-            escena = vista.mapToScene(vista.viewport().rect().center())
-        pagina = vista.nearest_page(escena)
-        if pagina is None:
+            scene = view.mapToScene(view.viewport().rect().center())
+        page_item = view.nearest_page(scene)
+        if page_item is None:
             return False
-        vista.place_image(os.path.basename(path), datos, pagina.index, pagina.mapFromScene(escena))
+        view.place_image(os.path.basename(path), data, page_item.index, page_item.mapFromScene(scene))
         self.statusBar().showMessage(tr("status_image_placed", name=os.path.basename(path)), 4000)
         return True
 
@@ -2432,16 +2443,16 @@ class MainWindow(QMainWindow):
         self._update_manual = False
         self.updater = UpdateChecker(self)
         self.updater.finished.connect(self._on_update_result)
-        activo = self.settings.value("updates/auto", True, type_=bool)
+        active = self.settings.value("updates/auto", True, type_=bool)
         self.act_update_auto.blockSignals(True)
-        self.act_update_auto.setChecked(bool(activo))
+        self.act_update_auto.setChecked(bool(active))
         self.act_update_auto.blockSignals(False)
-        if activo:
+        if active:
             # Se retrasa un poco: primero que arranque la ventana.
             QTimer.singleShot(2500, lambda: self.check_updates(manual=False))
 
-    def _set_update_auto(self, activo: bool) -> None:
-        self.settings.set_value("updates/auto", bool(activo))
+    def _set_update_auto(self, active: bool) -> None:
+        self.settings.set_value("updates/auto", bool(active))
 
     def check_updates(self, manual: bool = False) -> None:
         """Pregunta a la web oficial si hay una version mas nueva."""
@@ -2452,27 +2463,27 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(tr("update_checking"), 5000)
         self.updater.start()
 
-    def _on_update_result(self, datos) -> None:
-        if not datos:
+    def _on_update_result(self, data) -> None:
+        if not data:
             if self._update_manual:
                 QMessageBox.information(
                     self, __app_name__, tr("update_none", version=__version__)
                 )
             return
-        nueva = str(datos.get("version", ""))
+        nueva = str(data.get("version", ""))
         if not self._update_manual and nueva == self.settings.value("updates/skip", ""):
             return                       # el usuario dijo que no le avisaran
-        self._ask_to_update(nueva, datos)
+        self._ask_to_update(nueva, data)
 
-    def _ask_to_update(self, nueva: str, datos: dict) -> None:
+    def _ask_to_update(self, nueva: str, data: dict) -> None:
         from .update_download import UpdateDialog
 
-        dialogo = UpdateDialog(self, nueva, datos, install_cb=self.install_update)
+        dialogo = UpdateDialog(self, nueva, data, install_cb=self.install_update)
         dialogo.exec()
         if dialogo.skipped:
             self.settings.set_value("updates/skip", nueva)
 
-    def install_update(self, ruta: str) -> bool:
+    def install_update(self, path: str) -> bool:
         """Cierra el programa y arranca el instalador que se acaba de bajar.
 
         Devuelve False si el usuario cancela al cerrar (por ejemplo porque
@@ -2483,7 +2494,7 @@ class MainWindow(QMainWindow):
         if not self.close():             # respeta el aviso de cambios sin guardar
             return False
         try:
-            launch_installer(ruta)
+            launch_installer(path)
         except Exception as exc:         # pragma: no cover - depende del sistema
             QMessageBox.warning(
                 self, __app_name__, tr("update_download_failed", error=str(exc))

@@ -53,13 +53,13 @@ def sample_image_bytes() -> bytes:
     doc = pymupdf.open()
     page = doc.new_page(width=200, height=120)
     page.draw_rect(pymupdf.Rect(0, 0, 200, 120), color=(0.2, 0.4, 0.9), fill=(0.2, 0.4, 0.9))
-    datos = page.get_pixmap().tobytes("png")
+    data = page.get_pixmap().tobytes("png")
     doc.close()
-    return datos
+    return data
 
 
 @pytest.fixture()
 def sample_image(tmp_path, sample_image_bytes) -> str:
-    ruta = tmp_path / "logo.png"
-    ruta.write_bytes(sample_image_bytes)
-    return str(ruta)
+    path = tmp_path / "logo.png"
+    path.write_bytes(sample_image_bytes)
+    return str(path)

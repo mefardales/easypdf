@@ -21,41 +21,41 @@ def _leer(relativa: str) -> str:
 
 
 def test_pyproject_declara_la_misma_version():
-    encontrado = re.search(r'^version\s*=\s*"([^"]+)"', _leer("pyproject.toml"), re.M)
-    assert encontrado, "no hay version en pyproject.toml"
-    assert encontrado.group(1) == __version__
+    found = re.search(r'^version\s*=\s*"([^"]+)"', _leer("pyproject.toml"), re.M)
+    assert found, "no hay version en pyproject.toml"
+    assert found.group(1) == __version__
 
 
 def test_el_instalador_declara_la_misma_version():
-    texto = _leer("packaging/installer.iss")
-    encontrado = re.search(r'#define MyAppVersion "([^"]+)"', texto)
-    assert encontrado, "no hay MyAppVersion en installer.iss"
-    assert encontrado.group(1) == __version__
+    text = _leer("packaging/installer.iss")
+    found = re.search(r'#define MyAppVersion "([^"]+)"', text)
+    assert found, "no hay MyAppVersion en installer.iss"
+    assert found.group(1) == __version__
 
 
 def test_los_metadatos_de_windows_declaran_la_misma_version():
-    texto = _leer("packaging/version_info.txt")
-    esperado = tuple(int(p) for p in __version__.split(".")) + (0,)
+    text = _leer("packaging/version_info.txt")
+    expected = tuple(int(p) for p in __version__.split(".")) + (0,)
 
     # los dos campos numericos, que son los que lee Windows de verdad
     for campo in ("filevers", "prodvers"):
-        encontrado = re.search(rf"{campo}=\(([^)]+)\)", texto)
-        assert encontrado, f"no hay {campo} en version_info.txt"
-        numeros = tuple(int(n) for n in encontrado.group(1).split(","))
-        assert numeros == esperado, f"{campo} dice {numeros} y el paquete {esperado}"
+        found = re.search(rf"{campo}=\(([^)]+)\)", text)
+        assert found, f"no hay {campo} en version_info.txt"
+        numeros = tuple(int(n) for n in found.group(1).split(","))
+        assert numeros == expected, f"{campo} dice {numeros} y el paquete {expected}"
 
     # y los de texto, que son los que se ven en Propiedades
     for campo in ("FileVersion", "ProductVersion"):
-        encontrado = re.search(rf"StringStruct\('{campo}', '([^']+)'\)", texto)
-        assert encontrado, f"no hay {campo} en version_info.txt"
-        assert encontrado.group(1) == f"{__version__}.0"
+        found = re.search(rf"StringStruct\('{campo}', '([^']+)'\)", text)
+        assert found, f"no hay {campo} en version_info.txt"
+        assert found.group(1) == f"{__version__}.0"
 
 
 def test_la_web_enlaza_la_version_del_paquete():
     """Los enlaces de descarga tienen que apuntar a esta version."""
-    for pagina in ("site/index.html", "site/es/index.html"):
-        enlaces = re.findall(r"releases/download/v([\d.]+)/EasyPDF-([\d.]+)-", _leer(pagina))
-        assert enlaces, f"{pagina} no tiene enlaces de descarga"
-        for etiqueta, archivo in enlaces:
-            assert etiqueta == __version__, f"{pagina} enlaza la v{etiqueta}"
-            assert archivo == __version__, f"{pagina} enlaza el archivo {archivo}"
+    for page_item in ("site/index.html", "site/es/index.html"):
+        enlaces = re.findall(r"releases/download/v([\d.]+)/EasyPDF-([\d.]+)-", _leer(page_item))
+        assert enlaces, f"{page_item} no tiene enlaces de descarga"
+        for label, file in enlaces:
+            assert label == __version__, f"{page_item} enlaza la v{label}"
+            assert file == __version__, f"{page_item} enlaza el archivo {file}"

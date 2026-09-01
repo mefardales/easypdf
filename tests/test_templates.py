@@ -20,7 +20,7 @@ from easypdf.templates import (
 
 
 @pytest.fixture()
-def anotaciones(sample_image_bytes):
+def annotations(sample_image_bytes):
     return [
         Annotation(
             kind=Kind.TABLE, page=0, rect=(20, 20, 300, 120), rows=2, cols=2,
@@ -36,8 +36,8 @@ def anotaciones(sample_image_bytes):
     ]
 
 
-def test_ida_y_vuelta_de_cada_tipo(anotaciones):
-    for original in anotaciones:
+def test_ida_y_vuelta_de_cada_tipo(annotations):
+    for original in annotations:
         copia = annotation_from_dict(annotation_to_dict(original))
         assert copia.kind is original.kind
         assert copia.page == original.page
@@ -48,37 +48,37 @@ def test_ida_y_vuelta_de_cada_tipo(anotaciones):
         assert copia.bold == original.bold and copia.align == original.align
 
 
-def test_guardar_y_cargar(tmp_path, anotaciones):
-    ruta = save_template(str(tmp_path), "Factura mensual", anotaciones, [(595, 842), (595, 842)])
-    assert ruta.endswith(EXTENSION)
-    nombre, paginas, cargadas = load_template(ruta)
-    assert nombre == "Factura mensual"
-    assert paginas == [(595.0, 842.0), (595.0, 842.0)]
-    assert [a.kind for a in cargadas] == [a.kind for a in anotaciones]
-    imagen = [a for a in cargadas if a.kind is Kind.IMAGE][0]
-    assert imagen.image_data == anotaciones[2].image_data
+def test_guardar_y_cargar(tmp_path, annotations):
+    path = save_template(str(tmp_path), "Factura mensual", annotations, [(595, 842), (595, 842)])
+    assert path.endswith(EXTENSION)
+    name, page_items, cargadas = load_template(path)
+    assert name == "Factura mensual"
+    assert page_items == [(595.0, 842.0), (595.0, 842.0)]
+    assert [a.kind for a in cargadas] == [a.kind for a in annotations]
+    image = [a for a in cargadas if a.kind is Kind.IMAGE][0]
+    assert image.image_data == annotations[2].image_data
 
 
-def test_listar_y_borrar(tmp_path, anotaciones):
-    save_template(str(tmp_path), "Uno", anotaciones[:1])
-    save_template(str(tmp_path), "Dos", anotaciones)
+def test_listar_y_borrar(tmp_path, annotations):
+    save_template(str(tmp_path), "Uno", annotations[:1])
+    save_template(str(tmp_path), "Dos", annotations)
     listadas = list_templates(str(tmp_path))
     assert [t.name for t in listadas] == ["Dos", "Uno"]
-    assert listadas[0].annotations == len(anotaciones)
+    assert listadas[0].annotations == len(annotations)
     delete_template(listadas[0].path)
     assert [t.name for t in list_templates(str(tmp_path))] == ["Uno"]
 
 
 def test_las_anotaciones_vacias_no_se_guardan(tmp_path):
-    ruta = save_template(str(tmp_path), "Casi vacia", [
+    path = save_template(str(tmp_path), "Casi vacia", [
         Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 11, 11)),   # diminuta
         Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 90, 90)),   # valida
     ])
-    assert len(json.loads(open(ruta, encoding="utf-8").read())["annotations"]) == 1
+    assert len(json.loads(open(path, encoding="utf-8").read())["annotations"]) == 1
 
 
-def test_un_archivo_roto_no_rompe_la_lista(tmp_path, anotaciones):
-    save_template(str(tmp_path), "Buena", anotaciones)
+def test_un_archivo_roto_no_rompe_la_lista(tmp_path, annotations):
+    save_template(str(tmp_path), "Buena", annotations)
     (tmp_path / ("rota" + EXTENSION)).write_text("{esto no es json", encoding="utf-8")
     assert [t.name for t in list_templates(str(tmp_path))] == ["Buena"]
     with pytest.raises(TemplateError):
@@ -90,19 +90,19 @@ def test_nombre_de_archivo_seguro():
     assert safe_filename("   ") == "plantilla"
 
 
-def test_aplicar_desde_una_pagina_concreta(anotaciones):
-    movidas = shift_to_page(anotaciones, first_page=2, page_count=5)
+def test_aplicar_desde_una_pagina_concreta(annotations):
+    movidas = shift_to_page(annotations, first_page=2, page_count=5)
     assert [a.page for a in movidas] == [2, 2, 3, 3]
     # no se sale del documento
-    assert [a.page for a in shift_to_page(anotaciones, 4, 5)] == [4, 4, 4, 4]
+    assert [a.page for a in shift_to_page(annotations, 4, 5)] == [4, 4, 4, 4]
     # y son copias: la plantilla original no se toca
-    assert anotaciones[0].page == 0
-    assert movidas[0].id != anotaciones[0].id
+    assert annotations[0].page == 0
+    assert movidas[0].id != annotations[0].id
 
 
-def test_sin_nombre_no_se_guarda(tmp_path, anotaciones):
+def test_sin_nombre_no_se_guarda(tmp_path, annotations):
     with pytest.raises(TemplateError):
-        save_template(str(tmp_path), "   ", anotaciones)
+        save_template(str(tmp_path), "   ", annotations)
 
 
 def test_lista_vacia_si_no_hay_carpeta(tmp_path):
@@ -140,8 +140,8 @@ def test_una_plantilla_vieja_sin_tipo_se_sigue_leyendo(tmp_path):
 
     from easypdf.templates import EXTENSION, list_templates
 
-    ruta = tmp_path / ("Antigua" + EXTENSION)
-    ruta.write_text(json.dumps({
+    path = tmp_path / ("Antigua" + EXTENSION)
+    path.write_text(json.dumps({
         "version": 1, "name": "Antigua",
         "pages": [{"width": 595.0, "height": 842.0}],
         "annotations": [],
@@ -170,10 +170,10 @@ def test_se_puede_cargar_una_plantilla_de_serie():
     from easypdf.templates import builtin_infos, load_builtin
 
     informe = next(i for i in builtin_infos() if i.category == "report")
-    nombre, paginas, anotaciones = load_builtin(informe.name)
-    assert nombre == informe.name
-    assert paginas == [(595.0, 842.0)]
-    assert any(a.kind is Kind.TEXT for a in anotaciones)
+    name, page_items, annotations = load_builtin(informe.name)
+    assert name == informe.name
+    assert page_items == [(595.0, 842.0)]
+    assert any(a.kind is Kind.TEXT for a in annotations)
 
 
 def test_cargar_una_de_serie_da_copias_independientes():
@@ -182,9 +182,9 @@ def test_cargar_una_de_serie_da_copias_independientes():
 
     alguna = builtin_infos()[1].name
     _n1, _p1, unas = load_builtin(alguna)
-    _n2, _p2, otras = load_builtin(alguna)
+    _n2, _p2, others = load_builtin(alguna)
     unas[0].text = "cambiado"
-    assert otras[0].text != "cambiado"
+    assert others[0].text != "cambiado"
 
 
 def test_pedir_una_de_serie_que_no_existe_avisa():
@@ -225,11 +225,11 @@ def test_una_anotacion_rota_no_tira_las_demas():
 
     from easypdf.ui.clipboard import decode, encode
 
-    datos = json.loads(encode([Annotation(kind=Kind.RECT, page=0)]))
-    datos["annotations"].insert(0, {"kind": "esto-no-existe"})
-    leidas = decode(json.dumps(datos))
-    assert len(leidas) == 1
-    assert leidas[0].kind is Kind.RECT
+    data = json.loads(encode([Annotation(kind=Kind.RECT, page=0)]))
+    data["annotations"].insert(0, {"kind": "esto-no-existe"})
+    read_ones = decode(json.dumps(data))
+    assert len(read_ones) == 1
+    assert read_ones[0].kind is Kind.RECT
 
 
 def test_copiar_no_deja_el_programa_reventando_al_cerrarse(tmp_path):
@@ -244,11 +244,11 @@ def test_copiar_no_deja_el_programa_reventando_al_cerrarse(tmp_path):
     import sys
     import textwrap
 
-    raiz = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     guion = tmp_path / "copiar.py"
     guion.write_text(textwrap.dedent(f"""
         import sys
-        sys.path.insert(0, {os.path.join(raiz, "src")!r})
+        sys.path.insert(0, {os.path.join(root, "src")!r})
         from PySide6.QtWidgets import QApplication
         app = QApplication([])
         from easypdf.model import Annotation, Kind

@@ -42,9 +42,9 @@ def download_dir() -> str:
     Asi queda a mano si luego quiere volver a instalarlo o guardarlo. Si el
     sistema no dice cual es, se usa la carpeta temporal.
     """
-    ruta = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation)
-    if ruta and os.path.isdir(ruta) and os.access(ruta, os.W_OK):
-        return ruta
+    path = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation)
+    if path and os.path.isdir(path) and os.access(path, os.W_OK):
+        return path
     return tempfile.gettempdir()
 
 
@@ -70,17 +70,17 @@ class Downloader(QObject):
     def cancel(self) -> None:
         self._cancelled = True
 
-    def start(self, url: str, destino: str) -> None:
+    def start(self, url: str, target: str) -> None:
         if self._running:
             return
         self._running = True
         self._cancelled = False
 
-        def trabajo() -> None:
+        def work() -> None:
             try:
-                ruta = download_verified(
+                path = download_verified(
                     url,
-                    destino,
+                    target,
                     on_progress=self._avanzar,
                     cancelled=lambda: self._cancelled,
                 )
@@ -92,12 +92,12 @@ class Downloader(QObject):
                 self._avisar(self.failed, str(exc))
             else:
                 self._running = False
-                self._avisar(self.finished, ruta)
+                self._avisar(self.finished, path)
 
-        threading.Thread(target=trabajo, daemon=True, name="easypdf-download").start()
+        threading.Thread(target=work, daemon=True, name="easypdf-download").start()
 
-    def _avanzar(self, bajado: int, total: int) -> None:
-        self._avisar(self.progress, bajado, total)
+    def _avanzar(self, downloaded: int, total: int) -> None:
+        self._avisar(self.progress, downloaded, total)
 
     def _avisar(self, senal, *args) -> None:
         if self._cancelled:
@@ -117,12 +117,12 @@ class UpdateDialog(QDialog):
     forma parte de lo mismo.
     """
 
-    def __init__(self, parent, nueva: str, datos: dict, install_cb=None) -> None:
+    def __init__(self, parent, nueva: str, data: dict, install_cb=None) -> None:
         super().__init__(parent)
         self.setWindowTitle(tr("update_title"))
         self.setMinimumWidth(440)
         self._nueva = nueva
-        self._datos = datos or {}
+        self._datos = data or {}
         self._install_cb = install_cb
         self._web = str(self._datos.get("url") or __url__)
         self._descarga: Downloader | None = None
@@ -131,31 +131,31 @@ class UpdateDialog(QDialog):
         self.skipped = False
 
         layout = QVBoxLayout(self)
-        self.texto = QLabel(tr("update_body", new=nueva, old=__version__))
-        self.texto.setTextFormat(Qt.TextFormat.RichText)
-        self.texto.setWordWrap(True)
-        layout.addWidget(self.texto)
+        self.text = QLabel(tr("update_body", new=nueva, old=__version__))
+        self.text.setTextFormat(Qt.TextFormat.RichText)
+        self.text.setWordWrap(True)
+        layout.addWidget(self.text)
 
-        self.nota = QLabel()
-        self.nota.setWordWrap(True)
-        self.nota.setStyleSheet("color:#666")
-        self.nota.hide()
-        layout.addWidget(self.nota)
+        self.note = QLabel()
+        self.note.setWordWrap(True)
+        self.note.setStyleSheet("color:#666")
+        self.note.hide()
+        layout.addWidget(self.note)
 
         self.barra = QProgressBar()
         self.barra.hide()
         layout.addWidget(self.barra)
 
-        self.botonera = QHBoxLayout()
-        self.botonera.addStretch(1)
-        layout.addLayout(self.botonera)
+        self.button_row = QHBoxLayout()
+        self.button_row.addStretch(1)
+        layout.addLayout(self.button_row)
 
         self._ofrecer()
 
     # -------------------------------------------------------------- botones
     def _limpiar_botones(self) -> None:
-        while self.botonera.count() > 1:            # el stretch se queda
-            elemento = self.botonera.takeAt(1)
+        while self.button_row.count() > 1:            # el stretch se queda
+            elemento = self.button_row.takeAt(1)
             widget = elemento.widget()
             if widget is not None:
                 # Sacarlo del layout no basta: sigue siendo hijo del dialogo y
@@ -165,13 +165,13 @@ class UpdateDialog(QDialog):
                 widget.setParent(None)
                 widget.deleteLater()
 
-    def _boton(self, texto: str, slot, principal: bool = False) -> QPushButton:
-        boton = QPushButton(texto, self)
-        boton.clicked.connect(slot)
-        boton.setDefault(principal)
-        boton.setAutoDefault(principal)
-        self.botonera.addWidget(boton)
-        return boton
+    def _boton(self, text: str, slot, principal: bool = False) -> QPushButton:
+        button = QPushButton(text, self)
+        button.clicked.connect(slot)
+        button.setDefault(principal)
+        button.setAutoDefault(principal)
+        self.button_row.addWidget(button)
+        return button
 
     # --------------------------------------------------------------- estados
     def _ofrecer(self) -> None:
@@ -183,8 +183,8 @@ class UpdateDialog(QDialog):
                 tr("update_download"), self._descargar, principal=True
             )
         else:
-            self.nota.setText(tr("update_no_asset"))
-            self.nota.show()
+            self.note.setText(tr("update_no_asset"))
+            self.note.show()
         self._boton(tr("update_go"), self._abrir_web)
         self._boton(tr("update_later"), self.reject)
         self._boton(tr("update_skip"), self._saltar)
@@ -195,66 +195,66 @@ class UpdateDialog(QDialog):
         paquete = asset_for_platform(self._datos)
         if paquete is None:                          # pragma: no cover - sin boton
             return
-        url, nombre = paquete
-        destino = os.path.join(download_dir(), nombre)
+        url, name = paquete
+        target = os.path.join(download_dir(), name)
 
         self._limpiar_botones()
-        self.texto.setText(tr("update_downloading", name=nombre))
-        self.nota.hide()
+        self.text.setText(tr("update_downloading", name=name))
+        self.note.hide()
         self.barra.setRange(0, 0)                    # indeterminada hasta saber el total
         # El texto va debajo, no dentro: encima de la barra medio pintada se
         # lee mal justo donde cambia el color.
         self.barra.setTextVisible(False)
         self.barra.show()
-        self.nota.setText("")
-        self.nota.show()
+        self.note.setText("")
+        self.note.show()
         self._boton(tr("update_cancel"), self._cancelar)
 
         self._descarga = Downloader(self)
         self._descarga.progress.connect(self._progreso)
         self._descarga.finished.connect(self._listo)
         self._descarga.failed.connect(self._fallo)
-        self._descarga.start(url, destino)
+        self._descarga.start(url, target)
         self._ajustar()
 
-    def _progreso(self, bajado: int, total: int) -> None:
-        hechos = bajado / MEGA
+    def _progreso(self, downloaded: int, total: int) -> None:
+        hechos = downloaded / MEGA
         if total > 0:
             self.barra.setRange(0, total)
-            self.barra.setValue(bajado)
-            self.nota.setText(
+            self.barra.setValue(downloaded)
+            self.note.setText(
                 tr("update_progress", done=f"{hechos:.1f}", total=f"{total / MEGA:.1f}")
             )
         else:
-            self.nota.setText(tr("update_progress_unknown", done=f"{hechos:.1f}"))
-        if total > 0 and bajado >= total:
+            self.note.setText(tr("update_progress_unknown", done=f"{hechos:.1f}"))
+        if total > 0 and downloaded >= total:
             # Queda comprobar el sha256, que con un archivo de 40 MB se nota.
-            self.nota.setText(tr("update_verifying"))
+            self.note.setText(tr("update_verifying"))
 
-    def _listo(self, ruta: str) -> None:
+    def _listo(self, path: str) -> None:
         """Tercer momento: el archivo esta bajado y comprobado."""
-        self._archivo = ruta
+        self._archivo = path
         self.barra.setRange(0, 1)
         self.barra.setValue(1)
         self.barra.hide()
         self._limpiar_botones()
-        if is_installer(ruta):
-            self.texto.setText(tr("update_ready_install"))
-            self.nota.hide()
+        if is_installer(path):
+            self.text.setText(tr("update_ready_install"))
+            self.note.hide()
             self._boton(tr("update_install_now"), self._instalar, principal=True)
         else:
             # En Linux se publica un paquete portable: no hay nada que
             # ejecutar, se descomprime encima de la copia que ya se tenga.
-            self.texto.setText(tr("update_ready_file", path=ruta))
-            self.nota.hide()
+            self.text.setText(tr("update_ready_file", path=path))
+            self.note.hide()
             self._boton(tr("update_open_folder"), self._abrir_carpeta, principal=True)
         self._boton(tr("update_close"), self.accept)
         self._ajustar()
 
     def _fallo(self, motivo: str) -> None:
         self.barra.hide()
-        self.texto.setText(tr("update_download_failed", error=motivo))
-        self.nota.hide()
+        self.text.setText(tr("update_download_failed", error=motivo))
+        self.note.hide()
         self._limpiar_botones()
         self._boton(tr("update_go"), self._abrir_web)
         self._boton(tr("update_close"), self.reject, principal=True)

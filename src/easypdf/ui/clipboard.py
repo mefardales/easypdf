@@ -1,9 +1,9 @@
-"""Copiar y pegar anotaciones por el portapapeles del sistema.
+"""Copy and paste annotations through the system clipboard.
 
-Se usa el portapapeles de verdad, y no una variable interna, para poder
-copiar en una ventana y pegar en otra. El contenido va con un tipo MIME
-propio: asi solo lo entiende este programa y no se confunde con un texto
-cualquiera que hubiera copiado el usuario.
+The real clipboard is used, rather than an internal variable, so you can copy
+in one window and paste in another. What is copied carries a marker of its own
+inside, so a plain text copied from some other program never turns into
+annotations by accident.
 """
 
 from __future__ import annotations
@@ -15,69 +15,69 @@ from PySide6.QtGui import QGuiApplication
 from ..model import Annotation
 from ..templates import TemplateError, annotation_from_dict, annotation_to_dict
 
-#: Tipo MIME propio. Lleva el nombre del programa para no chocar con nada.
+#: Custom MIME type kept only to read what older versions copied.
 MIME = "application/x-easypdf-annotations"
 
-#: Version del formato, por si algun dia cambia lo que se guarda.
+#: Format version, in case what gets stored ever changes.
 FORMAT = 1
 
 
 def _clipboard():
-    aplicacion = QGuiApplication.instance()
-    return aplicacion.clipboard() if aplicacion is not None else None
+    application = QGuiApplication.instance()
+    return application.clipboard() if application is not None else None
 
 
 def encode(annotations) -> str:
-    """Serializa las anotaciones en el texto que viaja por el portapapeles."""
+    """Serialise the annotations into the text that travels the clipboard."""
     return json.dumps(
         {"easypdf": FORMAT, "annotations": [annotation_to_dict(a) for a in annotations]},
         ensure_ascii=False,
     )
 
 
-def decode(texto: str) -> list[Annotation]:
-    """Lee lo que hubiera copiado. Devuelve [] si no es nuestro."""
+def decode(text: str) -> list[Annotation]:
+    """Read whatever was copied. Returns [] if it is not ours."""
     try:
-        datos = json.loads(texto)
+        data = json.loads(text)
     except (ValueError, TypeError):
         return []
-    if not isinstance(datos, dict) or "easypdf" not in datos:
+    if not isinstance(data, dict) or "easypdf" not in data:
         return []
-    resultado = []
-    for entrada in datos.get("annotations") or []:
+    result = []
+    for entry in data.get("annotations") or []:
         try:
-            resultado.append(annotation_from_dict(entrada))
+            result.append(annotation_from_dict(entry))
         except (TemplateError, TypeError, ValueError, KeyError):
-            continue          # una anotacion rota no tira las demas
-    return resultado
+            continue          # one broken annotation must not sink the rest
+    return result
 
 
 def copy_annotations(annotations) -> int:
-    """Deja las anotaciones en el portapapeles. Devuelve cuantas."""
-    lista = list(annotations)
-    portapapeles = _clipboard()
-    if not lista or portapapeles is None:
+    """Leave the annotations on the clipboard. Returns how many."""
+    items = list(annotations)
+    clipboard = _clipboard()
+    if not items or clipboard is None:
         return 0
-    # Va como texto y no con un tipo MIME propio a proposito. Un QMimeData
-    # creado aqui se lo queda el portapapeles, pero el envoltorio de Python
-    # tambien cree que es suyo y lo borra: el programa reventaba al cerrarse
-    # despues de haber copiado algo. El texto no tiene ese problema, y no se
-    # pierde nada: lo copiado lleva su marca dentro y decode() la comprueba,
-    # asi que un texto de otro programa no se cuela como anotaciones.
-    portapapeles.setText(encode(lista))
-    return len(lista)
+    # Sent as plain text rather than with a custom MIME type on purpose. A
+    # QMimeData built here is taken over by the clipboard, but the Python
+    # wrapper also believes it owns it, and both delete it: the program
+    # crashed on exit once anything had been copied. Text has no such problem
+    # and nothing is lost: what is copied carries its own marker and decode()
+    # checks it, so another program's text still cannot slip in.
+    clipboard.setText(encode(items))
+    return len(items)
 
 
 def clipboard_annotations() -> list[Annotation]:
-    """Lo que haya copiado de este programa, o [] si no hay nada suyo."""
-    portapapeles = _clipboard()
-    if portapapeles is None:
+    """What was copied from this program, or [] if there is nothing of ours."""
+    clipboard = _clipboard()
+    if clipboard is None:
         return []
-    datos = portapapeles.mimeData()
-    if datos is not None and datos.hasFormat(MIME):
-        # Lo copiado por una version anterior, que si usaba un tipo propio.
-        return decode(bytes(datos.data(MIME)).decode("utf-8", "replace"))
-    return decode(portapapeles.text())
+    data = clipboard.mimeData()
+    if data is not None and data.hasFormat(MIME):
+        # Copied by an older version, which did use a custom type.
+        return decode(bytes(data.data(MIME)).decode("utf-8", "replace"))
+    return decode(clipboard.text())
 
 
 def has_annotations() -> bool:

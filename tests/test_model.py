@@ -11,8 +11,8 @@ def test_normalized_rect_ordena_las_esquinas():
 
 
 def test_bounds_de_linea_y_dibujo():
-    linea = Annotation(kind=Kind.LINE, page=0, p1=(10, 90), p2=(80, 20))
-    assert linea.bounds() == (10, 20, 80, 90)
+    line = Annotation(kind=Kind.LINE, page=0, p1=(10, 90), p2=(80, 20))
+    assert line.bounds() == (10, 20, 80, 90)
     dibujo = Annotation(kind=Kind.INK, page=0, strokes=[[(5, 5), (30, 40)], [(60, 10)]])
     assert dibujo.bounds() == (5, 5, 60, 40)
 
@@ -56,17 +56,17 @@ def test_store_agrega_y_elimina():
     assert len(store) == 0
 
 
-def test_kind_tiene_etiqueta_en_espanol():
-    assert Kind.RECT.label == "Cuadro"
-    assert Kind.INK.label == "Dibujo"
+def test_every_kind_has_a_readable_label():
+    assert Kind.RECT.label == "Box"
+    assert Kind.INK.label == "Drawing"
 
 
 def test_tabla_reparte_las_celdas():
     tabla = Annotation(kind=Kind.TABLE, page=0, rect=(10, 20, 110, 80), rows=2, cols=4)
-    celdas = tabla.cell_rects()
-    assert len(celdas) == 8
-    assert celdas[0] == (10, 20, 35, 50)
-    assert celdas[-1] == (85, 50, 110, 80)
+    cells = tabla.cell_rects()
+    assert len(cells) == 8
+    assert cells[0] == (10, 20, 35, 50)
+    assert cells[-1] == (85, 50, 110, 80)
     # el borde mas las separaciones interiores
     assert len(tabla.grid_lines()) == (2 + 1) + (4 + 1)
 
@@ -81,11 +81,11 @@ def test_tabla_ajusta_los_textos_al_numero_de_celdas():
 def test_la_punta_de_flecha_crece_con_el_grosor_pero_no_pasa_de_la_linea():
     from easypdf.model import arrow_head
 
-    base_fina, punta, izquierda, derecha = arrow_head((0, 0), (100, 0), 1.0)
+    base_fina, punta, left, right = arrow_head((0, 0), (100, 0), 1.0)
     largo_fino = punta[0] - base_fina[0]
     base_gruesa, punta, _, _ = arrow_head((0, 0), (100, 0), 6.0)
     assert (punta[0] - base_gruesa[0]) > largo_fino
-    assert abs(izquierda[1] - derecha[1]) == pytest.approx(largo_fino, rel=0.05)
+    assert abs(left[1] - right[1]) == pytest.approx(largo_fino, rel=0.05)
     # en una linea muy corta la punta no puede ser mas larga que la linea
     base_corta, punta_corta, _, _ = arrow_head((0, 0), (6, 0), 6.0)
     assert base_corta[0] >= 0.0
@@ -98,25 +98,25 @@ def test_la_punta_de_flecha_crece_con_el_grosor_pero_no_pasa_de_la_linea():
 def test_rotate_point_lleva_las_esquinas_a_su_sitio():
     from easypdf.model import rotate_point
 
-    ancho, alto = 600.0, 800.0
+    width, height = 600.0, 800.0
     # Girando 90 grados en horario, la esquina superior izquierda pasa a ser
     # la superior derecha de una pagina que ahora mide 800x600.
-    assert rotate_point((0.0, 0.0), 90, ancho, alto) == (800.0, 0.0)
-    assert rotate_point((600.0, 0.0), 90, ancho, alto) == (800.0, 600.0)
-    assert rotate_point((0.0, 0.0), 180, ancho, alto) == (600.0, 800.0)
-    assert rotate_point((0.0, 0.0), 270, ancho, alto) == (0.0, 600.0)
-    assert rotate_point((10.0, 20.0), 0, ancho, alto) == (10.0, 20.0)
+    assert rotate_point((0.0, 0.0), 90, width, height) == (800.0, 0.0)
+    assert rotate_point((600.0, 0.0), 90, width, height) == (800.0, 600.0)
+    assert rotate_point((0.0, 0.0), 180, width, height) == (600.0, 800.0)
+    assert rotate_point((0.0, 0.0), 270, width, height) == (0.0, 600.0)
+    assert rotate_point((10.0, 20.0), 0, width, height) == (10.0, 20.0)
 
 
 def test_cuatro_giros_de_90_devuelven_el_punto_al_origen():
     from easypdf.model import rotate_point
 
-    punto, ancho, alto = (123.0, 456.0), 600.0, 800.0
+    point, width, height = (123.0, 456.0), 600.0, 800.0
     for _ in range(4):
-        punto = rotate_point(punto, 90, ancho, alto)
-        ancho, alto = alto, ancho          # la pagina cambia de orientacion
-    assert punto == (123.0, 456.0)
-    assert (ancho, alto) == (600.0, 800.0)
+        point = rotate_point(point, 90, width, height)
+        width, height = height, width          # la pagina cambia de orientacion
+    assert point == (123.0, 456.0)
+    assert (width, height) == (600.0, 800.0)
 
 
 def test_rotate_annotation_gira_rectangulo_linea_y_trazos():
@@ -162,8 +162,8 @@ def test_snap_offset_elige_la_guia_mas_proxima_entre_varias():
     from easypdf.model import snap_offset
 
     # 97 esta a 3 de 100 y a 3 de 94: gana la primera que empata por orden
-    delta, guia = snap_offset([97.0], [100.0, 94.0], 6.0)
-    assert guia == 100.0 and delta == 3.0
+    delta, guide = snap_offset([97.0], [100.0, 94.0], 6.0)
+    assert guide == 100.0 and delta == 3.0
     # y si una esta claramente mas cerca, gana esa
     assert snap_offset([97.0], [100.0, 96.0], 6.0) == (-1.0, 96.0)
 

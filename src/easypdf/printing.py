@@ -1,4 +1,4 @@
-"""Impresion: la vista previa y la salida usan el mismo PDF que se guarda."""
+"""Printing: the preview and the output use the same PDF that gets saved."""
 
 from __future__ import annotations
 
@@ -15,20 +15,19 @@ from .document import PdfDocument
 from .i18n import tr
 from .model import Annotation
 
-#: Limite de resolucion del rasterizado. 300 ppp es calidad de impresion normal
-#: y evita rasterizar a 1200 ppp (16 veces mas memoria por el mismo resultado).
+#: Rasterising resolution cap. 300 dpi is normal print quality and avoids
+#: rasterising at 1200 dpi (16 times the memory for the same result).
 MAX_PRINT_DPI = 300
 
-#: Tope duro de pixeles por pagina, por si la impresora declara un area enorme.
+#: Hard pixel cap per page, in case the printer declares a huge area.
 MAX_PAGE_PIXELS = 40_000_000
 
 
 def page_scale(page_width: float, page_height: float, target_width: float, target_height: float) -> float:
-    """Factor de rasterizado de una pagina para que quepa en la hoja.
+    """Rasterising factor for a page so that it fits the sheet.
 
-    Se limita por ``MAX_PRINT_DPI`` y por ``MAX_PAGE_PIXELS``: una impresora de
-    1200 ppp pediria imagenes de cientos de megabytes sin ninguna mejora
-    visible.
+    Capped by ``MAX_PRINT_DPI`` and ``MAX_PAGE_PIXELS``: a 1200 dpi printer
+    would ask for images hundreds of megabytes big with no visible gain.
     """
     if page_width <= 0 or page_height <= 0:
         return 1.0
@@ -41,13 +40,13 @@ def page_scale(page_width: float, page_height: float, target_width: float, targe
 
 
 def pages_for_printer(printer: QPrinter, page_count: int) -> list[int]:
-    """Indices (base 0) de las paginas que pide el dialogo de impresion."""
+    """Zero-based indices of the pages the print dialog asked for."""
     if printer.printRange() == QPrinter.PageRange:
         first = max(1, printer.fromPage() or 1)
         last = min(page_count, printer.toPage() or page_count)
         return list(range(first - 1, last))
     if printer.printRange() == QPrinter.CurrentPage:
-        return []  # lo decide quien llama
+        return []  # the caller decides
     return list(range(page_count))
 
 
@@ -58,7 +57,7 @@ def render_to_printer(
     password: str = "",
     parent=None,
 ) -> bool:
-    """Dibuja las paginas del PDF en la impresora (o en el PDF de salida)."""
+    """Draw the PDF pages on the printer (or into the output PDF)."""
     doc = pymupdf.open(stream=data, filetype="pdf")
     if doc.needs_pass:
         doc.authenticate(password)
@@ -98,7 +97,7 @@ def render_to_printer(
             rect = page.rect
             if rect.width <= 0 or rect.height <= 0:
                 continue
-            # Se rasteriza justo a la resolucion que cabe en la hoja.
+            # Rasterised at exactly the resolution that fits the sheet.
             scale = page_scale(rect.width, rect.height, target.width(), target.height())
             pix = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), alpha=False, annots=True)
             image = QImage(pix.samples, pix.width, pix.height, pix.stride, QImage.Format_RGB888)
@@ -135,7 +134,7 @@ def print_document(
     annotations: Sequence[Annotation] = (),
     current_page: int = 0,
 ) -> bool:
-    """Muestra el dialogo de impresion del sistema e imprime."""
+    """Show the system print dialog and print."""
     if not doc.can_print:
         answer = QMessageBox.question(
             parent,
@@ -172,7 +171,7 @@ def print_preview(
     doc: PdfDocument,
     annotations: Sequence[Annotation] = (),
 ) -> None:
-    """Vista previa de impresion con el resultado exacto (anotaciones incluidas)."""
+    """Print preview showing the exact result (annotations included)."""
     data = doc.export_bytes(annotations)
     printer = _make_printer(doc)
     dialog = QPrintPreviewDialog(printer, parent)

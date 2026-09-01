@@ -28,28 +28,28 @@ def _printer(path, dpi: int = 150) -> QPrinter:
 
 
 def test_imprime_todas_las_paginas(qapp, tmp_path, sample_pdf_bytes):
-    salida = tmp_path / "impreso.pdf"
-    assert render_to_printer(sample_pdf_bytes, _printer(salida))
-    assert salida.exists()
-    assert pymupdf.open(str(salida)).page_count == 3
+    output = tmp_path / "impreso.pdf"
+    assert render_to_printer(sample_pdf_bytes, _printer(output))
+    assert output.exists()
+    assert pymupdf.open(str(output)).page_count == 3
 
 
 def test_imprime_solo_las_paginas_pedidas(qapp, tmp_path, sample_pdf_bytes):
-    salida = tmp_path / "una.pdf"
-    assert render_to_printer(sample_pdf_bytes, _printer(salida), pages=[1])
-    assert pymupdf.open(str(salida)).page_count == 1
+    output = tmp_path / "una.pdf"
+    assert render_to_printer(sample_pdf_bytes, _printer(output), pages=[1])
+    assert pymupdf.open(str(output)).page_count == 1
 
 
 def test_la_impresion_incluye_las_anotaciones(qapp, tmp_path, sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
-    datos = doc.export_bytes(
+    data = doc.export_bytes(
         [Annotation(kind=Kind.RECT, page=0, rect=(60, 60, 400, 300),
                     color=(1.0, 0.0, 0.0), width=6.0)]
     )
     doc.close()
-    salida = tmp_path / "con-anotacion.pdf"
-    assert render_to_printer(datos, _printer(salida), pages=[0])
-    pix = pymupdf.open(str(salida))[0].get_pixmap()
+    output = tmp_path / "con-anotacion.pdf"
+    assert render_to_printer(data, _printer(output), pages=[0])
+    pix = pymupdf.open(str(output))[0].get_pixmap()
     # Debe haber pixeles claramente rojos en la hoja impresa.
     rojos = 0
     for offset in range(0, len(pix.samples) - 3, pix.n):

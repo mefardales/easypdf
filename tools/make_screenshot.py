@@ -52,8 +52,8 @@ def build_sample_pdf(path: str, pages: int = 4) -> None:
             pymupdf.Point(72, 128), pymupdf.Point(523, 128), color=(0.8, 0.8, 0.8), width=1
         )
         y = 165
-        for linea in PARRAFOS:
-            page.insert_text((72, y), linea, fontsize=11)
+        for line in PARRAFOS:
+            page.insert_text((72, y), line, fontsize=11)
             y += 19
     doc.save(path)
     doc.close()
@@ -89,7 +89,7 @@ def main() -> int:
         window.view.go_to_page(0)
         app.processEvents()
 
-        anotaciones = [
+        annotations = [
             Annotation(kind=Kind.HIGHLIGHT, page=0, rect=(70, 152, 470, 172),
                        color=(1.0, 0.83, 0.0)),
             Annotation(kind=Kind.RECT, page=0, rect=(66, 320, 460, 400),
@@ -108,7 +108,7 @@ def main() -> int:
                               "Current", "5", "3,950 EUR"],
                        color=(0.15, 0.15, 0.18), width=0.8, font_size=9),
         ]
-        for ann in anotaciones:
+        for ann in annotations:
             window.view.add_annotation(ann, undoable=False)
 
         window.select_tool(Tool.TABLE)
@@ -119,11 +119,11 @@ def main() -> int:
         QTest.qWait(800)
         app.processEvents()
 
-        destino = os.path.join(ROOT, "docs", "captura-principal.png")
-        os.makedirs(os.path.dirname(destino), exist_ok=True)
-        if not window.grab().save(destino):
+        target = os.path.join(ROOT, "docs", "captura-principal.png")
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        if not window.grab().save(target):
             raise RuntimeError("no se pudo guardar la captura")
-        print(f"Escrito {destino}")
+        print(f"Escrito {target}")
 
         window._modified = False
         window.view.undo_stack.setClean()

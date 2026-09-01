@@ -16,29 +16,29 @@ from easypdf.model import Kind
 @pytest.fixture(autouse=True)
 def idioma_conocido():
     """Las pruebas no dependen del idioma del sistema."""
-    anterior = language()
+    previous = language()
     set_language("en")
     yield
-    set_language(anterior)
+    set_language(previous)
 
 
 def test_todas_las_piezas_se_construyen():
-    for clave in ELEMENTS:
-        piezas = build(clave, 100.0, 200.0)
-        assert piezas, f"{clave} no ha creado nada"
-        for ann in piezas:
+    for key in ELEMENTS:
+        pieces = build(key, 100.0, 200.0)
+        assert pieces, f"{key} no ha creado nada"
+        for ann in pieces:
             assert isinstance(ann.kind, Kind)
-            assert not ann.is_empty(), f"{clave} ha creado una anotacion vacia"
+            assert not ann.is_empty(), f"{key} ha creado una anotacion vacia"
 
 
 def test_cada_pieza_nace_donde_se_le_dice():
     """Se insertan en el sitio que elija el usuario, no en una esquina fija."""
-    for clave in ELEMENTS:
-        piezas = build(clave, 100.0, 200.0)
-        x0 = min(min(a.bounds()[0], a.bounds()[2]) for a in piezas)
-        y0 = min(min(a.bounds()[1], a.bounds()[3]) for a in piezas)
-        assert x0 == pytest.approx(100.0), clave
-        assert y0 == pytest.approx(200.0), clave
+    for key in ELEMENTS:
+        pieces = build(key, 100.0, 200.0)
+        x0 = min(min(a.bounds()[0], a.bounds()[2]) for a in pieces)
+        y0 = min(min(a.bounds()[1], a.bounds()[3]) for a in pieces)
+        assert x0 == pytest.approx(100.0), key
+        assert y0 == pytest.approx(200.0), key
 
 
 def test_una_pieza_desconocida_se_queja():
@@ -72,18 +72,18 @@ def test_el_contenido_tambien_va_en_el_idioma_activo():
 
 
 def test_la_casilla_es_un_cuadrado_con_su_etiqueta():
-    piezas = build("checkbox", 0.0, 0.0)
-    cuadro = next(a for a in piezas if a.kind is Kind.RECT)
+    pieces = build("checkbox", 0.0, 0.0)
+    cuadro = next(a for a in pieces if a.kind is Kind.RECT)
     x0, y0, x1, y1 = cuadro.rect
     assert (x1 - x0) == pytest.approx(y1 - y0), "la casilla tiene que ser cuadrada"
-    assert any(a.kind is Kind.TEXT and a.text for a in piezas)
+    assert any(a.kind is Kind.TEXT and a.text for a in pieces)
 
 
 def test_la_lista_de_casillas_lleva_cuatro():
-    piezas = build("checklist", 0.0, 0.0)
-    assert sum(1 for a in piezas if a.kind is Kind.RECT) == 4
-    etiquetas = [a.text for a in piezas if a.kind is Kind.TEXT]
-    assert len(etiquetas) == 4 and len(set(etiquetas)) == 4   # numeradas, no repetidas
+    pieces = build("checklist", 0.0, 0.0)
+    assert sum(1 for a in pieces if a.kind is Kind.RECT) == 4
+    labels = [a.text for a in pieces if a.kind is Kind.TEXT]
+    assert len(labels) == 4 and len(set(labels)) == 4   # numeradas, no repetidas
 
 
 def test_la_tabla_trae_cabeceras_y_filas_vacias():
@@ -103,6 +103,6 @@ def test_el_ancho_pedido_se_respeta():
 
 
 def test_un_ancho_ridiculo_no_rompe_la_pieza():
-    piezas = build("yes_no", 0.0, 0.0, width=1.0)
-    assert piezas
-    assert all(a.bounds()[2] >= a.bounds()[0] for a in piezas)
+    pieces = build("yes_no", 0.0, 0.0, width=1.0)
+    assert pieces
+    assert all(a.bounds()[2] >= a.bounds()[0] for a in pieces)

@@ -4,6 +4,7 @@ import pymupdf
 import pytest
 
 from easypdf.document import PasswordRequired, PdfDocument, PdfError
+from easypdf.i18n import tr
 from easypdf.model import Annotation, Kind
 
 
@@ -46,10 +47,10 @@ def test_exportar_incluye_las_anotaciones(sample_pdf_bytes):
         Annotation(kind=Kind.RECT, page=0, rect=(50, 50, 200, 150)),
         Annotation(kind=Kind.TEXT, page=1, rect=(50, 50, 250, 100), text="hola"),
     ]
-    salida = pymupdf.open(stream=doc.export_bytes(anns), filetype="pdf")
-    assert [a.type[1] for a in salida[0].annots()] == ["Square"]
-    assert [a.type[1] for a in salida[1].annots()] == ["FreeText"]
-    assert list(salida[2].annots()) == []
+    output = pymupdf.open(stream=doc.export_bytes(anns), filetype="pdf")
+    assert [a.type[1] for a in output[0].annots()] == ["Square"]
+    assert [a.type[1] for a in output[1].annots()] == ["FreeText"]
+    assert list(output[2].annots()) == []
     doc.close()
 
 
@@ -57,33 +58,33 @@ def test_exportar_dos_veces_no_duplica(sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     anns = [Annotation(kind=Kind.RECT, page=0, rect=(50, 50, 200, 150))]
     doc.export_bytes(anns)
-    salida = pymupdf.open(stream=doc.export_bytes(anns), filetype="pdf")
-    assert len(list(salida[0].annots())) == 1
+    output = pymupdf.open(stream=doc.export_bytes(anns), filetype="pdf")
+    assert len(list(output[0].annots())) == 1
     doc.close()
 
 
 def test_guardar_como_escribe_el_archivo(tmp_path, sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
-    destino = tmp_path / "salida.pdf"
-    doc.save_as(str(destino), [Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 90, 90))])
-    assert destino.exists()
-    assert doc.path == str(destino)
+    target = tmp_path / "salida.pdf"
+    doc.save_as(str(target), [Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 90, 90))])
+    assert target.exists()
+    assert doc.path == str(target)
     assert not list(tmp_path.glob("*.easypdf-tmp"))
-    guardado = pymupdf.open(str(destino))
-    assert len(list(guardado[0].annots())) == 1
+    stored = pymupdf.open(str(target))
+    assert len(list(stored[0].annots())) == 1
     doc.close()
 
 
 def test_documento_protegido(tmp_path, sample_pdf_bytes):
-    origen = pymupdf.open(stream=sample_pdf_bytes, filetype="pdf")
+    source = pymupdf.open(stream=sample_pdf_bytes, filetype="pdf")
     protegido = tmp_path / "protegido.pdf"
-    origen.save(
+    source.save(
         str(protegido),
         encryption=pymupdf.PDF_ENCRYPT_AES_256,
         owner_pw="duenno",
         user_pw="secreta",
     )
-    origen.close()
+    source.close()
     with pytest.raises(PasswordRequired):
         PdfDocument.open(str(protegido))
     doc = PdfDocument.open(str(protegido), password="secreta")
@@ -105,10 +106,10 @@ def test_archivo_invalido(tmp_path):
 
 
 def test_documento_en_blanco():
-    doc = PdfDocument.blank(3, "Carta")
+    doc = PdfDocument.blank(3, "Letter")
     assert doc.page_count == 3
     assert [round(v) for v in doc.page_size(0)] == [612, 792]
-    assert doc.name == "Documento nuevo.pdf"
+    assert doc.name == tr("untitled_document")
     assert doc.path is None
     doc.close()
 
@@ -136,11 +137,11 @@ def test_no_se_puede_borrar_la_ultima_pagina():
 
 def test_extraer_y_devolver_una_pagina(sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
-    datos = doc.extract_page(1)
+    data = doc.extract_page(1)
     doc.delete_page(1)
     assert doc.page_count == 2
     assert "Pagina 2" not in doc.page_text(1)
-    doc.insert_page_bytes(datos, 1)
+    doc.insert_page_bytes(data, 1)
     assert doc.page_count == 3
     assert "Pagina 2" in doc.page_text(1)
     doc.close()
@@ -158,72 +159,72 @@ def test_mover_una_pagina(sample_pdf_bytes):
 def test_las_paginas_nuevas_se_guardan(tmp_path):
     doc = PdfDocument.blank(1)
     doc.add_blank_page()
-    destino = tmp_path / "nuevo.pdf"
-    doc.save_as(str(destino), [Annotation(kind=Kind.RECT, page=1, rect=(50, 50, 200, 150))])
-    guardado = pymupdf.open(str(destino))
-    assert guardado.page_count == 2
-    assert len(list(guardado[1].annots())) == 1
+    target = tmp_path / "nuevo.pdf"
+    doc.save_as(str(target), [Annotation(kind=Kind.RECT, page=1, rect=(50, 50, 200, 150))])
+    stored = pymupdf.open(str(target))
+    assert stored.page_count == 2
+    assert len(list(stored[1].annots())) == 1
     doc.close()
 
 
 def test_girar_una_pagina_cambia_su_orientacion():
-    documento = PdfDocument.blank(pages=1, size="A4")
-    ancho, alto = documento.page_size(0)
-    assert documento.page_rotation(0) == 0
+    document = PdfDocument.blank(pages=1, size="A4")
+    width, height = document.page_size(0)
+    assert document.page_rotation(0) == 0
 
-    documento.set_page_rotation(0, 90)
-    assert documento.page_rotation(0) == 90
-    assert documento.page_size(0) == (alto, ancho)
+    document.set_page_rotation(0, 90)
+    assert document.page_rotation(0) == 90
+    assert document.page_size(0) == (height, width)
 
-    documento.set_page_rotation(0, 180)
-    assert documento.page_size(0) == (ancho, alto)   # 180 no cambia el tamano
+    document.set_page_rotation(0, 180)
+    assert document.page_size(0) == (width, height)   # 180 no cambia el tamano
 
-    documento.set_page_rotation(0, 0)
-    assert documento.page_rotation(0) == 0
-    assert documento.page_size(0) == (ancho, alto)
-    documento.close()
+    document.set_page_rotation(0, 0)
+    assert document.page_rotation(0) == 0
+    assert document.page_size(0) == (width, height)
+    document.close()
 
 
 def test_el_giro_se_normaliza_y_se_guarda_en_el_pdf(tmp_path):
-    documento = PdfDocument.blank(pages=1, size="A4")
-    documento.set_page_rotation(0, 450)             # 450 = 90
-    assert documento.page_rotation(0) == 90
+    document = PdfDocument.blank(pages=1, size="A4")
+    document.set_page_rotation(0, 450)             # 450 = 90
+    assert document.page_rotation(0) == 90
 
-    destino = tmp_path / "girado.pdf"
-    documento.save_as(str(destino))
-    documento.close()
+    target = tmp_path / "girado.pdf"
+    document.save_as(str(target))
+    document.close()
 
-    guardado = PdfDocument.open(str(destino))
-    assert guardado.page_rotation(0) == 90
-    guardado.close()
+    stored = PdfDocument.open(str(target))
+    assert stored.page_rotation(0) == 90
+    stored.close()
 
 
 def test_los_marcadores_sobreviven_al_guardar(tmp_path):
-    documento = PdfDocument.blank(pages=3, size="A4")
-    assert documento.bookmarks() == []
+    document = PdfDocument.blank(pages=3, size="A4")
+    assert document.bookmarks() == []
 
-    documento.set_bookmarks([("Resumen", 0), ("Anexo", 2)])
-    assert documento.bookmarks() == [("Resumen", 0), ("Anexo", 2)]
+    document.set_bookmarks([("Resumen", 0), ("Anexo", 2)])
+    assert document.bookmarks() == [("Resumen", 0), ("Anexo", 2)]
 
-    destino = tmp_path / "marcadores.pdf"
-    documento.save_as(str(destino))
-    documento.close()
+    target = tmp_path / "marcadores.pdf"
+    document.save_as(str(target))
+    document.close()
 
-    guardado = PdfDocument.open(str(destino))
-    assert guardado.bookmarks() == [("Resumen", 0), ("Anexo", 2)]
-    guardado.close()
+    stored = PdfDocument.open(str(target))
+    assert stored.bookmarks() == [("Resumen", 0), ("Anexo", 2)]
+    stored.close()
 
     # y cualquier lector los ve, porque son el indice estandar del PDF
-    crudo = pymupdf.open(str(destino))
+    crudo = pymupdf.open(str(target))
     assert len(crudo.get_toc()) == 2
     crudo.close()
 
 
 def test_no_se_guarda_un_marcador_a_una_pagina_que_no_existe():
-    documento = PdfDocument.blank(pages=2, size="A4")
-    documento.set_bookmarks([("Bueno", 0), ("Imposible", 99)])
-    assert documento.bookmarks() == [("Bueno", 0)]
-    documento.close()
+    document = PdfDocument.blank(pages=2, size="A4")
+    document.set_bookmarks([("Bueno", 0), ("Imposible", 99)])
+    assert document.bookmarks() == [("Bueno", 0)]
+    document.close()
 
 
 def test_take_notes_saca_las_notas_una_sola_vez(tmp_path):
@@ -235,17 +236,17 @@ def test_take_notes_saca_las_notas_una_sola_vez(tmp_path):
     apply_annotations(crudo, [
         Annotation(kind=Kind.NOTE, page=0, rect=(100, 100, 120, 120), text="Ojo aqui"),
     ])
-    origen = tmp_path / "con_nota.pdf"
-    crudo.save(str(origen))
+    source = tmp_path / "con_nota.pdf"
+    crudo.save(str(source))
     crudo.close()
 
-    documento = PdfDocument.open(str(origen))
-    notas = documento.take_notes()
-    assert len(notas) == 1
-    pagina, x, y, texto = notas[0]
-    assert (pagina, texto) == (0, "Ojo aqui")
+    document = PdfDocument.open(str(source))
+    notes = document.take_notes()
+    assert len(notes) == 1
+    page_item, x, y, text = notes[0]
+    assert (page_item, text) == (0, "Ojo aqui")
     assert (round(x), round(y)) == (100, 100)
 
     # ya no quedan en el documento: las lleva EasyPDF, y si no se duplicarian
-    assert documento.take_notes() == []
-    documento.close()
+    assert document.take_notes() == []
+    document.close()

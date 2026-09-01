@@ -1,14 +1,14 @@
-"""Modelo de datos de las anotaciones.
+"""Annotation data model.
 
-Este modulo es Python puro: no depende ni de Qt ni de PyMuPDF, de forma que la
-logica se puede probar sin interfaz grafica.
+This module is plain Python: it depends on neither Qt nor PyMuPDF, so the
+logic can be tested without a graphical interface.
 
-Sistema de coordenadas
-----------------------
-Todas las coordenadas se guardan en **puntos PDF** (1 pt = 1/72 pulgadas), con
-el origen en la esquina superior izquierda de la pagina y el eje Y creciendo
-hacia abajo, que es el mismo sistema que usa ``page.rect`` de PyMuPDF y el que
-se ve en pantalla. Asi no hay conversiones de zoom guardadas en el modelo.
+Coordinate system
+-----------------
+Every coordinate is stored in **PDF points** (1 pt = 1/72 inch), with the
+origin at the top-left corner of the page and the Y axis growing downwards.
+That is the same system PyMuPDF's ``page.rect`` uses and the one seen on
+screen, so no zoom conversion ever gets baked into the model.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ Rect = tuple[float, float, float, float]  # x0, y0, x1, y1
 
 
 class Kind(str, Enum):
-    """Tipos de anotacion que sabe crear EasyPDF."""
+    """Annotation types easypdf.surf knows how to create."""
 
     RECT = "rect"
     HIGHLIGHT = "highlight"
@@ -36,28 +36,28 @@ class Kind(str, Enum):
     TABLE = "table"
     IMAGE = "image"
     NOTE = "note"
-    #: Pasada de goma. Se guarda como los trazos de tinta, pero al guardar el
-    #: archivo no se dibuja: se usa para quitar de verdad lo que hay debajo.
+    #: An eraser stroke. Stored like an ink stroke, but it is not drawn when
+    #: the file is saved: it is used to really remove whatever lies beneath.
     ERASE = "erase"
 
     @property
     def label(self) -> str:
         return {
-            Kind.RECT: "Cuadro",
-            Kind.HIGHLIGHT: "Resaltado",
-            Kind.LINE: "Linea",
-            Kind.ARROW: "Flecha",
-            Kind.TEXT: "Texto",
-            Kind.INK: "Dibujo",
-            Kind.ERASE: "Borrado",
-            Kind.TABLE: "Tabla",
-            Kind.IMAGE: "Imagen",
-            Kind.NOTE: "Nota",
+            Kind.RECT: "Box",
+            Kind.HIGHLIGHT: "Highlight",
+            Kind.LINE: "Line",
+            Kind.ARROW: "Arrow",
+            Kind.TEXT: "Text",
+            Kind.INK: "Drawing",
+            Kind.ERASE: "Erasure",
+            Kind.TABLE: "Table",
+            Kind.IMAGE: "Image",
+            Kind.NOTE: "Note",
         }[self]
 
 
 class Font(str, Enum):
-    """Familias que cualquier lector de PDF sabe dibujar sin incrustar nada."""
+    """Families every PDF reader can draw without embedding anything."""
 
     SANS = "helv"
     SERIF = "tiro"
@@ -65,7 +65,7 @@ class Font(str, Enum):
 
     @property
     def label(self) -> str:
-        return {Font.SANS: "Sans", Font.SERIF: "Serif", Font.MONO: "Monoespaciada"}[self]
+        return {Font.SANS: "Sans", Font.SERIF: "Serif", Font.MONO: "Monospace"}[self]
 
     @property
     def qt_family(self) -> str:
@@ -77,7 +77,7 @@ class Font(str, Enum):
 
 
 class Align(int, Enum):
-    """Alineacion del texto (mismos valores que usa el PDF)."""
+    """Text alignment (the same values the PDF format uses)."""
 
     LEFT = 0
     CENTER = 1
@@ -85,95 +85,95 @@ class Align(int, Enum):
 
     @property
     def label(self) -> str:
-        return {Align.LEFT: "Izquierda", Align.CENTER: "Centro", Align.RIGHT: "Derecha"}[self]
+        return {Align.LEFT: "Left", Align.CENTER: "Centre", Align.RIGHT: "Right"}[self]
 
 
 def _new_id() -> str:
     return uuid.uuid4().hex
 
 
-#: Proporciones de la punta de flecha. Son las mismas en pantalla, al imprimir
-#: y en el archivo guardado: PyMuPDF dibuja las puntas estandar del PDF diez
-#: veces mas grandes que el grosor de la linea, lo que con trazos gruesos queda
-#: desproporcionado, asi que EasyPDF dibuja su propia punta.
-ARROW_HEAD_MIN = 11.0    # largo minimo, en puntos
-ARROW_HEAD_FACTOR = 5.0  # veces el grosor de la linea
-ARROW_HEAD_RATIO = 0.50  # media anchura respecto al largo
+#: Arrow head proportions. They are the same on screen, on paper and in the
+#: saved file: PyMuPDF draws the standard PDF arrow heads ten times bigger
+#: than the line width, which looks out of proportion with thick strokes, so
+#: easypdf.surf draws its own head instead.
+ARROW_HEAD_MIN = 11.0    # minimum length, in points
+ARROW_HEAD_FACTOR = 5.0  # times the line width
+ARROW_HEAD_RATIO = 0.50  # half-width relative to the length
 
 
 def arrow_head(p1: Point, p2: Point, width: float) -> tuple[Point, Point, Point, Point]:
-    """Geometria de la punta de una flecha que va de ``p1`` a ``p2``.
+    """Geometry of the head of an arrow going from ``p1`` to ``p2``.
 
-    Devuelve ``(base, punta, izquierda, derecha)``: la base es donde debe
-    terminar la linea para que el trazo no asome por delante de la punta.
+    Returns ``(base, tip, left, right)``: the base is where the line has to
+    stop so the stroke does not poke out in front of the head.
     """
     dx, dy = p2[0] - p1[0], p2[1] - p1[1]
-    largo_linea = math.hypot(dx, dy)
-    largo = max(ARROW_HEAD_MIN, max(0.1, width) * ARROW_HEAD_FACTOR)
-    if largo_linea < 1e-6:
+    line_length = math.hypot(dx, dy)
+    length = max(ARROW_HEAD_MIN, max(0.1, width) * ARROW_HEAD_FACTOR)
+    if line_length < 1e-6:
         return (p2, p2, p2, p2)
-    largo = min(largo, largo_linea)          # nunca mas larga que la propia linea
-    ux, uy = dx / largo_linea, dy / largo_linea
-    base = (p2[0] - ux * largo, p2[1] - uy * largo)
-    media = largo * ARROW_HEAD_RATIO
+    length = min(length, line_length)        # never longer than the line itself
+    ux, uy = dx / line_length, dy / line_length
+    base = (p2[0] - ux * length, p2[1] - uy * length)
+    half = length * ARROW_HEAD_RATIO
     nx, ny = -uy, ux
-    izquierda = (base[0] + nx * media, base[1] + ny * media)
-    derecha = (base[0] - nx * media, base[1] - ny * media)
-    return (base, p2, izquierda, derecha)
+    left = (base[0] + nx * half, base[1] + ny * half)
+    right = (base[0] - nx * half, base[1] - ny * half)
+    return (base, p2, left, right)
 
 
 def arrow_line_end(p1: Point, p2: Point, width: float) -> Point:
-    """Punto donde termina el trazo de una flecha (dentro de la punta)."""
-    base, punta, _, _ = arrow_head(p1, p2, width)
-    return ((base[0] + punta[0]) / 2.0, (base[1] + punta[1]) / 2.0)
+    """Point where an arrow's stroke ends (inside the head)."""
+    base, tip, _, _ = arrow_head(p1, p2, width)
+    return ((base[0] + tip[0]) / 2.0, (base[1] + tip[1]) / 2.0)
 
 
 def rotate_point(point: Point, degrees: int, width: float, height: float) -> Point:
-    """Gira un punto junto con su pagina.
+    """Rotate a point along with its page.
 
-    ``width`` y ``height`` son los de la pagina **antes** de girar, y
-    ``degrees`` el giro en sentido horario (90, 180 o 270). Con 90 y 270 la
-    pagina cambia de orientacion, asi que el punto pasa a un lienzo de
-    ``height`` x ``width``.
+    ``width`` and ``height`` are the page's **before** rotating, and
+    ``degrees`` the clockwise rotation (90, 180 or 270). At 90 and 270 the
+    page changes orientation, so the point moves onto a ``height`` x ``width``
+    canvas.
     """
     x, y = point
-    giro = degrees % 360
-    if giro == 90:
+    turn = degrees % 360
+    if turn == 90:
         return (height - y, x)
-    if giro == 180:
+    if turn == 180:
         return (width - x, height - y)
-    if giro == 270:
+    if turn == 270:
         return (y, width - x)
     return (x, y)
 
 
 def rotate_annotation(ann: Annotation, degrees: int, width: float, height: float) -> None:
-    """Gira una anotacion con su pagina, en el sitio.
+    """Rotate an annotation with its page, in place.
 
-    El texto no se inclina: la caja se recoloca donde le toca pero las letras
-    siguen leyendose en horizontal, que es lo unico que sabe dibujar un
-    FreeText de PDF sin incrustar una apariencia propia.
+    Text is not tilted: the box moves where it belongs but the letters keep
+    reading horizontally, which is all a PDF FreeText can draw without
+    embedding an appearance stream of its own.
     """
     if degrees % 360 == 0:
         return
 
-    def gira(p: Point) -> Point:
+    def turn(p: Point) -> Point:
         return rotate_point(p, degrees, width, height)
 
     x0, y0, x1, y1 = ann.rect
-    (a, b), (c, d) = gira((x0, y0)), gira((x1, y1))
+    (a, b), (c, d) = turn((x0, y0)), turn((x1, y1))
     ann.rect = (min(a, c), min(b, d), max(a, c), max(b, d))
-    ann.p1 = gira(ann.p1)
-    ann.p2 = gira(ann.p2)
-    ann.strokes = [[gira(p) for p in stroke] for stroke in ann.strokes]
+    ann.p1 = turn(ann.p1)
+    ann.p2 = turn(ann.p2)
+    ann.strokes = [[turn(p) for p in stroke] for stroke in ann.strokes]
 
 
 def move_annotation(ann: Annotation, dx: float, dy: float) -> None:
-    """Desplaza una anotacion en el sitio, con todo lo que la compone.
+    """Shift an annotation in place, with everything that makes it up.
 
-    Hay que tocar las tres representaciones: el rectangulo (cuadros, textos,
-    tablas e imagenes), los extremos (lineas y flechas) y los trazos (tinta y
-    goma). Mover solo el rectangulo dejaria la linea donde estaba.
+    All three representations have to move: the rectangle (boxes, texts,
+    tables and images), the end points (lines and arrows) and the strokes
+    (ink and eraser). Moving only the rectangle would leave the line behind.
     """
     if not dx and not dy:
         return
@@ -184,90 +184,89 @@ def move_annotation(ann: Annotation, dx: float, dy: float) -> None:
     ann.strokes = [[(x + dx, y + dy) for x, y in stroke] for stroke in ann.strokes]
 
 
-def _puntos_del_trazo(stroke, paso: float):
-    """Recorre un trazo dando puntos cada ``paso``, no solo los vertices.
+def _walk_stroke(stroke, step: float):
+    """Walk a stroke yielding a point every ``step``, not just the vertices.
 
-    Un arrastre rapido deja los puntos muy separados: sin rellenar los huecos,
-    la goma pasaria por encima de algo sin darse cuenta.
+    A fast drag leaves the points far apart: without filling the gaps the
+    eraser would pass over something without noticing.
     """
     if not stroke:
         return
     yield stroke[0]
     for (x0, y0), (x1, y1) in zip(stroke, stroke[1:]):
         dx, dy = x1 - x0, y1 - y0
-        largo = (dx * dx + dy * dy) ** 0.5
-        trozos = int(largo / paso)
-        for i in range(1, trozos + 1):
-            f = i / (trozos + 1)
+        length = (dx * dx + dy * dy) ** 0.5
+        pieces = int(length / step)
+        for i in range(1, pieces + 1):
+            f = i / (pieces + 1)
             yield (x0 + dx * f, y0 + dy * f)
         yield (x1, y1)
 
 
 def stroke_touches(strokes, width: float, rect: Rect) -> bool:
-    """True si un trazo de grosor ``width`` pasa por encima de ``rect``."""
-    radio = max(0.5, float(width) / 2.0)
+    """True if a stroke ``width`` points thick passes over ``rect``."""
+    radius = max(0.5, float(width) / 2.0)
     x0, y0, x1, y1 = rect
-    izq, der = min(x0, x1) - radio, max(x0, x1) + radio
-    arriba, abajo = min(y0, y1) - radio, max(y0, y1) + radio
+    left, right = min(x0, x1) - radius, max(x0, x1) + radius
+    top, bottom = min(y0, y1) - radius, max(y0, y1) + radius
     for stroke in strokes:
-        for x, y in _puntos_del_trazo(stroke, radio):
-            if izq <= x <= der and arriba <= y <= abajo:
+        for x, y in _walk_stroke(stroke, radius):
+            if left <= x <= right and top <= y <= bottom:
                 return True
     return False
 
 
 def stroke_boxes(strokes, width: float) -> list[Rect]:
-    """Rectangulos que cubre un trazo, para poder borrar debajo de el."""
-    radio = max(0.5, float(width) / 2.0)
-    cajas: list[Rect] = []
+    """Rectangles a stroke covers, so what is underneath can be erased."""
+    radius = max(0.5, float(width) / 2.0)
+    boxes: list[Rect] = []
     for stroke in strokes:
         for (x0, y0), (x1, y1) in zip(stroke, stroke[1:]):
-            cajas.append((min(x0, x1) - radio, min(y0, y1) - radio,
-                          max(x0, x1) + radio, max(y0, y1) + radio))
-        if len(stroke) == 1:            # un toque suelto tambien borra
+            boxes.append((min(x0, x1) - radius, min(y0, y1) - radius,
+                          max(x0, x1) + radius, max(y0, y1) + radius))
+        if len(stroke) == 1:            # a single tap erases too
             x, y = stroke[0]
-            cajas.append((x - radio, y - radio, x + radio, y + radio))
-    return cajas
+            boxes.append((x - radius, y - radius, x + radius, y + radius))
+    return boxes
 
 
-#: Tamanos de la goma, en puntos PDF. Ctrl+ y Ctrl- recorren esta lista.
+#: Eraser sizes, in PDF points. Ctrl+ and Ctrl- walk this list.
 ERASER_SIZES = (6.0, 10.0, 16.0, 24.0, 36.0, 54.0, 80.0)
 ERASER_DEFAULT = 16.0
 
 
-#: A que distancia (en pixeles de pantalla) empieza a tirar el iman.
+#: How close (in screen pixels) the magnet starts pulling.
 SNAP_PIXELS = 6.0
 
 
 def snap_offset(
     anchors: Sequence[float], candidates: Sequence[float], threshold: float
 ) -> tuple[float, float | None]:
-    """Cuanto hay que desplazar para pegar algun borde a alguna guia.
+    """How far to shift to stick an edge to one of the guides.
 
-    ``anchors`` son los bordes y el centro de lo que se esta moviendo;
-    ``candidates``, las lineas a las que se puede alinear. Devuelve
-    ``(desplazamiento, guia usada)``, o ``(0.0, None)`` si nada esta lo
-    bastante cerca.
+    ``anchors`` are the edges and centre of whatever is being moved;
+    ``candidates`` the lines it can align to. Returns ``(offset, guide used)``,
+    or ``(0.0, None)`` if nothing is close enough.
     """
-    mejor_delta, mejor_guia, mejor_dist = 0.0, None, threshold
-    for ancla in anchors:
-        for guia in candidates:
-            distancia = abs(guia - ancla)
-            if distancia < mejor_dist:
-                mejor_dist, mejor_delta, mejor_guia = distancia, guia - ancla, guia
-    return (mejor_delta, mejor_guia)
+    best_delta, best_guide, best_distance = 0.0, None, threshold
+    for anchor in anchors:
+        for guide in candidates:
+            distance = abs(guide - anchor)
+            if distance < best_distance:
+                best_distance, best_delta, best_guide = distance, guide - anchor, guide
+    return (best_delta, best_guide)
 
 
 @dataclass
 class Annotation:
-    """Una anotacion colocada encima de una pagina.
+    """An annotation placed on top of a page.
 
-    Segun ``kind`` se usan unos campos u otros:
+    Depending on ``kind`` some fields are used and others are not:
 
     * ``RECT`` / ``HIGHLIGHT`` / ``TEXT``  -> ``rect``
-    * ``LINE`` / ``ARROW``                 -> ``p1`` y ``p2``
+    * ``LINE`` / ``ARROW``                 -> ``p1`` and ``p2``
     * ``INK``                              -> ``strokes``
-    * ``TEXT``                             -> ademas ``text``, ``font_size``
+    * ``TEXT``                             -> plus ``text``, ``font_size``
     """
 
     kind: Kind
@@ -287,16 +286,16 @@ class Annotation:
     cells: list[str] = field(default_factory=list)
     image_data: bytes = b""
     image_name: str = ""
-    done: bool = False          # nota ya leida
+    done: bool = False          # note already read
     color: RGB = (0.85, 0.10, 0.10)
     fill: RGB | None = None
     width: float = 1.5
     opacity: float = 1.0
     id: str = field(default_factory=_new_id)
 
-    # -- utilidades ------------------------------------------------------
+    # -- helpers ---------------------------------------------------------
     def copy(self) -> Annotation:
-        """Copia independiente (incluidos los trazos y las celdas)."""
+        """Independent copy (strokes and cells included)."""
         return replace(
             self,
             strokes=[list(stroke) for stroke in self.strokes],
@@ -308,65 +307,65 @@ class Annotation:
         return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
 
     def bounds(self) -> Rect:
-        """Rectangulo envolvente, sea cual sea el tipo."""
+        """Bounding rectangle, whatever the type."""
         if self.kind in (Kind.LINE, Kind.ARROW):
             (x0, y0), (x1, y1) = self.p1, self.p2
             return (min(x0, x1), min(y0, y1), max(x0, x1), max(y0, y1))
         if self.kind in (Kind.INK, Kind.ERASE):
-            pts = [p for stroke in self.strokes for p in stroke]
-            if not pts:
+            points = [p for stroke in self.strokes for p in stroke]
+            if not points:
                 return (0.0, 0.0, 0.0, 0.0)
-            xs = [p[0] for p in pts]
-            ys = [p[1] for p in pts]
+            xs = [p[0] for p in points]
+            ys = [p[1] for p in points]
             return (min(xs), min(ys), max(xs), max(ys))
         return self.normalized_rect()
 
     def translate(self, dx: float, dy: float) -> None:
-        """Desplaza la anotacion (en puntos PDF)."""
+        """Shift the annotation (in PDF points)."""
         x0, y0, x1, y1 = self.rect
         self.rect = (x0 + dx, y0 + dy, x1 + dx, y1 + dy)
         self.p1 = (self.p1[0] + dx, self.p1[1] + dy)
         self.p2 = (self.p2[0] + dx, self.p2[1] + dy)
         self.strokes = [[(x + dx, y + dy) for x, y in s] for s in self.strokes]
 
-    # -- tablas ----------------------------------------------------------
+    # -- tables ----------------------------------------------------------
     def cell_count(self) -> int:
         return max(1, self.rows) * max(1, self.cols)
 
     def normalized_cells(self) -> list[str]:
-        """Textos de las celdas, siempre con el tamano justo de la rejilla."""
+        """Cell texts, always exactly as many as the grid has cells."""
         total = self.cell_count()
         cells = list(self.cells)[:total]
         cells += [""] * (total - len(cells))
         return cells
 
     def cell_rects(self) -> list[Rect]:
-        """Rectangulo de cada celda, en orden de lectura."""
+        """Rectangle of every cell, in reading order."""
         x0, y0, x1, y1 = self.normalized_rect()
-        filas, columnas = max(1, self.rows), max(1, self.cols)
-        alto = (y1 - y0) / filas
-        ancho = (x1 - x0) / columnas
+        rows, columns = max(1, self.rows), max(1, self.cols)
+        height = (y1 - y0) / rows
+        width = (x1 - x0) / columns
         return [
-            (x0 + c * ancho, y0 + f * alto, x0 + (c + 1) * ancho, y0 + (f + 1) * alto)
-            for f in range(filas)
-            for c in range(columnas)
+            (x0 + c * width, y0 + r * height, x0 + (c + 1) * width, y0 + (r + 1) * height)
+            for r in range(rows)
+            for c in range(columns)
         ]
 
     def grid_lines(self) -> list[tuple[Point, Point]]:
-        """Lineas de la tabla: el borde y las separaciones interiores."""
+        """A table's lines: the border and the inner dividers."""
         x0, y0, x1, y1 = self.normalized_rect()
-        filas, columnas = max(1, self.rows), max(1, self.cols)
-        lineas: list[tuple[Point, Point]] = []
-        for f in range(filas + 1):
-            y = y0 + (y1 - y0) * f / filas
-            lineas.append(((x0, y), (x1, y)))
-        for c in range(columnas + 1):
-            x = x0 + (x1 - x0) * c / columnas
-            lineas.append(((x, y0), (x, y1)))
-        return lineas
+        rows, columns = max(1, self.rows), max(1, self.cols)
+        lines: list[tuple[Point, Point]] = []
+        for r in range(rows + 1):
+            y = y0 + (y1 - y0) * r / rows
+            lines.append(((x0, y), (x1, y)))
+        for c in range(columns + 1):
+            x = x0 + (x1 - x0) * c / columns
+            lines.append(((x, y0), (x, y1)))
+        return lines
 
     def is_empty(self) -> bool:
-        """True si la anotacion no tiene tamano util y deberia descartarse."""
+        """True if the annotation has no useful size and should be dropped."""
         if self.kind in (Kind.INK, Kind.ERASE):
             return not any(len(s) >= 2 for s in self.strokes)
         if self.kind in (Kind.LINE, Kind.ARROW):
@@ -375,7 +374,7 @@ class Annotation:
             return (dx * dx + dy * dy) < 4.0
         x0, y0, x1, y1 = self.normalized_rect()
         if self.kind is Kind.NOTE:
-            return False      # el icono tiene tamano fijo, nunca sobra
+            return False      # the icon has a fixed size, it is never too small
         if self.kind is Kind.IMAGE and not self.image_data:
             return True
         if self.kind in (Kind.TEXT, Kind.TABLE, Kind.IMAGE):
@@ -384,12 +383,12 @@ class Annotation:
 
 
 class AnnotationStore:
-    """Coleccion ordenada de anotaciones del documento abierto."""
+    """Ordered collection of the open document's annotations."""
 
     def __init__(self, annotations: Iterable[Annotation] | None = None) -> None:
         self._items: list[Annotation] = list(annotations or [])
 
-    # -- coleccion -------------------------------------------------------
+    # -- collection ------------------------------------------------------
     def __len__(self) -> int:
         return len(self._items)
 
@@ -403,7 +402,7 @@ class AnnotationStore:
     def items(self) -> Sequence[Annotation]:
         return tuple(self._items)
 
-    # -- operaciones -----------------------------------------------------
+    # -- operations ------------------------------------------------------
     def add(self, ann: Annotation, index: int | None = None) -> Annotation:
         if index is None:
             self._items.append(ann)
@@ -412,12 +411,12 @@ class AnnotationStore:
         return ann
 
     def remove(self, ann: Annotation) -> int:
-        """Elimina una anotacion y devuelve la posicion que ocupaba."""
+        """Remove an annotation and return the position it held."""
         for i, item in enumerate(self._items):
             if item is ann or item.id == ann.id:
                 del self._items[i]
                 return i
-        raise ValueError("la anotacion no pertenece al documento")
+        raise ValueError("the annotation does not belong to this document")
 
     def clear(self) -> None:
         self._items.clear()

@@ -33,11 +33,11 @@ def _leer_version() -> str:
     """
     import re
 
-    ruta = pathlib.Path(__file__).resolve().parent.parent / "src" / "easypdf" / "__init__.py"
-    encontrado = re.search(r'__version__\s*=\s*"([^"]+)"', ruta.read_text(encoding="utf-8"))
-    if not encontrado:
-        raise RuntimeError(f"no se encuentra __version__ en {ruta}")
-    return encontrado.group(1)
+    path = pathlib.Path(__file__).resolve().parent.parent / "src" / "easypdf" / "__init__.py"
+    found = re.search(r'__version__\s*=\s*"([^"]+)"', path.read_text(encoding="utf-8"))
+    if not found:
+        raise RuntimeError(f"no se encuentra __version__ en {path}")
+    return found.group(1)
 #: Las descargas apuntan a los archivos de la release, no a los del repositorio:
 #: GitHub solo cuenta las descargas de las releases, y de ese numero sale el
 #: contador de la portada.
@@ -291,31 +291,31 @@ def build_page(lang: str) -> str:
 
     funciones = "\n".join(
         "        <li>\n"
-        f'          <svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[clave]}</svg>\n'
-        f"          <div><b>{esc(titulo)}</b><span>{esc(texto)}</span></div>\n"
+        f'          <svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[key]}</svg>\n'
+        f"          <div><b>{esc(title)}</b><span>{esc(text)}</span></div>\n"
         "        </li>"
-        for clave, titulo, texto in t["features"]
+        for key, title, text in t["features"]
     )
 
     descargas = "\n".join(
-        f'        <a class="dl" href="{FILES[clave]}">\n'
-        f'          <span class="dl-os">{esc(titulo)}</span>\n'
+        f'        <a class="dl" href="{FILES[key]}">\n'
+        f'          <span class="dl-os">{esc(title)}</span>\n'
         f'          <span class="dl-note">{esc(detalle)}</span>\n'
         f'          <span class="dl-size">{esc(peso)}</span>\n'
         '          <span class="dl-go" aria-hidden="true">&darr;</span>\n'
         "        </a>"
-        for clave, titulo, detalle, peso in t["downloads"]
+        for key, title, detalle, peso in t["downloads"]
     )
 
     faq = "\n".join(
         "        <details>\n"
         f"          <summary>{esc(pregunta)}</summary>\n"
-        f"          <p>{esc(respuesta)}</p>\n"
+        f"          <p>{esc(response)}</p>\n"
         "        </details>"
         # Van todas, no las cuatro primeras: los datos estructurados de abajo
         # declaran la lista entera, y Google pide que lo declarado se vea en
         # la pagina. Como son <details> plegados, no alargan nada.
-        for pregunta, respuesta in t["faq"]
+        for pregunta, response in t["faq"]
     )
 
     datos_app = {
@@ -342,16 +342,16 @@ def build_page(lang: str) -> str:
             {
                 "@type": "Question",
                 "name": pregunta,
-                "acceptedAnswer": {"@type": "Answer", "text": respuesta},
+                "acceptedAnswer": {"@type": "Answer", "text": response},
             }
-            for pregunta, respuesta in t["faq"]
+            for pregunta, response in t["faq"]
         ],
     }
 
-    plantilla = Template(open(TEMPLATE, encoding="utf-8").read())
-    return plantilla.safe_substitute(
+    template = Template(open(TEMPLATE, encoding="utf-8").read())
+    return template.safe_substitute(
         lang=t["lang"],
-        titulo=esc(t["title"]),
+        title=esc(t["title"]),
         OTRO_LANG=otro["lang"].upper(),
         url_setup=FILES["setup"],
         descripcion=esc(t["description"]),
@@ -403,14 +403,14 @@ def build_page(lang: str) -> str:
 
 def main() -> int:
     hoy = datetime.date.today().isoformat()
-    for carpeta in ("es",):
-        os.makedirs(os.path.join(SITE, carpeta), exist_ok=True)
+    for folder in ("es",):
+        os.makedirs(os.path.join(SITE, folder), exist_ok=True)
 
     for lang, t in TEXTS.items():
-        destino = os.path.join(SITE, t["path"], "index.html")
-        with open(destino, "w", encoding="utf-8") as fh:
+        target = os.path.join(SITE, t["path"], "index.html")
+        with open(target, "w", encoding="utf-8") as fh:
             fh.write(build_page(lang))
-        print(f"Escrito {destino}")
+        print(f"Escrito {target}")
 
     robots = f"""User-agent: *
 Allow: /

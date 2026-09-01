@@ -205,16 +205,16 @@ def _draw_ink(p: QPainter) -> None:
 def _draw_note(p: QPainter) -> None:
     """Nota adhesiva amarilla con la esquina doblada."""
     amarillo = QColor("#fbc02d")
-    cuerpo = QPainterPath()
-    cuerpo.moveTo(12, 10)
-    cuerpo.lineTo(52, 10)
-    cuerpo.lineTo(52, 40)
-    cuerpo.lineTo(38, 54)
-    cuerpo.lineTo(12, 54)
-    cuerpo.closeSubpath()
+    body = QPainterPath()
+    body.moveTo(12, 10)
+    body.lineTo(52, 10)
+    body.lineTo(52, 40)
+    body.lineTo(38, 54)
+    body.lineTo(12, 54)
+    body.closeSubpath()
     _pen(p, 3.5)
     p.setBrush(QBrush(amarillo))
-    p.drawPath(cuerpo)
+    p.drawPath(body)
     doblez = QPainterPath()
     doblez.moveTo(38, 54)
     doblez.lineTo(38, 40)
@@ -231,10 +231,10 @@ def _draw_note(p: QPainter) -> None:
 def _draw_eraser(p: QPainter) -> None:
     """Goma inclinada, con la parte de borrar en rosa y el cuerpo en gris."""
     # cuerpo (la mitad que se agarra)
-    cuerpo = QPolygonF([QPointF(30, 12), QPointF(52, 34), QPointF(40, 46), QPointF(18, 24)])
+    body = QPolygonF([QPointF(30, 12), QPointF(52, 34), QPointF(40, 46), QPointF(18, 24)])
     p.setPen(_pen(p, 3.5))
     p.setBrush(QBrush(QColor("#b0bec5")))
-    p.drawPolygon(cuerpo)
+    p.drawPolygon(body)
     # punta que borra
     punta = QPolygonF([QPointF(18, 24), QPointF(40, 46), QPointF(28, 58), QPointF(6, 36)])
     p.setBrush(QBrush(QColor("#ef9a9a")))
@@ -390,15 +390,15 @@ def _draw_italic(p: QPainter) -> None:
 def _draw_align(p: QPainter, modo: str) -> None:
     _pen(p, 5)
     anchos = (44, 30, 44, 26)
-    for fila, ancho in enumerate(anchos):
-        y = 16 + fila * 11
+    for row, width in enumerate(anchos):
+        y = 16 + row * 11
         if modo == "left":
             x = 10
         elif modo == "center":
-            x = 10 + (44 - ancho) / 2
+            x = 10 + (44 - width) / 2
         else:
-            x = 10 + (44 - ancho)
-        p.drawLine(QPointF(x, y), QPointF(x + ancho, y))
+            x = 10 + (44 - width)
+        p.drawLine(QPointF(x, y), QPointF(x + width, y))
 
 
 def _draw_app(p: QPainter) -> None:
@@ -410,17 +410,17 @@ def _draw_app(p: QPainter) -> None:
 
     # --- Hoja con la esquina superior derecha doblada ---------------------
     doblez = 15.0
-    hoja = QPainterPath()
-    hoja.moveTo(19, 2)
-    hoja.lineTo(54 - doblez, 2)
-    hoja.lineTo(54, 2 + doblez)
-    hoja.lineTo(54, 47)
-    hoja.quadTo(54, 53, 48, 53)
-    hoja.lineTo(25, 53)
-    hoja.quadTo(19, 53, 19, 47)
-    hoja.closeSubpath()
+    sheet = QPainterPath()
+    sheet.moveTo(19, 2)
+    sheet.lineTo(54 - doblez, 2)
+    sheet.lineTo(54, 2 + doblez)
+    sheet.lineTo(54, 47)
+    sheet.quadTo(54, 53, 48, 53)
+    sheet.lineTo(25, 53)
+    sheet.quadTo(19, 53, 19, 47)
+    sheet.closeSubpath()
     p.setBrush(QColor("#f2f3f5"))
-    p.drawPath(hoja)
+    p.drawPath(sheet)
     p.setBrush(QColor("#ef3b26"))
     p.drawPolygon(
         QPolygonF([QPointF(54 - doblez, 2), QPointF(54, 2 + doblez), QPointF(54, 2)])
@@ -428,31 +428,31 @@ def _draw_app(p: QPainter) -> None:
 
     # Renglones del documento
     p.setBrush(QColor("#ccd1d9"))
-    for y, ancho in ((26, 15), (33, 12)):
-        p.drawRoundedRect(QRectF(37, y, ancho, 4.2), 2.1, 2.1)
+    for y, width in ((26, 15), (33, 12)):
+        p.drawRoundedRect(QRectF(37, y, width, 4.2), 2.1, 2.1)
 
     # --- Ola: masa de agua que barre la parte de abajo --------------------
-    fondo = QPainterPath()
-    fondo.moveTo(3, 42)
-    fondo.cubicTo(12, 36, 22, 54, 34, 50)
-    fondo.cubicTo(46, 46, 52, 38, 59, 43)
-    fondo.cubicTo(63, 52, 55, 62, 42, 62)
-    fondo.lineTo(15, 62)
-    fondo.cubicTo(4, 62, -1, 52, 3, 42)
-    fondo.closeSubpath()
+    background = QPainterPath()
+    background.moveTo(3, 42)
+    background.cubicTo(12, 36, 22, 54, 34, 50)
+    background.cubicTo(46, 46, 52, 38, 59, 43)
+    background.cubicTo(63, 52, 55, 62, 42, 62)
+    background.lineTo(15, 62)
+    background.cubicTo(4, 62, -1, 52, 3, 42)
+    background.closeSubpath()
     p.setBrush(QColor("#0d47a1"))
-    p.drawPath(fondo)
+    p.drawPath(background)
 
-    medio = QPainterPath()
-    medio.moveTo(3, 48)
-    medio.cubicTo(14, 42, 24, 58, 36, 54)
-    medio.cubicTo(48, 50, 53, 45, 59, 49)
-    medio.cubicTo(61, 56, 53, 62, 42, 62)
-    medio.lineTo(15, 62)
-    medio.cubicTo(5, 62, 1, 55, 3, 48)
-    medio.closeSubpath()
+    middle = QPainterPath()
+    middle.moveTo(3, 48)
+    middle.cubicTo(14, 42, 24, 58, 36, 54)
+    middle.cubicTo(48, 50, 53, 45, 59, 49)
+    middle.cubicTo(61, 56, 53, 62, 42, 62)
+    middle.lineTo(15, 62)
+    middle.cubicTo(5, 62, 1, 55, 3, 48)
+    middle.closeSubpath()
     p.setBrush(QColor("#1e88e5"))
-    p.drawPath(medio)
+    p.drawPath(middle)
 
     # --- Cresta que se enrosca sobre si misma ----------------------------
     cresta = QPainterPath()
@@ -576,10 +576,10 @@ def app_icon() -> QIcon:
     Si hay un icono en ``assets/`` (por ejemplo uno propio generado con
     ``tools/make_icon.py``) se usa ese; si no, se dibuja por codigo.
     """
-    for nombre in ("easypdf.ico", "easypdf.png"):
-        ruta = asset_path(nombre)
-        if ruta:
-            candidato = QIcon(ruta)
+    for name in ("easypdf.ico", "easypdf.png"):
+        path = asset_path(name)
+        if path:
+            candidato = QIcon(path)
             if not candidato.isNull():
                 return candidato
     result = QIcon()

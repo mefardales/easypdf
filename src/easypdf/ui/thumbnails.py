@@ -1,9 +1,9 @@
-"""Panel de miniaturas con reordenacion por arrastre.
+"""Thumbnail panel with drag-to-reorder.
 
-La lista no mueve nunca sus propios elementos: cuando se suelta un arrastre
-avisa con ``page_moved`` y es la ventana quien mueve la pagina de verdad, a
-traves de la pila de deshacer. Asi las miniaturas y el documento no se pueden
-desincronizar, y el arrastre se deshace con Ctrl+Z como cualquier otro cambio.
+The list never moves its own items: when a drag is dropped it reports it with
+``page_moved`` and the window is the one that really moves the page, through
+the undo stack. That way the thumbnails and the document cannot drift apart,
+and the drag is undone with Ctrl+Z like any other change.
 """
 
 from __future__ import annotations
@@ -13,15 +13,15 @@ from PySide6.QtWidgets import QAbstractItemView, QListWidget, QListWidgetItem
 
 
 class ThumbnailList(QListWidget):
-    """Lista de miniaturas que se pueden reordenar arrastrando."""
+    """List of thumbnails that can be reordered by dragging."""
 
-    #: Se emite al soltar un arrastre: (posicion de origen, posicion de destino).
+    #: Emitted when a drag is dropped: (source position, target position).
     page_moved = Signal(int, int)
 
-    def __init__(self, ancho: int, parent=None) -> None:
+    def __init__(self, width: int, parent=None) -> None:
         super().__init__(parent)
         self.setViewMode(QListWidget.IconMode)
-        self.setIconSize(QSize(ancho, int(ancho * 1.5)))
+        self.setIconSize(QSize(width, int(width * 1.5)))
         self.setResizeMode(QListWidget.Adjust)
         self.setMovement(QListWidget.Snap)
         self.setSpacing(6)
@@ -29,86 +29,86 @@ class ThumbnailList(QListWidget):
         self.setWordWrap(True)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
-        # Arrastre interno para reordenar las paginas.
+        # Internal drag, used to reorder the pages.
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
         self.setDropIndicatorShown(True)
         self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setDefaultDropAction(Qt.MoveAction)
 
-    # -- arrastre --------------------------------------------------------
+    # -- dragging --------------------------------------------------------
     def drop_row(self, pos) -> int:
-        """Posicion en la que caeria un arrastre soltado en ``pos``."""
+        """Position a drag dropped at ``pos`` would land on."""
         if self.count() == 0:
             return 0
-        indice = self.indexAt(pos)
-        # Entre dos miniaturas hay un hueco de separacion, y soltar justo ahi
-        # es el gesto natural para decir "ponla aqui". Ahi indexAt no devuelve
-        # nada, asi que se busca la miniatura mas cercana en vez de dar la
-        # posicion por perdida: antes se mandaba la pagina al final de todas.
-        fila = indice.row() if indice.isValid() else self.nearest_row(pos)
-        rect = self.visualRect(self.model().index(fila, 0))
-        # Soltar en la mitad de abajo (o derecha) de una miniatura coloca la
-        # pagina detras de ella, que es lo que espera quien la esta arrastrando.
+        index = self.indexAt(pos)
+        # There is a gap between two thumbnails, and dropping right there is
+        # the natural gesture for "put it here". indexAt returns nothing in
+        # that gap, so the nearest thumbnail is looked up instead of giving
+        # the position up for lost: the page used to be sent to the very end.
+        row = index.row() if index.isValid() else self.nearest_row(pos)
+        rect = self.visualRect(self.model().index(row, 0))
+        # Dropping on the bottom (or right) half of a thumbnail puts the page
+        # after it, which is what whoever is dragging expects.
         if self.stacked_vertically():
-            despues = pos.y() > rect.center().y()
+            after = pos.y() > rect.center().y()
         else:
-            despues = pos.x() > rect.center().x()
-        return fila + 1 if despues else fila
+            after = pos.x() > rect.center().x()
+        return row + 1 if after else row
 
     def nearest_row(self, pos) -> int:
-        """Miniatura mas cercana a un punto, aunque el punto caiga en un hueco."""
+        """Thumbnail closest to a point, even if the point falls in a gap."""
         vertical = self.stacked_vertically()
-        mejor, mejor_distancia = 0, None
-        for fila in range(self.count()):
-            rect = self.visualRect(self.model().index(fila, 0))
+        best, best_distance = 0, None
+        for row in range(self.count()):
+            rect = self.visualRect(self.model().index(row, 0))
             if vertical:
-                inicio, fin, punto = rect.top(), rect.bottom(), pos.y()
+                start, end, point = rect.top(), rect.bottom(), pos.y()
             else:
-                inicio, fin, punto = rect.left(), rect.right(), pos.x()
-            if punto < inicio:
-                distancia = inicio - punto
-            elif punto > fin:
-                distancia = punto - fin
+                start, end, point = rect.left(), rect.right(), pos.x()
+            if point < start:
+                distance = start - point
+            elif point > end:
+                distance = point - end
             else:
-                distancia = 0
-            if mejor_distancia is None or distancia < mejor_distancia:
-                mejor, mejor_distancia = fila, distancia
-                if distancia == 0:
+                distance = 0
+            if best_distance is None or distance < best_distance:
+                best, best_distance = row, distance
+                if distance == 0:
                     break
-        return mejor
+        return best
 
     def stacked_vertically(self) -> bool:
-        """True si las miniaturas van una debajo de otra.
+        """True if the thumbnails run one below the other.
 
-        El modo icono declara un flujo horizontal, pero en un panel estrecho
-        solo cabe una miniatura por fila y se apilan en vertical, que es como
-        el usuario las arrastra. Se mira la separacion real entre las dos
-        primeras en vez de fiarse de flow().
+        Icon mode declares a horizontal flow, but in a narrow panel only one
+        thumbnail fits per row and they stack vertically, which is how the
+        user drags them. The real spacing between the first two is measured
+        instead of trusting flow().
         """
         if self.count() < 2:
             return True
-        r0 = self.visualRect(self.model().index(0, 0))
-        r1 = self.visualRect(self.model().index(1, 0))
-        return abs(r1.top() - r0.top()) >= abs(r1.left() - r0.left())
+        first = self.visualRect(self.model().index(0, 0))
+        second = self.visualRect(self.model().index(1, 0))
+        return abs(second.top() - first.top()) >= abs(second.left() - first.left())
 
-    def dropEvent(self, event) -> None:  # pragma: no cover - gesto de raton
-        origen = self.currentRow()
-        destino = self.drop_row(event.position().toPoint())
-        # Qt no toca la lista: se reconstruye entera tras mover la pagina.
+    def dropEvent(self, event) -> None:  # pragma: no cover - mouse gesture
+        source = self.currentRow()
+        target = self.drop_row(event.position().toPoint())
+        # Qt does not touch the list: it is rebuilt after moving the page.
         event.setDropAction(Qt.IgnoreAction)
         event.accept()
-        if origen < 0:
+        if source < 0:
             return
-        if destino > origen:
-            destino -= 1                     # la propia pagina deja su hueco
-        destino = max(0, min(destino, self.count() - 1))
-        if destino != origen:
-            self.page_moved.emit(origen, destino)
+        if target > source:
+            target -= 1                      # the page itself frees its slot
+        target = max(0, min(target, self.count() - 1))
+        if target != source:
+            self.page_moved.emit(source, target)
 
-    # -- utilidades ------------------------------------------------------
-    def add_page_item(self, numero: int, icono) -> QListWidgetItem:
-        item = QListWidgetItem(icono, str(numero))
+    # -- helpers ---------------------------------------------------------
+    def add_page_item(self, number: int, icon) -> QListWidgetItem:
+        item = QListWidgetItem(icon, str(number))
         item.setTextAlignment(Qt.AlignHCenter)
         self.addItem(item)
         return item

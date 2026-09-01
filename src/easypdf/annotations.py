@@ -55,12 +55,12 @@ def _hex_color(rgb) -> str:
 
 def _rich_html(ann: Annotation, text: str) -> str:
     """Texto en HTML sencillo para negrita y cursiva."""
-    cuerpo = html.escape(text).replace("\n", "<br>")
+    body = html.escape(text).replace("\n", "<br>")
     if ann.bold:
-        cuerpo = f"<b>{cuerpo}</b>"
+        body = f"<b>{body}</b>"
     if ann.italic:
-        cuerpo = f"<i>{cuerpo}</i>"
-    return cuerpo
+        body = f"<i>{body}</i>"
+    return body
 
 
 def _add_freetext(
@@ -189,7 +189,7 @@ def add_annotation(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
         # estandar del PDF: PyMuPDF la hace diez veces el grosor de la linea,
         # que con trazos gruesos tapa media pagina y no coincide con lo que se
         # ve en pantalla.
-        base, punta, izquierda, derecha = arrow_head(ann.p1, ann.p2, ann.width)
+        base, punta, left, right = arrow_head(ann.p1, ann.p2, ann.width)
         fin = ((base[0] + punta[0]) / 2.0, (base[1] + punta[1]) / 2.0)
         annot = page.add_line_annot(_point(ann.p1, page), _point(fin, page))
         annot.set_colors(stroke=_color(ann.color))
@@ -197,7 +197,7 @@ def add_annotation(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
         _apply_common(annot, ann)
 
         cabeza = page.add_polygon_annot(
-            [tuple(_point(pt, page)) for pt in (punta, izquierda, derecha)]
+            [tuple(_point(pt, page)) for pt in (punta, left, right)]
         )
         cabeza.set_colors(stroke=_color(ann.color), fill=_color(ann.color))
         cabeza.set_border(width=0.1)
@@ -265,39 +265,39 @@ def _add_table(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
     texto se guarda como un texto libre. Se ve igual en cualquier lector.
     """
     if ann.fill:
-        fondo = page.add_rect_annot(_rect(ann, page))
-        fondo.set_colors(stroke=None, fill=_color(ann.fill))
-        fondo.set_border(width=0)
-        _apply_common(fondo, ann)
+        background = page.add_rect_annot(_rect(ann, page))
+        background.set_colors(stroke=None, fill=_color(ann.fill))
+        background.set_border(width=0)
+        _apply_common(background, ann)
 
-    trazos = [
+    strokes = [
         [tuple(_point(a, page)), tuple(_point(b, page))] for a, b in ann.grid_lines()
     ]
-    rejilla = page.add_ink_annot(trazos)
+    rejilla = page.add_ink_annot(strokes)
     rejilla.set_colors(stroke=_color(ann.color))
     rejilla.set_border(width=max(0.1, ann.width))
     _apply_common(rejilla, ann)
 
-    for texto, celda in zip(ann.normalized_cells(), ann.cell_rects()):
-        if not texto.strip():
+    for text, cell in zip(ann.normalized_cells(), ann.cell_rects()):
+        if not text.strip():
             continue
-        x0, y0, x1, y1 = celda
-        caja = pymupdf.Rect(
+        x0, y0, x1, y1 = cell
+        box = pymupdf.Rect(
             x0 + CELL_PADDING, y0 + CELL_PADDING, x1 - CELL_PADDING, y1 - CELL_PADDING
         )
-        if caja.is_empty or caja.width < 2 or caja.height < 2:
+        if box.is_empty or box.width < 2 or box.height < 2:
             continue
         celda_annot = _add_freetext(
             page,
-            pymupdf.Rect(caja * page.derotation_matrix).normalize(),
+            pymupdf.Rect(box * page.derotation_matrix).normalize(),
             ann,
-            texto,
+            text,
             border_width=0,
             fill=False,
         )
         _apply_common(celda_annot, ann)
         if ann.bold or ann.italic:
-            _set_plain_content(celda_annot, texto)
+            _set_plain_content(celda_annot, text)
 
     return rejilla
 
@@ -319,12 +319,12 @@ def apply_erasures(doc: pymupdf.Document, erasures: Iterable[Annotation]) -> int
         if 0 <= ann.page < doc.page_count:
             por_pagina.setdefault(ann.page, []).append(ann)
 
-    for indice, pasadas in por_pagina.items():
-        page = doc[indice]
+    for index, pasadas in por_pagina.items():
+        page = doc[index]
         for ann in pasadas:
             relleno = _color(ann.color)
-            for caja in stroke_boxes(ann.strokes, ann.width):
-                rect = pymupdf.Rect(*caja) & page.rect
+            for box in stroke_boxes(ann.strokes, ann.width):
+                rect = pymupdf.Rect(*box) & page.rect
                 if rect.is_empty:
                     continue
                 page.add_redact_annot(rect, fill=relleno)
@@ -343,12 +343,12 @@ def apply_erasures(doc: pymupdf.Document, erasures: Iterable[Annotation]) -> int
 
 def apply_annotations(doc: pymupdf.Document, annotations: Iterable[Annotation]) -> int:
     """Escribe todas las anotaciones en el documento. Devuelve cuantas se anadieron."""
-    lista = list(annotations)
+    items = list(annotations)
     # Primero se borra y despues se dibuja: lo que el usuario haya puesto
     # encima de una zona borrada tiene que sobrevivir.
-    apply_erasures(doc, lista)
+    apply_erasures(doc, items)
     count = 0
-    for ann in lista:
+    for ann in items:
         if ann.kind is Kind.ERASE:
             continue          # ya ha hecho su trabajo al borrar
         if ann.is_empty():

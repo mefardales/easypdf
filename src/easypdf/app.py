@@ -70,8 +70,8 @@ def main(argv: list[str] | None = None) -> int:
     window = MainWindow()
     window.show()
 
-    if args.archivo:
-        path = os.path.abspath(os.path.expanduser(args.archivo))
+    if args.file:
+        path = os.path.abspath(os.path.expanduser(args.file))
         window.open_path(path)
 
     return app.exec()

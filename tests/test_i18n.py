@@ -15,9 +15,9 @@ from easypdf.i18n import (
 
 @pytest.fixture(autouse=True)
 def idioma_limpio():
-    anterior = language()
+    previous = language()
     yield
-    set_language(anterior)
+    set_language(previous)
 
 
 def test_los_dos_idiomas_tienen_las_mismas_claves():
@@ -29,7 +29,7 @@ def test_los_dos_idiomas_tienen_las_mismas_claves():
 
 def test_no_hay_textos_vacios():
     for codigo, textos in TEXTS.items():
-        vacios = [clave for clave, valor in textos.items() if not valor.strip()]
+        vacios = [key for key, value in textos.items() if not value.strip()]
         assert not vacios, f"{codigo} tiene textos vacios: {vacios}"
 
 
@@ -37,12 +37,12 @@ def test_los_campos_de_cada_texto_coinciden_entre_idiomas():
     """Si un texto lleva {name}, la traduccion tiene que llevarlo tambien."""
     import string
 
-    def campos(texto):
-        return {c for _, c, _, _ in string.Formatter().parse(texto) if c}
+    def campos(text):
+        return {c for _, c, _, _ in string.Formatter().parse(text) if c}
 
-    for clave, texto in TEXTS[DEFAULT_LANGUAGE].items():
+    for key, text in TEXTS[DEFAULT_LANGUAGE].items():
         for codigo, textos in TEXTS.items():
-            assert campos(textos[clave]) == campos(texto), f"{clave} en {codigo}"
+            assert campos(textos[key]) == campos(text), f"{key} en {codigo}"
 
 
 def test_traduce_y_cambia_de_idioma():

@@ -1,4 +1,4 @@
-"""Consulta en segundo plano si hay una version nueva."""
+"""Check for a new version in the background."""
 
 from __future__ import annotations
 
@@ -11,13 +11,13 @@ from ..updates import LATEST_URL, check
 
 
 class UpdateChecker(QObject):
-    """Pregunta a la web oficial sin entretener a la interfaz.
+    """Ask the official site without holding up the interface.
 
-    La consulta va en un hilo aparte: si la web tarda o no hay internet, el
-    programa sigue funcionando como si nada.
+    The query runs on a separate thread: if the site is slow or there is no
+    internet, the program carries on as if nothing happened.
     """
 
-    #: Se emite con los datos de la version nueva, o con None si no hay.
+    #: Emitted with the new version's data, or with None if there is none.
     finished = Signal(object)
 
     def __init__(self, parent=None) -> None:
@@ -30,36 +30,36 @@ class UpdateChecker(QObject):
         return self._running
 
     def cancel(self) -> None:
-        """Deja de avisar del resultado. Se llama al cerrar la ventana."""
+        """Stop reporting the result. Called when the window closes."""
         self._cancelled = True
 
     def start(self, url: str | None = None, current: str | None = None) -> None:
-        # La direccion se lee al llamar, no al importar el modulo: como valor
-        # por omision quedaba congelada la de entonces y no habia forma de
-        # apuntar a otra parte (por ejemplo en las pruebas).
+        # The address is read when called, not when the module is imported:
+        # as a default argument it froze to whatever it was back then and
+        # there was no way to point it elsewhere (in the tests, for example).
         if self._running:
             return
         self._running = True
-        destino = url or LATEST_URL
+        target = url or LATEST_URL
         version = current or __version__
 
-        def trabajo() -> None:
+        def work() -> None:
             try:
-                datos = check(version, destino)
-            except Exception:  # pragma: no cover - defensivo
-                datos = None
+                data = check(version, target)
+            except Exception:  # pragma: no cover - defensive
+                data = None
             self._running = False
             if self._cancelled:
                 return
             try:
-                self.finished.emit(datos)
+                self.finished.emit(data)
             except RuntimeError:
-                # La ventana se cerro mientras se consultaba: ya no hay a
-                # quien avisar, y no es motivo para soltar un error.
+                # The window closed while the query was running: there is no
+                # one left to tell, and that is no reason to raise an error.
                 pass
 
-        hilo = threading.Thread(target=trabajo, daemon=True, name="easypdf-updates")
-        hilo.start()
+        thread = threading.Thread(target=work, daemon=True, name="easypdf-updates")
+        thread.start()
 
 
 __all__ = ["UpdateChecker"]

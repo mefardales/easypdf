@@ -1,4 +1,4 @@
-"""Comandos de deshacer/rehacer (QUndoStack)."""
+"""Undo/redo commands (QUndoStack)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from ..model import Annotation, Kind, rotate_annotation
 
 
 class AddAnnotationCommand(QUndoCommand):
-    """Anade una anotacion (y su item) al documento."""
+    """Add an annotation (and its item) to the document."""
 
     def __init__(self, view, ann: Annotation, item, text: str | None = None) -> None:
         super().__init__(text or tr("cmd_add", kind=tr(f"kind_{Kind(ann.kind).value}")))
@@ -22,7 +22,7 @@ class AddAnnotationCommand(QUndoCommand):
 
     def redo(self) -> None:
         if self._first_redo:
-            # El item ya esta en la escena al crearse con el raton.
+            # The item is already in the scene, created with the mouse.
             self._first_redo = False
         else:
             self._view.attach_item(self._item, self._ann)
@@ -33,13 +33,13 @@ class AddAnnotationCommand(QUndoCommand):
         self._view.detach_item(self._item)
         try:
             self._view.store.remove(self._ann)
-        except ValueError:  # pragma: no cover - defensivo
+        except ValueError:  # pragma: no cover - defensive
             pass
         self._view.notify_modified()
 
 
 class DeleteAnnotationsCommand(QUndoCommand):
-    """Elimina una o varias anotaciones."""
+    """Delete one or several annotations."""
 
     def __init__(self, view, items: Sequence) -> None:
         label = (
@@ -55,7 +55,7 @@ class DeleteAnnotationsCommand(QUndoCommand):
             self._view.detach_item(item)
             try:
                 self._view.store.remove(item.ann)
-            except ValueError:  # pragma: no cover - defensivo
+            except ValueError:  # pragma: no cover - defensive
                 pass
         self._view.notify_modified()
 
@@ -67,7 +67,7 @@ class DeleteAnnotationsCommand(QUndoCommand):
 
 
 class ChangeAnnotationsCommand(QUndoCommand):
-    """Cambia geometria o estilo de anotaciones ya existentes."""
+    """Change the geometry or style of existing annotations."""
 
     def __init__(
         self,
@@ -96,7 +96,7 @@ class ChangeAnnotationsCommand(QUndoCommand):
 
     def redo(self) -> None:
         if self._skip_first_redo:
-            # El cambio ya esta hecho por la interaccion del usuario.
+            # The change is already done by the user's interaction.
             self._skip_first_redo = False
             self._view.notify_modified()
             return
@@ -114,7 +114,7 @@ __all__ = [
 
 
 class AddPageCommand(QUndoCommand):
-    """Anade (o duplica) una pagina del documento."""
+    """Add (or duplicate) a page of the document."""
 
     def __init__(self, view, index: int, size=None, duplicate: bool = False) -> None:
         super().__init__(tr("cmd_page_duplicate") if duplicate else tr("cmd_page_add"))
@@ -124,11 +124,11 @@ class AddPageCommand(QUndoCommand):
         self._duplicate = duplicate
 
     def redo(self) -> None:
-        documento = self._view.document
+        document = self._view.document
         if self._duplicate:
-            self._index = documento.duplicate_page(self._index - 1)
+            self._index = document.duplicate_page(self._index - 1)
         else:
-            self._index = documento.add_blank_page(self._index, self._size)
+            self._index = document.add_blank_page(self._index, self._size)
         self._view.shift_annotation_pages(self._index, 1)
         self._view.refresh_pages()
 
@@ -139,7 +139,7 @@ class AddPageCommand(QUndoCommand):
 
 
 class DeletePageCommand(QUndoCommand):
-    """Borra una pagina y todo lo que hubiera anotado en ella."""
+    """Delete a page and everything annotated on it."""
 
     def __init__(self, view, index: int) -> None:
         super().__init__(tr("cmd_page_delete", page=index + 1))
@@ -149,16 +149,16 @@ class DeletePageCommand(QUndoCommand):
         self._items: list = []
 
     def redo(self) -> None:
-        documento = self._view.document
-        self._page_data = documento.extract_page(self._index)
+        document = self._view.document
+        self._page_data = document.extract_page(self._index)
         self._items = self._view.items_on_page(self._index)
         for item in self._items:
             self._view.detach_item(item)
             try:
                 self._view.store.remove(item.ann)
-            except ValueError:  # pragma: no cover - defensivo
+            except ValueError:  # pragma: no cover - defensive
                 pass
-        documento.delete_page(self._index)
+        document.delete_page(self._index)
         self._view.shift_annotation_pages(self._index + 1, -1)
         self._view.refresh_pages()
 
@@ -173,7 +173,7 @@ class DeletePageCommand(QUndoCommand):
 
 
 class RotatePageCommand(QUndoCommand):
-    """Gira una pagina y lleva consigo lo que hubiera anotado en ella."""
+    """Rotate a page, taking whatever is annotated on it along."""
 
     def __init__(self, view, index: int, delta: int) -> None:
         super().__init__(tr("cmd_page_rotate", page=index + 1))
@@ -181,51 +181,51 @@ class RotatePageCommand(QUndoCommand):
         self._index = index
         self._delta = int(delta) % 360
 
-    def _girar(self, delta: int) -> None:
-        documento = self._view.document
-        # El tamano de antes del giro es el que necesita la conversion de
-        # coordenadas, asi que se toma primero.
-        ancho, alto = documento.page_size(self._index)
-        documento.set_page_rotation(
-            self._index, documento.page_rotation(self._index) + delta
+    def _rotate(self, delta: int) -> None:
+        document = self._view.document
+        # The size from before the rotation is what the coordinate
+        # conversion needs, so it is read first.
+        width, height = document.page_size(self._index)
+        document.set_page_rotation(
+            self._index, document.page_rotation(self._index) + delta
         )
         for ann in self._view.store:
             if ann.page == self._index:
-                rotate_annotation(ann, delta, ancho, alto)
+                rotate_annotation(ann, delta, width, height)
         self._view.refresh_pages()
 
     def redo(self) -> None:
-        self._girar(self._delta)
+        self._rotate(self._delta)
 
     def undo(self) -> None:
-        self._girar(-self._delta % 360)
+        self._rotate(-self._delta % 360)
 
 
 class MovePageCommand(QUndoCommand):
-    """Cambia una pagina de sitio."""
+    """Move a page somewhere else."""
 
-    def __init__(self, view, index: int, destino: int) -> None:
+    def __init__(self, view, index: int, target: int) -> None:
         super().__init__(tr("cmd_page_move", page=index + 1))
         self._view = view
         self._index = index
-        self._destino = destino
+        self._target = target
 
-    def _mover(self, desde: int, hasta: int) -> None:
-        self._view.document.move_page(desde, hasta)
+    def _move(self, source: int, target: int) -> None:
+        self._view.document.move_page(source, target)
         for ann in self._view.store:
-            if ann.page == desde:
-                ann.page = hasta
-            elif desde < ann.page <= hasta:
+            if ann.page == source:
+                ann.page = target
+            elif source < ann.page <= target:
                 ann.page -= 1
-            elif hasta <= ann.page < desde:
+            elif target <= ann.page < source:
                 ann.page += 1
         self._view.refresh_pages()
 
     def redo(self) -> None:
-        self._mover(self._index, self._destino)
+        self._move(self._index, self._target)
 
     def undo(self) -> None:
-        self._mover(self._destino, self._index)
+        self._move(self._target, self._index)
 
 
 __all__ += ["AddPageCommand", "DeletePageCommand", "MovePageCommand"]
