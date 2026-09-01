@@ -112,7 +112,7 @@ def test_the_table_is_stored_as_a_grid_plus_texts(document):
     doc, page = document
     table = Annotation(
         kind=Kind.TABLE, page=0, rect=(40, 40, 340, 160), rows=2, cols=3,
-        cells=["Concepto", "Cantidad", "Importe", "Camisetas", "12", ""],
+        cells=["Item", "Quantity", "Amount", "Shirts", "12", ""],
         font_size=10,
     )
     apply_annotations(doc, [table])
@@ -122,7 +122,7 @@ def test_the_table_is_stored_as_a_grid_plus_texts(document):
     assert kinds[0] == "Ink"
     assert kinds.count("FreeText") == 5
     contents = [a.info.get("content", "") for a in annotations if a.type[1] == "FreeText"]
-    assert "Concepto" in contents and "12" in contents
+    assert "Item" in contents and "12" in contents
 
 
 def test_a_filled_table_gets_a_background(document):
