@@ -37,6 +37,21 @@ services:
       - path: /*.html
         name: Cache-Control
         value: public, max-age=600
+      # The browser tools: the libraries never change without changing name,
+      # so they can be kept for a year; the worker must not be, or a new
+      # version would never reach anyone.
+      - path: /tools/vendor/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /*.webmanifest
+        name: Content-Type
+        value: application/manifest+json
+      - path: /tools/sw.js
+        name: Cache-Control
+        value: no-cache
+      - path: /es/tools/sw.js
+        name: Cache-Control
+        value: no-cache
 
     routes:
       # /es (with no slash) leads to the Spanish version

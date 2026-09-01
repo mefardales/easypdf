@@ -1,0 +1,50 @@
+{
+  "name": "Herramientas de easypdf.surf",
+  "short_name": "PDF",
+  "description": "Unir, dividir, girar, borrar paginas y convertir PDF e imagenes. Gratis, sin cuentas y sin que tus archivos salgan de tu dispositivo.",
+  "id": "/es/tools/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "/tools/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/tools/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/tools/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Unir PDF",
+      "url": "merge-pdf/"
+    },
+    {
+      "name": "Dividir PDF",
+      "url": "split-pdf/"
+    },
+    {
+      "name": "Imagenes a PDF",
+      "url": "images-to-pdf/"
+    }
+  ]
+}

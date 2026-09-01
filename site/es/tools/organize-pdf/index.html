@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Girar y reordenar las paginas de un PDF gratis - easypdf.surf</title>
+<meta name="description" content="Endereza las paginas y muevelas al orden que quieras. Gratis, en tu navegador, sin subir nada.">
+<meta name="theme-color" content="#ffffff">
+<link rel="canonical" href="https://easypdf.surf/es/tools/organize-pdf/">
+<link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/organize-pdf/">
+<link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/organize-pdf/">
+<link rel="alternate" hreflang="x-default" href="https://easypdf.surf/tools/organize-pdf/">
+<link rel="icon" href="/easypdf.png" type="image/png">
+<link rel="apple-touch-icon" href="/tools/icon-192.png">
+<link rel="manifest" href="/es/tools/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PDF tools">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="easypdf.surf">
+<meta property="og:locale" content="es_ES">
+<meta property="og:url" content="https://easypdf.surf/es/tools/organize-pdf/">
+<meta property="og:title" content="Girar y reordenar las paginas de un PDF gratis - easypdf.surf">
+<meta property="og:description" content="Endereza las paginas y muevelas al orden que quieras. Gratis, en tu navegador, sin subir nada.">
+<meta property="og:image" content="https://easypdf.surf/screenshot.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Girar y reordenar las paginas de un PDF gratis - easypdf.surf">
+<meta name="twitter:description" content="Endereza las paginas y muevelas al orden que quieras. Gratis, en tu navegador, sin subir nada.">
+<meta name="twitter:image" content="https://easypdf.surf/screenshot.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Girar y reordenar", "description": "Endereza las paginas y muevelas al orden que quieras. Gratis, en tu navegador, sin subir nada.", "url": "https://easypdf.surf/es/tools/organize-pdf/", "applicationCategory": "UtilitiesApplication", "browserRequirements": "Requires JavaScript", "operatingSystem": "Any", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "inLanguage": "es"}</script>
+<link rel="stylesheet" href="/tools/app.css">
+</head>
+<body data-tool="organize-pdf" data-base="/tools/" data-sw="../sw.js">
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="/es/">
+      <img src="/easypdf.png" alt="" width="22" height="22"> easypdf.surf
+    </a>
+    <nav>
+      <a class="nl" href="/es/tools/">Herramientas</a>
+      <a class="nl" href="/es/#downloads">Descargar el programa</a>
+      <a class="ib" href="https://easypdf.surf/tools/organize-pdf/" hreflang="en" lang="en"
+         title="In English">EN</a>
+      <button class="ib" id="theme" type="button" aria-label="Claro u oscuro" title="Claro u oscuro">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <g id="i-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/></g>
+          <g id="i-moon" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></g>
+        </svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <div class="head">
+    <p class="crumb"><a href="/es/">Inicio</a> / <a href="/es/tools/">Herramientas</a> / Girar y reordenar</p>
+    <h1>Girar y reordenar paginas</h1>
+    <p class="lede">Endereza una pagina que salio tumbada y mueve las paginas al orden que quieras.</p>
+    <p class="privacy">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      Tus archivos no salen de este dispositivo. No se sube nada.
+    </p>
+  </div>
+
+  <div class="drop" id="drop" tabindex="0" role="button"
+       aria-label="Elige un PDF">
+    <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"/></svg>
+    <b>Elige un PDF</b>
+    <span>o sueltalo aqui</span>
+    <input type="file" id="file" accept="application/pdf,.pdf">
+  </div>
+  <div class="ctl" id="ctl" hidden>
+    <div class="row">
+      <button class="ib" id="rot-all" type="button">Girar todas</button>
+    </div>
+    <p class="hint">Con las flechas mueves una pagina y con la flecha redonda la giras.</p>
+  </div>
+  <ul class="grid" id="grid" hidden></ul>
+  <div class="done" id="done" hidden></div>
+  <div class="actbar">
+    <div class="in">
+      <span class="st" id="status" role="status" aria-live="polite"></span>
+      <button class="go" id="go" type="button" disabled>
+        <span class="sp" aria-hidden="true"></span><span>Guardar el PDF</span>
+      </button>
+    </div>
+  </div>
+
+  <noscript><p class="noscript">Estas herramientas funcionan en tu navegador, asi que necesitan JavaScript activado. En cualquier caso no se envia nada a ningun sitio.</p></noscript>
+</main>
+
+<footer class="wrap">
+  <p>Todas estas herramientas funcionan en tu navegador. Tus documentos no se suben a ningun sitio, y no hay cuentas ni publicidad.</p>
+  <p><a href="/es/">easypdf.surf</a> &middot; <a href="https://github.com/mefardales/easypdf">Codigo fuente</a></p>
+  <p>Hecho con <a href="/tools/vendor/pdf-lib.LICENSE.md">pdf-lib</a> (MIT) y <a href="/tools/vendor/pdfjs.LICENSE">pdf.js</a> (Apache 2.0), servidos desde este mismo sitio.</p>
+</footer>
+
+<script>window.T = {"page": "Pagina", "reading": "Leyendo el archivo...", "working": "Trabajando...", "rendering": "Pagina {0} de {1}...", "done": "Listo", "done_title": "Listo", "done_merge": "Tus PDF, uno detras de otro en el orden de arriba.", "done_split": "Las paginas que pediste, en un solo PDF.", "done_split_many": "{0} PDF, uno por pagina, juntos en un zip.", "done_organize": "Las paginas en el orden nuevo, ya giradas.", "done_delete": "{0} paginas fuera.", "done_images": "Tus imagenes, una por pagina.", "done_image_one": "La pagina como imagen.", "done_image_many": "{0} imagenes, juntas en un zip.", "need_two": "Anade al menos dos PDF.", "n_files": "{0} archivos", "n_images": "{0} imagenes", "n_pages": "se quedan {0} paginas", "n_pages_doc": "{0} paginas", "remove": "Quitar", "rotate": "Girar", "move_left": "Mover antes", "move_right": "Mover despues", "move_up": "Subir", "move_down": "Bajar", "err_read": "No se ha podido leer el archivo.", "err_lib": "Algo no ha cargado. Comprueba la conexion y vuelve a intentarlo.", "err_pdf": "Esto no parece un PDF que se pueda leer.", "err_locked": "Ese PDF tiene contrasena. Abrelo antes con el programa.", "err_not_pdf": "Solo archivos PDF, por favor.", "err_not_image": "Solo imagenes JPG o PNG, por favor.", "err_range": "'{0}' no es un rango de paginas.", "err_no_pages": "Ese rango no deja ninguna pagina.", "err_all_gone": "Deja al menos una pagina."};</script>
+<script src="/tools/app.js" defer></script>
+</body>
+</html>

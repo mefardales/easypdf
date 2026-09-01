@@ -166,6 +166,7 @@
     </a>
     <nav>
       <a class="nl" href="#features">Funciones</a>
+      <a class="nl" href="/es/tools/">Herramientas</a>
       <a class="nl" href="#downloads">Descargas</a>
       <a class="ib" href="https://easypdf.surf/" hreflang="en" lang="en"
          title="Espanol">EN</a>
@@ -314,12 +315,12 @@
     boton.querySelector("#i-moon").style.display = modo === "dark" ? "none" : "";
   }
   var elegido = null;
-  try { elegido = localStorage.getItem("tema"); } catch (e) {}
+  try { elegido = localStorage.getItem("theme"); } catch (e) {}
   pintar(elegido || "light");
   boton.addEventListener("click", function () {
     var nuevo = raiz.getAttribute("data-theme") === "dark" ? "light" : "dark";
     pintar(nuevo);
-    try { localStorage.setItem("tema", nuevo); } catch (e) {}
+    try { localStorage.setItem("theme", nuevo); } catch (e) {}
   });
 
   var ua = navigator.userAgent || "",
@@ -366,7 +367,7 @@
   }
 
   var hoy = new Date().toISOString().slice(0, 10), contado = false;
-  try { contado = localStorage.getItem("visita") === hoy; } catch (e) {}
+  try { contado = localStorage.getItem("visit") === hoy; } catch (e) {}
   fetch("https://api.counterapi.dev/v1/easypdf-surf" + "/visitas-" + hoy + (contado ? "/" : "/up"))
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (d) {
@@ -377,7 +378,7 @@
             : d.data && typeof d.data.count === "number" ? d.data.count : null;
       poner("stat-today", "n-today", n);
     }).catch(function () {});
-  if (!contado) { try { localStorage.setItem("visita", hoy); } catch (e) {} }
+  if (!contado) { try { localStorage.setItem("visit", hoy); } catch (e) {} }
 })();
 </script>
 </body>

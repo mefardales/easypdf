@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="$lang" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>$title</title>
+<meta name="description" content="$description">
+<meta name="theme-color" content="#ffffff">
+<link rel="canonical" href="$canonical">
+<link rel="alternate" hreflang="en" href="$alt_en">
+<link rel="alternate" hreflang="es" href="$alt_es">
+<link rel="alternate" hreflang="x-default" href="$alt_en">
+<link rel="icon" href="/easypdf.png" type="image/png">
+<link rel="apple-touch-icon" href="/tools/icon-192.png">
+<link rel="manifest" href="$manifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PDF tools">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="easypdf.surf">
+<meta property="og:locale" content="$locale">
+<meta property="og:url" content="$canonical">
+<meta property="og:title" content="$title">
+<meta property="og:description" content="$description">
+<meta property="og:image" content="$domain/screenshot.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="$title">
+<meta name="twitter:description" content="$description">
+<meta name="twitter:image" content="$domain/screenshot.png">
+<script type="application/ld+json">$json_ld</script>
+<link rel="stylesheet" href="/tools/app.css">
+</head>
+<body data-tool="$tool" data-base="/tools/" data-sw="$sw">
+<a class="skip" href="#main">$skip</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="$home">
+      <img src="/easypdf.png" alt="" width="22" height="22"> easypdf.surf
+    </a>
+    <nav>
+      <a class="nl" href="$tools_home">$nav_tools</a>
+      <a class="nl" href="$home#downloads">$nav_download</a>
+      <a class="ib" href="$other_url" hreflang="$other_lang" lang="$other_lang"
+         title="$other_name">$OTHER_LANG</a>
+      <button class="ib" id="theme" type="button" aria-label="$theme" title="$theme">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <g id="i-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/></g>
+          <g id="i-moon" style="display:none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></g>
+        </svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <div class="head">
+    $crumb
+    <h1>$h1</h1>
+    <p class="lede">$lede</p>
+    <p class="privacy">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+      $privacy
+    </p>
+  </div>
+
+$body
+
+  <noscript><p class="noscript">$noscript</p></noscript>
+</main>
+
+<footer class="wrap">
+  <p>$footer_privacy</p>
+  <p><a href="$home">$footer_home</a> &middot; <a href="$repo">$footer_source</a></p>
+  <p>$footer_libs</p>
+</footer>
+
+<script>window.T = $i18n;</script>
+<script src="/tools/app.js" defer></script>
+</body>
+</html>

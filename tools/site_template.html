@@ -166,6 +166,7 @@
     </a>
     <nav>
       <a class="nl" href="#features">$nav_features</a>
+      <a class="nl" href="$tools_url">$nav_tools</a>
       <a class="nl" href="#downloads">$nav_download</a>
       <a class="ib" href="$domain/$other_path" hreflang="$other_lang" lang="$other_lang"
          title="$other_name">$OTHER_LANG</a>
@@ -243,12 +244,12 @@ $faq
     boton.querySelector("#i-moon").style.display = modo === "dark" ? "none" : "";
   }
   var elegido = null;
-  try { elegido = localStorage.getItem("tema"); } catch (e) {}
+  try { elegido = localStorage.getItem("theme"); } catch (e) {}
   pintar(elegido || "light");
   boton.addEventListener("click", function () {
     var nuevo = raiz.getAttribute("data-theme") === "dark" ? "light" : "dark";
     pintar(nuevo);
-    try { localStorage.setItem("tema", nuevo); } catch (e) {}
+    try { localStorage.setItem("theme", nuevo); } catch (e) {}
   });
 
   var ua = navigator.userAgent || "",
@@ -295,7 +296,7 @@ $faq
   }
 
   var hoy = new Date().toISOString().slice(0, 10), contado = false;
-  try { contado = localStorage.getItem("visita") === hoy; } catch (e) {}
+  try { contado = localStorage.getItem("visit") === hoy; } catch (e) {}
   fetch($visits_api + "/visitas-" + hoy + (contado ? "/" : "/up"))
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (d) {
@@ -306,7 +307,7 @@ $faq
             : d.data && typeof d.data.count === "number" ? d.data.count : null;
       poner("stat-today", "n-today", n);
     }).catch(function () {});
-  if (!contado) { try { localStorage.setItem("visita", hoy); } catch (e) {} }
+  if (!contado) { try { localStorage.setItem("visit", hoy); } catch (e) {} }
 })();
 </script>
 </body>

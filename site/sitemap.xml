@@ -17,4 +17,116 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/"/>
     <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/"/>
   </url>
+  <url>
+    <loc>https://easypdf.surf/tools/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/tools/merge-pdf/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/merge-pdf/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/merge-pdf/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/tools/split-pdf/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/split-pdf/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/split-pdf/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/tools/organize-pdf/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/organize-pdf/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/organize-pdf/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/tools/delete-pages/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/delete-pages/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/delete-pages/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/tools/images-to-pdf/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/images-to-pdf/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/images-to-pdf/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/tools/pdf-to-image/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/pdf-to-image/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/pdf-to-image/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/es/tools/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/es/tools/merge-pdf/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/merge-pdf/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/merge-pdf/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/es/tools/split-pdf/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/split-pdf/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/split-pdf/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/es/tools/organize-pdf/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/organize-pdf/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/organize-pdf/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/es/tools/delete-pages/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/delete-pages/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/delete-pages/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/es/tools/images-to-pdf/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/images-to-pdf/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/images-to-pdf/"/>
+  </url>
+  <url>
+    <loc>https://easypdf.surf/es/tools/pdf-to-image/</loc>
+    <lastmod>2026-09-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://easypdf.surf/tools/pdf-to-image/"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://easypdf.surf/es/tools/pdf-to-image/"/>
+  </url>
 </urlset>

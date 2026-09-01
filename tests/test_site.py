@@ -4,6 +4,9 @@ A rename in the generator once left ``$title`` and ``$description`` sitting in
 the published pages, because the placeholders in the HTML template were not
 renamed with them. ``safe_substitute`` says nothing when that happens, so this
 is what catches it.
+
+Covers the landing pages and the browser tools, both of which are written by
+tools/build_site.py.
 """
 
 from __future__ import annotations
@@ -16,8 +19,17 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
+TOOLS = ["merge-pdf", "split-pdf", "organize-pdf", "delete-pages",
+         "images-to-pdf", "pdf-to-image"]
+
+
 def _pages() -> list[pathlib.Path]:
-    return [ROOT / "site" / "index.html", ROOT / "site" / "es" / "index.html"]
+    site = ROOT / "site"
+    pages = [site / "index.html", site / "es" / "index.html"]
+    for folder in (site / "tools", site / "es" / "tools"):
+        pages.append(folder / "index.html")
+        pages.extend(folder / slug / "index.html" for slug in TOOLS)
+    return pages
 
 
 def test_no_placeholder_is_left_unfilled():

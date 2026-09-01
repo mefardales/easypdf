@@ -79,6 +79,16 @@ in the system's language), no accounts, no ads and no internet connection needed
 It checks on its own whether a newer version is out and offers to download and
 install it; that check can be turned off in the *Help* menu.
 
+## Tools in the browser
+
+Six of the things people need most often also run at
+**[easypdf.surf/tools](https://easypdf.surf/tools/)**, with nothing to install:
+merge, split, rotate and reorder, delete pages, images to PDF and PDF to image.
+
+They run entirely in the browser — the file is never uploaded anywhere — and
+they install on a phone as an app that keeps working with no connection. The
+source is in `site/tools/`, built by `tools/build_tools.py`.
+
 ## Screenshot
 
 <p align="center">
@@ -257,9 +267,13 @@ src/easypdf/
 packaging/          PyInstaller + Inno Setup + build scripts
 build/              Published executables (Windows and Linux)
 site/               The web page (English at /, Spanish at /es/; tools/build_site.py)
+site/tools/         The browser tools: a PWA that runs entirely on the visitor's
+                    device (pdf-lib + pdf.js, both vendored, no CDN)
 render.yaml         Deploying the site on Render
 tools/make_icon.py  Builds assets/easypdf.ico
-tests/              292 tests (model, PDF, templates, interface, printing, updates)
+tools/build_tools.py  Builds the browser tools pages
+tests/              340 tests (model, PDF, templates, interface, printing,
+                    updates, and the browser tools driven in a real Chromium)
 ```
 
 ## Development
@@ -268,6 +282,15 @@ tests/              292 tests (model, PDF, templates, interface, printing, updat
 pip install -r requirements-dev.txt
 pytest -q          # tests (the interface is tested in offscreen mode)
 ruff check src tests tools
+```
+
+The browser tools are driven in a real Chromium. Those tests skip themselves
+when there is no browser around, which is the case on the CI runners; to run
+them locally:
+
+```bash
+pip install playwright && playwright install chromium
+pytest tests/test_tools_browser.py -q
 ```
 
 To work on the site: `python tools/build_site.py` regenerates both pages, the

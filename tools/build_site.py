@@ -19,6 +19,8 @@ import os
 import pathlib
 from string import Template
 
+import build_tools
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.path.join(ROOT, "site")
 TEMPLATE = os.path.join(ROOT, "tools", "site_template.html")
@@ -79,6 +81,7 @@ TEXTS = {
         "keywords": "free pdf reader, annotate pdf, edit pdf, fill pdf, pdf windows",
         "skip": "Skip to content",
         "nav_features": "Features",
+        "nav_tools": "Tools",
         "nav_download": "Downloads",
         "nav_cta": "Get it",
         "nav_how": "How it works",
@@ -180,6 +183,7 @@ TEXTS = {
         "keywords": "lector pdf gratis, anotar pdf, editar pdf, rellenar pdf, pdf windows",
         "skip": "Ir al contenido",
         "nav_features": "Funciones",
+        "nav_tools": "Herramientas",
         "nav_download": "Descargas",
         "nav_cta": "Descargar",
         "nav_how": "Como funciona",
@@ -366,6 +370,8 @@ def build_page(lang: str) -> str:
         skip=esc(t["skip"]),
         home="../" if t["path"] else "./",
         nav_features=esc(t["nav_features"]),
+        nav_tools=esc(t["nav_tools"]),
+        tools_url=build_tools._url(lang),
         nav_download=esc(t["nav_download"]),
         nav_cta=esc(t["nav_cta"]),
         other_lang=other["lang"],
@@ -432,6 +438,22 @@ Sitemap: {DOMAIN}/sitemap.xml
   </url>"""
         for lang, t in TEXTS.items()
     )
+    # The tools pages: one URL per tool and language, each pointing at its
+    # twin in the other language.
+    for path in build_tools.urls():
+        other = path.replace("/es/tools/", "/tools/") if path.startswith("/es/") \
+            else path.replace("/tools/", "/es/tools/", 1)
+        english, spanish = (other, path) if path.startswith("/es/") else (path, other)
+        urls += f"""
+  <url>
+    <loc>{DOMAIN}{path}</loc>
+    <lastmod>{hoy}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="{DOMAIN}{english}"/>
+    <xhtml:link rel="alternate" hreflang="es" href="{DOMAIN}{spanish}"/>
+  </url>"""
+
     sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
@@ -455,6 +477,7 @@ Sitemap: {DOMAIN}/sitemap.xml
     print(f"Wrote latest.json (version {VERSION})")
 
     print("Wrote robots.txt and sitemap.xml")
+    build_tools.build()
     return 0
 
 
