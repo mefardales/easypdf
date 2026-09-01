@@ -1,4 +1,4 @@
-"""Vista del documento: paginas, herramientas de anotacion y navegacion."""
+"""The document view: pages, annotation tools and navigation."""
 
 from __future__ import annotations
 
@@ -56,14 +56,14 @@ from .items import (
     create_item,
 )
 
-PAGE_GAP = 16.0        # separacion entre paginas, en puntos
-PAGE_MARGIN = 16.0     # margen alrededor del documento
+PAGE_GAP = 16.0        # gap between pages, in points
+PAGE_MARGIN = 16.0     # margin around the document
 MAX_RENDER_SCALE = 4.0
-KEEP_RENDERED = 8      # paginas rasterizadas que se mantienen en memoria
+KEEP_RENDERED = 8      # rasterised pages kept in memory
 
 
 class Tool(str, Enum):
-    """Herramienta activa del puntero."""
+    """The pointer's active tool."""
 
     SELECT = "select"
     PAN = "hand"
@@ -95,7 +95,7 @@ class Tool(str, Enum):
 
 
 class PageItem(QGraphicsItem):
-    """Una pagina del PDF. Sus coordenadas locales son puntos PDF."""
+    """One page of the PDF. Its local coordinates are PDF points."""
 
     def __init__(self, index: int, width: float, height: float) -> None:
         super().__init__()
@@ -104,11 +104,10 @@ class PageItem(QGraphicsItem):
         self._pixmap: QPixmap | None = None
         self._pixmap_scale = 0.0
         self.setFlag(QGraphicsItem.ItemUsesExtendedStyleOption, True)
-        # Las anotaciones son hijas de la pagina y no pueden pintar fuera de
-        # ella: la goma es blanca y opaca, asi que al salirse de la hoja se
-        # comia el fondo gris. Lo que se sale tampoco saldria impreso, asi que
-        # recortarlo aqui es ademas lo que hace que la pantalla y el papel
-        # coincidan.
+        # Annotations are children of the page and must not paint outside it:
+        # the eraser is white and opaque, so running off the sheet ate into the
+        # grey background. What runs off would not print either, so clipping it
+        # here is also what makes screen and paper agree.
         self.setFlag(QGraphicsItem.ItemClipsChildrenToShape, True)
         self.setZValue(0)
 
@@ -141,10 +140,10 @@ class PageItem(QGraphicsItem):
 
 
 class AnnotationScene(QGraphicsScene):
-    """Escena que avisa cuando una anotacion empieza y termina de editarse."""
+    """Scene that reports when an annotation starts and stops being edited."""
 
-    annotationEdited = Signal(object, object, object)  # item, antes, despues
-    textEditing = Signal(bool)                        # hay un texto en edicion
+    annotationEdited = Signal(object, object, object)  # item, before, after
+    textEditing = Signal(bool)                        # a text is being edited
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -180,7 +179,7 @@ def _same_geometry(a: Annotation, b: Annotation) -> bool:
 
 
 class PdfView(QGraphicsView):
-    """Visor con desplazamiento continuo y herramientas de anotacion."""
+    """Viewer with continuous scrolling and annotation tools."""
 
     pageChanged = Signal(int)
     zoomChanged = Signal(float)
@@ -188,9 +187,9 @@ class PdfView(QGraphicsView):
     toolFinished = Signal()
     eraserSizeChanged = Signal(float)
     noteCreated = Signal(object)
-    erased = Signal()          # ha terminado una pasada de goma
-    mouseMovedOnPage = Signal(object)   # posicion en el viewport
-    guidesChanged = Signal()            # hay que repintar las reglas
+    erased = Signal()          # an eraser pass has finished
+    mouseMovedOnPage = Signal(object)   # position within the viewport
+    guidesChanged = Signal()            # the rulers need repainting
     selectionChanged = Signal()
     textEditing = Signal(bool)
 
@@ -212,9 +211,9 @@ class PdfView(QGraphicsView):
         self.undo_stack = QUndoStack(self)
 
         self._page_items: list[PageItem] = []
-        # Los items viven en la escena (propiedad de C++), pero hay que
-        # conservar la referencia de Python o el recolector se lleva la parte
-        # Python del objeto y deja de pintarse con su clase.
+        # The items live in the scene (owned by C++), but the Python reference
+        # has to be kept or the collector takes the Python half of the object
+        # and it stops being painted by its own class.
         self._items: dict[str, AnnotationItemMixin] = {}
         self._zoom = 1.0
         self._fit_mode: str | None = "width"
@@ -227,18 +226,18 @@ class PdfView(QGraphicsView):
         self._draft_page = 0
         self.snap_enabled = True
         self._guides = (None, None, None)
-        # Guias del usuario, en coordenadas de pagina. Son de todo el
-        # documento, no de una pagina: una guia sirve para alinear lo mismo en
-        # todas las hojas, que es justo para lo que se pone.
+        # The user's guides, in page coordinates. They belong to the whole
+        # document, not to one page: a guide lines the same thing up on every
+        # sheet, which is exactly what it is put there for.
         self.rulers_guides: dict[str, list[float]] = {"h": [], "v": []}
-        self._guide_drag = None      # ("h"|"v", pagina, valor, indice o None)
+        self._guide_drag = None      # ("h"|"v", page, value, index or None)
         self._eraser_size = ERASER_DEFAULT
-        # Cuantas veces se ha pegado lo mismo: cada pegada se separa un poco
-        # mas para que no se apilen unas encima de otras sin verse.
+        # How many times the same thing has been pasted: each paste is shifted
+        # a little further so they do not pile up invisibly on each other.
         self._paste_count = 0
         self._erasing = False
         self._erase_item = None
-        self._eraser_color = (1.0, 1.0, 1.0)   # blanco, el color del papel
+        self._eraser_color = (1.0, 1.0, 1.0)   # white, the colour of paper
         self._search_items: list[QGraphicsRectItem] = []
         self._hits: list[SearchHit] = []
         self._hit_index = -1
@@ -257,7 +256,7 @@ class PdfView(QGraphicsView):
             "align": Align.LEFT,
             "rows": 3,
             "cols": 3,
-            "image": None,      # (nombre, bytes) de la imagen elegida
+            "image": None,      # (name, bytes) of the chosen image
         }
 
         self._render_timer = QTimer(self)
@@ -272,7 +271,7 @@ class PdfView(QGraphicsView):
         self._scene.textEditing.connect(self._on_text_editing)
 
     def _on_text_editing(self, editing: bool) -> None:
-        """Mientras se escribe, el texto manda: nada de atajos globales."""
+        """While typing, the text wins: no global shortcuts."""
         self._text_editing = editing
         self.textEditing.emit(editing)
 
@@ -282,7 +281,7 @@ class PdfView(QGraphicsView):
 
     # ------------------------------------------------------------------ documento
     def set_document(self, doc: PdfDocument | None) -> None:
-        """Carga (o descarga) un documento y reconstruye la escena."""
+        """Load (or unload) a document and rebuild the scene."""
         self.document = doc
         self.store = AnnotationStore()
         self._items = {}
@@ -302,10 +301,10 @@ class PdfView(QGraphicsView):
         self.pageChanged.emit(0)
 
     def _load_existing_notes(self, doc: PdfDocument) -> None:
-        """Recoge las notas que ya trae el PDF para poder verlas y editarlas.
+        """Pick up the notes the PDF already carries so they can be seen and edited.
 
-        Se sacan del documento y pasan a la lista de anotaciones, que es desde
-        donde se vuelven a escribir al guardar. Asi no se duplican.
+        They are taken out of the document and moved into the annotation list,
+        which is what gets written back on save. That way they are not doubled.
         """
         from .items import NOTE_SIZE
 
@@ -323,7 +322,7 @@ class PdfView(QGraphicsView):
             self.attach_item(create_item(ann, self._page_items[page_item]), ann)
 
     def _build_page_items(self) -> None:
-        """Crea un item por pagina y ajusta el tamano de la escena."""
+        """Create one item per page and size the scene accordingly."""
         doc = self.document
         if doc is None:
             return
@@ -368,7 +367,7 @@ class PdfView(QGraphicsView):
 
     # -- operaciones sobre paginas ---------------------------------------
     def add_page(self, index: int | None = None, size=None) -> None:
-        """Inserta una pagina en blanco (al final si no se indica donde)."""
+        """Insert a blank page (at the end if no position is given)."""
         if self.document is None:
             return
         target = self.document.page_count if index is None else index
@@ -385,7 +384,7 @@ class PdfView(QGraphicsView):
         self.undo_stack.push(DeletePageCommand(self, index))
 
     def rotate_page(self, index: int, delta: int) -> None:
-        """Gira una pagina (delta en grados horarios: 90, 180 o -90)."""
+        """Rotate a page (delta in clockwise degrees: 90, 180 or -90)."""
         if self.document is None or delta % 360 == 0:
             return
         self.undo_stack.push(RotatePageCommand(self, index, delta))
@@ -395,10 +394,10 @@ class PdfView(QGraphicsView):
             return
         self.undo_stack.push(MovePageCommand(self, index, target))
 
-    def shift_annotation_pages(self, desde: int, delta: int) -> None:
-        """Recoloca las anotaciones cuando se insertan o quitan paginas."""
+    def shift_annotation_pages(self, start: int, delta: int) -> None:
+        """Move the annotations along when pages are inserted or removed."""
         for ann in self.store:
-            if ann.page >= desde:
+            if ann.page >= start:
                 ann.page += delta
 
     def items_on_page(self, index: int) -> list:
@@ -409,7 +408,7 @@ class PdfView(QGraphicsView):
         return len(self._page_items)
 
     def current_page_item(self):
-        """PageItem de la pagina en la que se esta trabajando (o None)."""
+        """The PageItem of the page being worked on (or None)."""
         if 0 <= self._current_page < len(self._page_items):
             return self._page_items[self._current_page]
         return None
@@ -462,7 +461,7 @@ class PdfView(QGraphicsView):
             pixmap = QPixmap.fromImage(image.copy())
             pixmap.setDevicePixelRatio(1.0)
             item.set_pixmap(pixmap, scale)
-        # Libera memoria de las paginas lejanas.
+        # Free the memory of pages that are far away.
         if len(rendered) and len(self._page_items) > KEEP_RENDERED:
             keep = set(rendered)
             low, high = min(keep), max(keep)
@@ -476,7 +475,7 @@ class PdfView(QGraphicsView):
         self._update_current_page()
 
     def _update_current_page(self) -> None:
-        """La pagina actual es la que ocupa mas alto de la ventana."""
+        """The current page is the one filling most of the window."""
         if not self._page_items:
             return
         view_rect = self.mapToScene(self.viewport().rect()).boundingRect()
@@ -531,7 +530,7 @@ class PdfView(QGraphicsView):
         self.apply_fit()
 
     def apply_fit(self) -> None:
-        """Recalcula el zoom para el modo de ajuste activo."""
+        """Work the zoom out again for the active fit mode."""
         if not self._page_items or not self._fit_mode:
             return
         page = self._page_items[min(self._current_page, len(self._page_items) - 1)]
@@ -565,7 +564,7 @@ class PdfView(QGraphicsView):
         index = max(0, min(len(self._page_items) - 1, index))
         rect = self._page_items[index].sceneBoundingRect()
         view_height = self.mapToScene(self.viewport().rect()).boundingRect().height()
-        # Deja el borde superior de la pagina justo arriba del area visible.
+        # Leave the top edge of the page right at the top of the visible area.
         self.centerOn(rect.center().x(), rect.top() + view_height / 2 - PAGE_GAP / 2)
         self._current_page = index
         self.pageChanged.emit(index)
@@ -593,7 +592,7 @@ class PdfView(QGraphicsView):
             self._scene.clearSelection()
 
     def _update_cursor(self) -> None:
-        """Pone el cursor de la herramienta activa."""
+        """Set the cursor of the active tool."""
         tool = self._tool
         if tool is Tool.PAN:
             self.setDragMode(QGraphicsView.ScrollHandDrag)
@@ -609,17 +608,17 @@ class PdfView(QGraphicsView):
             self.viewport().setCursor(Qt.CrossCursor)
 
     def _eraser_cursor(self) -> QCursor:
-        """Circulo del tamano real de la goma, para ver que se va a borrar."""
+        """A circle the eraser's real size, so you can see what will go."""
         side = max(8, min(128, int(self._eraser_size * self._zoom)))
         pixmap = QPixmap(side + 2, side + 2)
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
-        # doble trazo para que se vea sobre fondo claro y sobre fondo oscuro
+        # a double stroke so it shows on a light and on a dark background
         r, g, b = self._eraser_color
-        relleno = QColor(int(r * 255), int(g * 255), int(b * 255))
-        relleno.setAlpha(150)
-        painter.setBrush(relleno)                 # el color con el que tapa
+        fill = QColor(int(r * 255), int(g * 255), int(b * 255))
+        fill.setAlpha(150)
+        painter.setBrush(fill)                 # the colour it covers with
         painter.setPen(QPen(QColor(255, 255, 255, 220), 3))
         painter.drawEllipse(1, 1, side, side)
         painter.setPen(QPen(QColor(20, 20, 20, 230), 1))
@@ -687,22 +686,22 @@ class PdfView(QGraphicsView):
         if kind is Kind.TEXT and ann.fill is None:
             ann.width = 0.0
         if kind is Kind.TABLE:
-            # La rejilla siempre se ve, aunque el trazo elegido sea 0.
+            # The grid is always visible, even if the chosen stroke is 0.
             ann.width = max(0.5, ann.width)
         return ann
 
     def attach_item(self, item, ann: Annotation) -> None:
-        """Cuelga un item de su pagina y lo registra (usado tambien al rehacer)."""
+        """Hang an item off its page and register it (also used when redoing)."""
         page = self._page_items[ann.page] if 0 <= ann.page < len(self._page_items) else None
         if page is not None:
             item.setParentItem(page)
-        elif item.scene() is None:  # pragma: no cover - defensivo
+        elif item.scene() is None:  # pragma: no cover - defensive
             self._scene.addItem(item)
         item.setVisible(True)
         self._items[ann.id] = item
 
     def place_image(self, name: str, data: bytes, page: int, point: QPointF):
-        """Coloca una imagen en la pagina indicada (coordenadas de la pagina)."""
+        """Place an image on the given page (in page coordinates)."""
         ann = Annotation(kind=Kind.IMAGE, page=page, image_name=name, image_data=data)
         ann.rect = (point.x(), point.y(), point.x(), point.y())
         item = create_item(ann, self._page_items[page])
@@ -716,13 +715,13 @@ class PdfView(QGraphicsView):
         return item
 
     def apply_template(self, annotations, first_page: int | None = None) -> int:
-        """Anade las anotaciones de una plantilla. Devuelve cuantas ha colocado."""
+        """Add a template's annotations. Returns how many were placed."""
         if self.document is None:
             return 0
         from ..templates import shift_to_page
 
-        inicio = self.current_page if first_page is None else first_page
-        placed = shift_to_page(annotations, inicio, self.page_count)
+        start = self.current_page if first_page is None else first_page
+        placed = shift_to_page(annotations, start, self.page_count)
         if not placed:
             return 0
         self.undo_stack.beginMacro(tr("cmd_template", count=len(placed)))
@@ -731,15 +730,15 @@ class PdfView(QGraphicsView):
         self.undo_stack.endMacro()
         return len(placed)
 
-    #: Margen minimo al soltar un grupo de anotaciones, en puntos PDF.
+    #: Smallest margin when dropping a group of annotations, in PDF points.
     DROP_MARGIN = 24.0
 
     def insert_annotations(self, annotations, label: str | None = None) -> int:
-        """Suelta un grupo de anotaciones donde este mirando el usuario.
+        """Drop a group of annotations wherever the user is looking.
 
-        Se usa para las piezas de formulario: llegan colocadas unas respecto a
-        otras y aqui se mueven en bloque al centro de lo que se ve, sin que se
-        salgan del papel. Todo el grupo es un solo paso de deshacer.
+        This is what the form pieces use: they arrive placed relative to one
+        another and here they are moved as a block to the centre of what is on
+        screen, without running off the paper. The whole group is one undo step.
         """
         if self.document is None:
             return 0
@@ -775,13 +774,13 @@ class PdfView(QGraphicsView):
         return len(pieces)
 
     def add_annotation(self, ann: Annotation, undoable: bool = True):
-        """Anade al documento una anotacion ya definida y devuelve su item.
+        """Add an already defined annotation to the document and return its item.
 
-        Es la via publica para crear anotaciones sin raton (guiones, pruebas o
-        futuras funciones como sellos o firmas).
+        This is the public way to create annotations without a mouse (scripts,
+        tests, or future features such as stamps or signatures).
         """
         if not (0 <= ann.page < len(self._page_items)):
-            raise IndexError(f"la pagina {ann.page} no existe en el documento")
+            raise IndexError(f"page {ann.page} does not exist in the document")
         item = create_item(ann, self._page_items[ann.page])
         self._items[ann.id] = item
         if undoable:
@@ -807,7 +806,7 @@ class PdfView(QGraphicsView):
         if ann.kind is Kind.IMAGE:
             x0, y0, x1, y1 = ann.normalized_rect()
             if (x1 - x0) < 20 or (y1 - y0) < 20:
-                # Un clic sencillo coloca la imagen a un tamano comodo.
+                # A single click drops the image at a comfortable size.
                 aspect = getattr(item, "aspect", 1.0) or 1.0
                 page_item = self._page_items[ann.page].boundingRect()
                 width = min(page_item.width() * 0.4, 260.0)
@@ -836,20 +835,20 @@ class PdfView(QGraphicsView):
         elif isinstance(item, TableItem):
             item.edit_cell(0)
         elif ann.kind is Kind.NOTE:
-            self.noteCreated.emit(item)   # la ventana pide el texto
+            self.noteCreated.emit(item)   # the window asks for the text
         self.toolFinished.emit()
 
-    def _draw_ruler_guides(self, painter) -> None:  # pragma: no cover - dibujo
-        """Pinta las guias sacadas de las reglas."""
-        lapiz = QPen(QColor("#00a3c4"))
-        lapiz.setWidthF(1.0)
-        lapiz.setCosmetic(True)
+    def _draw_ruler_guides(self, painter) -> None:  # pragma: no cover - drawing
+        """Paint the guides pulled out of the rulers."""
+        pen = QPen(QColor("#00a3c4"))
+        pen.setWidthF(1.0)
+        pen.setCosmetic(True)
         guides = self.rulers_guides
         if not (guides["h"] or guides["v"]):
             return
         for item in self._page_items:
             box = item.sceneBoundingRect()
-            painter.setPen(lapiz)
+            painter.setPen(pen)
             for y in guides["h"]:
                 sy = item.mapToScene(QPointF(0, y)).y()
                 painter.drawLine(QPointF(box.left(), sy), QPointF(box.right(), sy))
@@ -857,9 +856,9 @@ class PdfView(QGraphicsView):
                 sx = item.mapToScene(QPointF(x, 0)).x()
                 painter.drawLine(QPointF(sx, box.top()), QPointF(sx, box.bottom()))
 
-        # la que se esta arrastrando, discontinua para distinguirla
+        # the one being dragged, dashed so it stands out
         if self._guide_drag is not None:
-            orientation, page_item, value, _indice = self._guide_drag
+            orientation, page_item, value, _index = self._guide_drag
             if 0 <= page_item < len(self._page_items):
                 item = self._page_items[page_item]
                 box = item.sceneBoundingRect()
@@ -875,20 +874,20 @@ class PdfView(QGraphicsView):
                     sx = item.mapToScene(QPointF(value, 0)).x()
                     painter.drawLine(QPointF(sx, box.top()), QPointF(sx, box.bottom()))
 
-    # ------------------------------------------------------------------ guias del usuario
+    # ------------------------------------------------------------ the user's guides
     def page_guides(self, page: int = 0) -> dict[str, list[float]]:
-        """Las guias del documento. El numero de pagina ya no cambia nada:
-        se ensenan y sirven para alinear en todas."""
+        """The document's guides. The page number no longer changes anything:
+        they show on every page and align on every page."""
         return self.rulers_guides
 
     def start_guide(self, orientation: str, value: float) -> None:
-        """Empieza a sacar una guia nueva desde la regla."""
+        """Start pulling a new guide out of the ruler."""
         page_item = self._current_page
         self._guide_drag = (orientation, page_item, value, None)
         self._guides_changed()
 
     def grab_guide(self, orientation: str, page_item: int, index: int, value: float) -> None:
-        """Coge una guia que ya existe para moverla."""
+        """Grab a guide that already exists in order to move it."""
         self._guide_drag = (orientation, page_item, value, index)
         self._guides_changed()
 
@@ -900,7 +899,7 @@ class PdfView(QGraphicsView):
         self._guides_changed()
 
     def drop_guide(self, value) -> None:
-        """Suelta la guia. Fuera de la pagina, se borra."""
+        """Drop the guide. Off the page, it goes away."""
         if self._guide_drag is None:
             return
         orientation, page_item, last, index = self._guide_drag
@@ -916,7 +915,7 @@ class PdfView(QGraphicsView):
             if inside:
                 guides[index] = float(value)
             else:
-                del guides[index]        # sacada fuera del margen: se borra
+                del guides[index]        # dragged off the margin: it goes
         self._guides_changed()
 
     def _guide_inside(self, page_item: int, orientation: str, value) -> bool:
@@ -926,11 +925,11 @@ class PdfView(QGraphicsView):
         limit = box.height() if orientation == "h" else box.width()
         return 0 <= value <= limit
 
-    def guide_at(self, escena_pos):
-        """Guia que hay bajo un punto de la escena, si la hay."""
+    def guide_at(self, scene_pos):
+        """The guide under a scene point, if there is one."""
         margin = 4.0 / max(self._zoom, 1e-6)
         for page_item, item in enumerate(self._page_items):
-            local = item.mapFromScene(escena_pos)
+            local = item.mapFromScene(scene_pos)
             box = item.boundingRect()
             if not box.adjusted(-margin, -margin, margin, margin).contains(local):
                 continue
@@ -948,13 +947,13 @@ class PdfView(QGraphicsView):
         self._guides_changed()
 
     def _guides_changed(self) -> None:
-        """Repinta la pagina y avisa a las reglas."""
+        """Repaint the page and tell the rulers."""
         self.viewport().update()
         self.guidesChanged.emit()
 
-    # ------------------------------------------------------------------ guias
+    # ----------------------------------------------------------- snap guides
     def show_guides(self, x, y, page) -> None:
-        """Marca las guias a las que se esta alineando (None = ninguna)."""
+        """Mark the guides being snapped to (None = none)."""
         new_ones = (x, y, page)
         if new_ones != self._guides:
             self._guides = new_ones
@@ -990,12 +989,12 @@ class PdfView(QGraphicsView):
     # ------------------------------------------------------------------ goma
     @property
     def eraser_size(self) -> float:
-        """Diametro de la goma, en puntos PDF."""
+        """Diameter of the eraser, in PDF points."""
         return self._eraser_size
 
     def set_eraser_size(self, size: float) -> None:
-        menor, mayor = ERASER_SIZES[0], ERASER_SIZES[-1]
-        new_one = max(menor, min(float(size), mayor))
+        smallest, largest = ERASER_SIZES[0], ERASER_SIZES[-1]
+        new_one = max(smallest, min(float(size), largest))
         if new_one != self._eraser_size:
             self._eraser_size = new_one
             self.eraserSizeChanged.emit(new_one)
@@ -1003,7 +1002,7 @@ class PdfView(QGraphicsView):
 
     @property
     def eraser_color(self):
-        """Color con el que la goma tapa el documento."""
+        """The colour the eraser covers the document with."""
         return self._eraser_color
 
     def set_eraser_color(self, rgb) -> None:
@@ -1011,21 +1010,21 @@ class PdfView(QGraphicsView):
         self._update_cursor()
 
     def step_eraser_size(self, delta: int) -> None:
-        """Pasa al tamano siguiente o anterior de la lista (Ctrl+ / Ctrl-)."""
+        """Step to the next or previous size in the list (Ctrl+ / Ctrl-)."""
         current = min(ERASER_SIZES, key=lambda t: abs(t - self._eraser_size))
         position = ERASER_SIZES.index(current) + (1 if delta > 0 else -1)
         position = max(0, min(position, len(ERASER_SIZES) - 1))
         self.set_eraser_size(ERASER_SIZES[position])
 
     def erase_at(self, page_index: int, point: QPointF) -> bool:
-        """Anade un punto al trazo con el que la goma tapa el documento."""
+        """Add a point to the stroke the eraser covers the document with."""
         if self._erase_item is None:
             return False
         self._erase_item.append_point(point)
         return True
 
     def annotations_under(self, erasure: Annotation) -> list:
-        """Los items por los que ha pasado la goma, en su misma pagina."""
+        """The items the eraser has run over, on its own page."""
         found = []
         for item in self._annotation_items():
             ann = item.ann
@@ -1036,15 +1035,15 @@ class PdfView(QGraphicsView):
         return found
 
     def _finish_erase(self) -> None:
-        """Cierra la pasada de goma y borra lo que haya pasado por debajo.
+        """Close the eraser pass and remove whatever went under it.
 
-        Borra de verdad: se lleva por delante las anotaciones por las que pasa,
-        y al guardar el archivo tambien quita el contenido original que tape.
-        Tapar no bastaba: el texto pintado de blanco se sigue pudiendo
-        seleccionar y copiar de un PDF, asi que quien borraba un dato
-        confidencial se creia a salvo sin estarlo.
+        It really erases: it takes the annotations it runs over with it, and on
+        save it also strips the original content it covers. Covering was not
+        enough: text painted white can still be selected and copied out of a
+        PDF, so anyone rubbing out a confidential figure believed they were
+        safe when they were not.
 
-        Hasta que se guarda, se deshace con Ctrl+Z como cualquier otra cosa.
+        Until the file is saved it undoes with Ctrl+Z like anything else.
         """
         self._erasing = False
         item = self._erase_item
@@ -1068,39 +1067,39 @@ class PdfView(QGraphicsView):
 
     # ------------------------------------------------------------------ raton
     def _leave_editing(self, event) -> bool:
-        """Cierra el texto o la celda que se este editando al pinchar fuera.
+        """Close the text or cell being edited when clicking outside it.
 
-        El editor de una celda es hijo de la tabla, asi que al pinchar fuera
-        quien pierde el foco es el editor y la tabla no se entera: se quedaba
-        editando para siempre y con ella DEL, Ctrl+C y Ctrl+V desactivados.
+        A cell editor is a child of the table, so on a click outside it is the
+        editor that loses the focus and the table never finds out: it stayed in
+        editing mode forever, and with it DEL, Ctrl+C and Ctrl+V stayed off.
 
-        Si el clic cae en un sitio vacio, ese primer clic solo sirve para salir
-        del cuadro y el elemento se queda seleccionado: asi se puede copiar o
-        borrar justo despues, que es lo que uno espera. El siguiente clic en
-        vacio ya suelta la seleccion.
+        If the click lands on an empty spot, that first click only leaves the
+        box and the element stays selected: that way it can be copied or
+        deleted right afterwards, which is what one expects. The next click on
+        empty space does drop the selection.
 
-        Se mira aqui y no con focusItemChanged de la escena: esa senal tambien
-        salta mientras Qt destruye la escena al cerrar, con los items a medio
-        liberar, y eso reventaba el programa.
+        This is checked here and not with the scene's focusItemChanged: that
+        signal also fires while Qt tears the scene down on close, with the
+        items half freed, and that used to crash the program.
 
-        Devuelve True si se queda con el clic.
+        Returns True if it keeps the click.
         """
         if not self._text_editing:
             return False
         touched = self._scene.itemAt(
             self.mapToScene(event.position().toPoint()), self.transform()
         )
-        being_edited = self._items_editandose()
+        being_edited = self._items_being_edited()
         if any(touched is getattr(item, "_editor", None) is not None
                for item in being_edited):
-            return False                 # se sigue escribiendo en esa celda
+            return False                 # typing carries on in that cell
         self.finish_all_editing()
         if touched is None or not isinstance(touched, AnnotationItemMixin):
             self._scene.clearSelection()
             for item in being_edited:
                 item.setSelected(True)
             event.accept()
-            return True                  # el clic se gasta en salir del cuadro
+            return True                  # the click is spent leaving the box
         return False
 
     def mousePressEvent(self, event) -> None:
@@ -1127,7 +1126,7 @@ class PdfView(QGraphicsView):
                 page=page.index,
                 color=tuple(self._eraser_color),
                 width=self._eraser_size,
-                opacity=1.0,            # opaca: tiene que tapar lo de debajo
+                opacity=1.0,            # opaque: it has to cover what is under it
             )
             self._erase_item = create_item(ann, page)
             self._erasing = True
@@ -1162,7 +1161,7 @@ class PdfView(QGraphicsView):
             event.accept()
             return
         if self._erasing and self._erase_item is not None:
-            # se sigue pintando en la misma pagina en la que se empezo
+            # painting carries on over the page it started on
             page = self._page_items[self._erase_item.ann.page]
             self.erase_at(page.index,
                           page.mapFromScene(self.mapToScene(event.position().toPoint())))
@@ -1185,7 +1184,7 @@ class PdfView(QGraphicsView):
             x0, y0 = self._draft_origin.x(), self._draft_origin.y()
             x1, y1 = local.x(), local.y()
             if ann.kind is Kind.IMAGE:
-                # La imagen conserva su proporcion mientras se coloca.
+                # The image keeps its ratio while it is being placed.
                 aspect = getattr(self._draft_item, "aspect", 1.0) or 1.0
                 width = abs(x1 - x0)
                 height = width / aspect
@@ -1221,54 +1220,54 @@ class PdfView(QGraphicsView):
             return
         super().mouseReleaseEvent(event)
 
-    def event(self, evento) -> bool:
-        """Atiende el tabulador antes que nadie.
+    def event(self, event) -> bool:
+        """Take the Tab key before anyone else does.
 
-        Tab no llega ni a keyPressEvent ni a la tabla: primero lo usa el widget
-        para pasar el foco al siguiente control, y despues la escena para
-        pasarlo al siguiente item. Por eso Tab entre celdas, que la ayuda
-        promete desde siempre, no funcionaba nunca.
+        Tab reaches neither keyPressEvent nor the table: first the widget uses
+        it to move the focus to the next control, and then the scene to move it
+        to the next item. That is why Tab between cells, which the help has
+        always promised, never worked.
         """
-        if self._es_tabulador(evento) and self._tab_entre_celdas(evento):
+        if self._is_tab_key(event) and self._tab_between_cells(event):
             return True
-        return super().event(evento)
+        return super().event(event)
 
-    def viewportEvent(self, evento) -> bool:
-        # Segun de donde venga la pulsacion la recibe la vista o su viewport,
-        # asi que el tabulador se mira en los dos sitios.
-        if self._es_tabulador(evento) and self._tab_entre_celdas(evento):
+    def viewportEvent(self, event) -> bool:
+        # Depending on where the key press comes from it reaches the view or
+        # its viewport, so Tab is looked for in both places.
+        if self._is_tab_key(event) and self._tab_between_cells(event):
             return True
-        return super().viewportEvent(evento)
+        return super().viewportEvent(event)
 
     @staticmethod
-    def _es_tabulador(evento) -> bool:
+    def _is_tab_key(event) -> bool:
         from PySide6.QtCore import QEvent
 
-        return (evento.type() == QEvent.Type.KeyPress
-                and evento.key() in (Qt.Key_Tab, Qt.Key_Backtab))
+        return (event.type() == QEvent.Type.KeyPress
+                and event.key() in (Qt.Key_Tab, Qt.Key_Backtab))
 
-    def _tab_entre_celdas(self, evento) -> bool:
-        """Pasa a la celda siguiente (o anterior) si se esta editando una."""
-        foco = self._scene.focusItem()
-        tabla = foco.parentItem() if foco is not None else None
-        if tabla is None or not getattr(tabla, "is_editing", False):
+    def _tab_between_cells(self, event) -> bool:
+        """Move to the next (or previous) cell if one is being edited."""
+        focused = self._scene.focusItem()
+        table = focused.parentItem() if focused is not None else None
+        if table is None or not getattr(table, "is_editing", False):
             return False
-        tabla.keyPressEvent(evento)
-        return bool(evento.isAccepted())
+        table.keyPressEvent(event)
+        return bool(event.isAccepted())
 
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key_Escape:
             if self._draft_item is not None:
                 self.detach_item(self._draft_item)
                 self._draft_item = None
-            # Esc sale del cuadro y vuelve a la herramienta de seleccionar,
-            # pero NO suelta lo seleccionado: lo normal despues de terminar
-            # algo es copiarlo, moverlo o borrarlo, y antes no quedaba nada a
-            # lo que aplicarlo. Para deseleccionar se pincha en un sitio
-            # vacio, como en cualquier programa.
-            being_edited = self._items_editandose()
-            # Cerrar los editores abiertos: si no, el editor de una celda se
-            # queda vivo con el foco y luego DEL no llega a borrar la tabla.
+            # Esc leaves the box and goes back to the select tool, but does
+            # NOT drop the selection: the usual thing after finishing something
+            # is to copy it, move it or delete it, and before there was nothing
+            # left to apply that to. To deselect you click on an empty spot,
+            # like in any other program.
+            being_edited = self._items_being_edited()
+            # Close any open editors: otherwise a cell editor stays alive with
+            # the focus and DEL then never reaches the table.
             self.finish_all_editing()
             for item in being_edited:
                 item.setSelected(True)
@@ -1287,15 +1286,15 @@ class PdfView(QGraphicsView):
         super().keyPressEvent(event)
 
     # ------------------------------------------------------------------ edicion
-    def _items_editandose(self) -> list:
-        """Los items que tienen un texto o una celda abiertos ahora mismo."""
+    def _items_being_edited(self) -> list:
+        """The items with a text or a cell open right now."""
         return [
             item for item in self._annotation_items()
             if getattr(item, "is_editing", False) or getattr(item, "_editing", False)
         ]
 
     def finish_all_editing(self) -> None:
-        """Cierra cualquier celda o texto que se este editando."""
+        """Close any cell or text that is being edited."""
         for item in self._annotation_items():
             finish = getattr(item, "finish_editing", None)
             if callable(finish) and getattr(item, "is_editing", False):
@@ -1303,9 +1302,9 @@ class PdfView(QGraphicsView):
             stop_it = getattr(item, "stop_editing", None)
             if callable(stop_it) and getattr(item, "_editing", False):
                 stop_it()
-        foco = self._scene.focusItem()
-        if isinstance(foco, QGraphicsTextItem):
-            foco.clearFocus()
+        focused = self._scene.focusItem()
+        if isinstance(focused, QGraphicsTextItem):
+            focused.clearFocus()
 
     def delete_selected(self) -> bool:
         items = self.selected_items()
@@ -1318,13 +1317,13 @@ class PdfView(QGraphicsView):
         for item in self._annotation_items():
             item.setSelected(True)
 
-    # ------------------------------------------------------- copiar y pegar
-    #: Cuanto se separa lo pegado de su original, en puntos PDF. Lo justo
-    #: para verlo encima y poder arrastrarlo, como en cualquier editor.
+    # -------------------------------------------------------- copy and paste
+    #: How far a paste is offset from its original, in PDF points. Just enough
+    #: to see it on top and be able to drag it, as in any editor.
     PASTE_OFFSET = 12.0
 
     def copy_selected(self) -> int:
-        """Copia lo seleccionado al portapapeles. Devuelve cuantas copio."""
+        """Copy the selection to the clipboard. Returns how many were copied."""
         from .clipboard import copy_annotations
 
         items = self.selected_items()
@@ -1332,18 +1331,18 @@ class PdfView(QGraphicsView):
             return 0
         how_many = copy_annotations(item.ann for item in items)
         if how_many:
-            self._paste_count = 0        # la primera pegada va al lado
+            self._paste_count = 0        # the first paste goes alongside
         return how_many
 
     def cut_selected(self) -> int:
-        """Copia y elimina. El borrado se deshace como cualquier otro."""
+        """Copy and remove. The deletion undoes like any other."""
         how_many = self.copy_selected()
         if how_many:
             self.delete_selected()
         return how_many
 
     def paste_clipboard(self, page: int | None = None) -> int:
-        """Pega en la pagina indicada (por omision, la que se esta viendo)."""
+        """Paste into the given page (by default, the one on screen)."""
         from ..templates import shift_to_page
         from .clipboard import clipboard_annotations
 
@@ -1353,15 +1352,15 @@ class PdfView(QGraphicsView):
         if not copied:
             return 0
         target = self.current_page if page is None else page
-        # shift_to_page da identidad nueva a cada copia y conserva la
-        # distancia entre paginas, para poder pegar lo copiado de varias.
+        # shift_to_page gives every copy a new identity and keeps the distance
+        # between pages, so what was copied from several pages can be pasted.
         placed = shift_to_page(copied, target, self.page_count)
         if not placed:
             return 0
         self._paste_count += 1
-        salto = self.PASTE_OFFSET * self._paste_count
+        offset = self.PASTE_OFFSET * self._paste_count
         for ann in placed:
-            move_annotation(ann, salto, salto)
+            move_annotation(ann, offset, offset)
         self._scene.clearSelection()
         self.undo_stack.beginMacro(tr("cmd_paste", count=len(placed)))
         for ann in placed:
@@ -1374,7 +1373,7 @@ class PdfView(QGraphicsView):
         self.undo_stack.push(ChangeAnnotationsCommand(self, [(item, before, after)]))
 
     def apply_style_to_selection(self, **changes) -> bool:
-        """Cambia color, grosor, opacidad o tamano de letra de lo seleccionado."""
+        """Change colour, width, opacity or font size of the selection."""
         items = self.selected_items()
         if not items:
             return False
@@ -1465,7 +1464,7 @@ class PdfView(QGraphicsView):
 
 
 def _constrain_angle(origin: QPointF, point: QPointF) -> QPointF:
-    """Ajusta el punto al multiplo de 45 grados mas cercano (tecla Mayus)."""
+    """Snap the point to the nearest multiple of 45 degrees (the Shift key)."""
     dx = point.x() - origin.x()
     dy = point.y() - origin.y()
     if abs(dx) < 1e-6 and abs(dy) < 1e-6:
