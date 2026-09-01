@@ -1,10 +1,10 @@
-# Contribuir a easypdf.surf
+# Contributing to easypdf.surf
 
-Gracias por querer echar una mano. easypdf.surf quiere seguir siendo **sencillo**: antes de
-anadir una funcion, piensa si una persona que solo quiere leer y anotar un PDF la
-echaria de menos.
+Thanks for wanting to lend a hand. easypdf.surf aims to stay **simple**: before
+adding a feature, ask yourself whether somebody who only wants to read and
+annotate a PDF would miss it.
 
-## Preparar el entorno
+## Setting up
 
 ```bash
 git clone https://github.com/mefardales/easypdf.git
@@ -12,43 +12,44 @@ cd easypdf
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements-dev.txt
-python -m easypdf                # arranca la aplicacion
+python -m easypdf                # starts the application
 ```
 
-## Antes de abrir un pull request
+## Before opening a pull request
 
 ```bash
-pytest -q                        # todas las pruebas en verde
-ruff check src tests tools       # sin avisos de estilo
+pytest -q                        # every test green
+ruff check src tests tools       # no style warnings
 ```
 
-Si tocas la interfaz, anade una prueba en `tests/test_ui.py`: se ejecutan con la
-plataforma Qt `offscreen`, asi que funcionan sin pantalla y en integracion continua.
+If you touch the interface, add a test in `tests/test_ui.py`: they run with the
+Qt `offscreen` platform, so they work without a screen and on continuous
+integration.
 
-## Como esta organizado el codigo
+## How the code is laid out
 
-- `model.py` es Python puro: sin Qt y sin PyMuPDF. Toda la logica que se pueda probar
-  sin interfaz deberia vivir ahi.
-- `document.py` y `annotations.py` son la unica frontera con PyMuPDF.
-- La interfaz (`ui/`) no habla nunca con PyMuPDF directamente.
-- Las coordenadas de las anotaciones estan siempre en **puntos PDF** con el origen
-  arriba a la izquierda. No guardes coordenadas de pantalla.
+- `model.py` is pure Python: no Qt and no PyMuPDF. Any logic that can be tested
+  without an interface belongs there.
+- `document.py` and `annotations.py` are the only border with PyMuPDF.
+- The interface (`ui/`) never talks to PyMuPDF directly.
+- Annotation coordinates are always in **PDF points** with the origin at the top
+  left. Never store screen coordinates.
 
-## Estilo
+## Style
 
-- Los textos de la interfaz van en `src/easypdf/i18n.py`, nunca sueltos en el
-  codigo: `tr("mi_clave")`. Cada texto nuevo se anade a los dos idiomas (hay una
-  prueba que lo comprueba). Nombres de funciones y variables en ingles.
-- Comentarios solo donde el codigo no se explica solo.
-- Lineas de hasta 100 caracteres (lo comprueba `ruff`).
+- Interface texts go in `src/easypdf/i18n.py`, never loose in the code:
+  `tr("my_key")`. Every new text is added to both languages (a test checks
+  that). Function and variable names in English.
+- Comments only where the code does not explain itself.
+- Lines up to 100 characters (`ruff` checks that).
 
-## Reportar un fallo
+## Reporting a bug
 
-Abre una incidencia indicando la version de EasyPDF, tu sistema operativo y, si
-puedes, un PDF de ejemplo (o uno equivalente sin datos personales) y los pasos para
-reproducirlo.
+Open an issue giving the EasyPDF version, your operating system and, if you can,
+an example PDF (or an equivalent one without personal data) and the steps to
+reproduce it.
 
-## Licencia de las aportaciones
+## Licence of contributions
 
-Al enviar un pull request aceptas publicar tu codigo bajo la
-[GNU AGPL v3 o posterior](LICENSE), la misma licencia del proyecto.
+By sending a pull request you agree to publish your code under the
+[GNU AGPL v3 or later](LICENSE), the same licence as the project.

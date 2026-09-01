@@ -1,73 +1,73 @@
-# Compilados de easypdf.surf
+# easypdf.surf builds
 
-Esta carpeta contiene los programas ya compilados, listos para usar. **No hace
-falta tener Python instalado.**
+This folder holds the already-built programs, ready to use. **You do not need
+Python installed.**
 
-La forma mas comoda de descargar es la web del proyecto:
+The easiest way to download is the project's site:
 **[easypdf.surf](https://easypdf.surf)**.
 
-Aqui tambien: pulsa el nombre del archivo y la descarga empieza sola:
+Here too: click the file name and the download starts on its own:
 
-| Descarga | Para quien | Que es |
+| Download | Who it is for | What it is |
 |---|---|---|
-| [**EasyPDF-1.1.0-Setup.exe**](https://github.com/mefardales/easypdf/releases/download/v1.1.0/EasyPDF-1.1.0-Setup.exe) | Windows 10/11 (64 bits) | Instalador. Crea el acceso directo, registra la aplicacion en *Abrir con* y se desinstala desde *Configuracion -> Aplicaciones*. No necesita permisos de administrador: puede instalarse solo para tu usuario. |
-| [**EasyPDF-1.1.0-windows-x64-portable.zip**](https://github.com/mefardales/easypdf/releases/download/v1.1.0/EasyPDF-1.1.0-windows-x64-portable.zip) | Windows 10/11 (64 bits) | Version portable. Descomprime la carpeta y ejecuta `EasyPDF.exe`. No instala nada ni toca el registro: funciona desde un pendrive. |
-| [**EasyPDF-1.1.0-linux-x64.tar.xz**](https://github.com/mefardales/easypdf/releases/download/v1.1.0/EasyPDF-1.1.0-linux-x64.tar.xz) | Linux (x86-64) | Version portable. Descomprime y ejecuta `./EasyPDF`. |
+| [**EasyPDF-1.6.2-Setup.exe**](https://github.com/mefardales/easypdf/releases/download/v1.6.2/EasyPDF-1.6.2-Setup.exe) | Windows 10/11 (64 bit) | Installer. It creates the shortcut, registers the application under *Open with* and uninstalls from *Settings -> Apps*. It needs no administrator rights: it can be installed for your user only. |
+| [**EasyPDF-1.6.2-windows-x64-portable.zip**](https://github.com/mefardales/easypdf/releases/download/v1.6.2/EasyPDF-1.6.2-windows-x64-portable.zip) | Windows 10/11 (64 bit) | Portable version. Unpack the folder and run `EasyPDF.exe`. It installs nothing and does not touch the registry: it works from a USB stick. |
+| [**EasyPDF-1.6.2-linux-x64.tar.xz**](https://github.com/mefardales/easypdf/releases/download/v1.6.2/EasyPDF-1.6.2-linux-x64.tar.xz) | Linux (x86-64) | Portable version. Unpack and run `./EasyPDF`. |
 
-Comprobar el `sha256` es **opcional**: solo si quieres verificar que la descarga
-llego intacta. Junto a cada archivo hay uno:
+Checking the `sha256` is **optional**: only if you want to make sure the download
+arrived intact. There is one next to every file:
 
 ```bash
-sha256sum -c EasyPDF-1.1.0-linux-x64.tar.xz.sha256      # Linux
+sha256sum -c EasyPDF-1.6.2-linux-x64.tar.xz.sha256      # Linux
 ```
 
 ```powershell
-Get-FileHash EasyPDF-1.1.0-Setup.exe -Algorithm SHA256  # Windows
+Get-FileHash EasyPDF-1.6.2-Setup.exe -Algorithm SHA256  # Windows
 ```
 
-## Como usarlos
+## How to use them
 
-**Windows (instalador)** — doble clic en `EasyPDF-1.1.0-Setup.exe` y siguiente.
-Windows SmartScreen puede avisar de que el editor es desconocido, porque el
-ejecutable no esta firmado digitalmente (una firma de codigo es de pago): pulsa
-*Mas informacion -> Ejecutar de todas formas*.
+**Windows (installer)** — double click `EasyPDF-1.6.2-Setup.exe` and press next.
+Windows SmartScreen may warn that the publisher is unknown, because the
+executable is not digitally signed (a code signing certificate costs money):
+press *More info -> Run anyway*.
 
-**Windows (portable)** — descomprime el `.zip` y ejecuta `EasyPDF.exe` de dentro
-de la carpeta. Hay que mantener la carpeta entera, no solo el `.exe`.
+**Windows (portable)** — unpack the `.zip` and run `EasyPDF.exe` from inside the
+folder. Keep the whole folder, not just the `.exe`.
 
 **Linux** —
 
 ```bash
-tar xf EasyPDF-1.1.0-linux-x64.tar.xz
+tar xf EasyPDF-1.6.2-linux-x64.tar.xz
 cd EasyPDF
-./EasyPDF                 # o:  ./EasyPDF documento.pdf
+./EasyPDF                 # or:  ./EasyPDF document.pdf
 ```
 
-Si el sistema es muy minimo puede que falten bibliotecas de Qt:
+On a very minimal system some Qt libraries may be missing:
 
 ```bash
 sudo apt install libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libdbus-1-3
 ```
 
-**macOS** — no hay compilado publicado; se ejecuta desde el codigo fuente
+**macOS** — there is no published build; run it from source
 (`pip install -r requirements.txt && python -m easypdf`).
 
-## De donde salen estos archivos
+## Where these files come from
 
-Se generan siempre con los mismos guiones del repositorio, nunca a mano:
+They are always produced by the repository's own scripts, never by hand:
 
-| Plataforma | Como se genera |
+| Platform | How it is built |
 |---|---|
-| Windows | `.github/workflows/build-windows.yml` en un runner `windows-latest` (PyInstaller + Inno Setup). Tambien se puede en local: `powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1` |
-| Linux | `.github/workflows/build-linux.yml` en `ubuntu-22.04`, o en local: `bash packaging/build_linux.sh` |
+| Windows | `.github/workflows/build-windows.yml` on a `windows-latest` runner (PyInstaller + Inno Setup). It can also be done locally: `powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1` |
+| Linux | `.github/workflows/build-linux.yml` on `ubuntu-22.04`, or locally: `bash packaging/build_linux.sh` |
 
-Los ejecutables de Windows solo se pueden generar **desde Windows**: PyInstaller
-no compila para otra plataforma distinta de aquella en la que se ejecuta.
+The Windows executables can only be built **from Windows**: PyInstaller does not
+cross-compile for a platform other than the one it runs on.
 
-Para publicar una version nueva basta con etiquetarla; los dos flujos compilan y
-adjuntan los archivos a la release de GitHub:
+To publish a new version it is enough to tag it; both workflows build and attach
+the files to the GitHub release:
 
 ```bash
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.6.2
+git push origin v1.6.2
 ```

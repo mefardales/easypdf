@@ -5,9 +5,9 @@
 <h1 align="center">easypdf.surf</h1>
 
 <p align="center">
-  <b>Lector de PDF sencillo con anotaciones e impresion.</b><br>
-  Abre, lee, imprime y dibuja cuadros, lineas, flechas y texto encima de tus PDF.<br>
-  Como Adobe Reader, pero mucho mas simple, libre y gratuito.
+  <b>A simple PDF reader with annotations and printing.</b><br>
+  Open, read, print and draw boxes, lines, arrows and text on top of your PDFs.<br>
+  Like Adobe Reader, but far simpler, free and open source.
 </p>
 
 <p align="center">
@@ -15,101 +15,110 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img alt="Licencia AGPL v3" src="https://img.shields.io/badge/licencia-AGPL--3.0-blue.svg"></a>
+  <a href="LICENSE"><img alt="AGPL v3 licence" src="https://img.shields.io/badge/licence-AGPL--3.0-blue.svg"></a>
   <img alt="Python 3.9+" src="https://img.shields.io/badge/python-3.9%2B-3776ab.svg">
-  <img alt="Windows, Linux, macOS" src="https://img.shields.io/badge/plataformas-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg">
+  <img alt="Windows, Linux, macOS" src="https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg">
 </p>
 
 ---
 
-## Descargar (un solo clic)
+## Download (one click)
 
-La forma mas comoda es la pagina web del proyecto:
+The easiest way is the project's own site:
 **[easypdf.surf](https://easypdf.surf)**.
-Tambien puedes descargar desde aqui mismo:
+You can also download straight from here:
 
-### Windows 10 u 11
+### Windows 10 or 11
 
 <p align="center">
-  <a href="https://github.com/mefardales/easypdf/releases/download/v1.1.0/EasyPDF-1.1.0-Setup.exe">
-    <img src="https://img.shields.io/badge/%E2%AC%87%20DESCARGAR%20EasyPDF%20para%20Windows-instalador-d81b1b?style=for-the-badge" alt="Descargar EasyPDF para Windows">
+  <a href="https://github.com/mefardales/easypdf/releases/download/v1.6.2/EasyPDF-1.6.2-Setup.exe">
+    <img src="https://img.shields.io/badge/%E2%AC%87%20DOWNLOAD%20EasyPDF%20for%20Windows-installer-d81b1b?style=for-the-badge" alt="Download EasyPDF for Windows">
   </a>
 </p>
 
-1. Pulsa el boton de arriba: se descarga `EasyPDF-1.1.0-Setup.exe`.
-2. Doble clic en el archivo descargado (suele quedar en la carpeta *Descargas*).
-3. Si Windows muestra un aviso azul de *Windows protegio tu PC*, pulsa
-   **Mas informacion** y despues **Ejecutar de todas formas**. Sale porque el
-   programa no esta firmado con un certificado de pago, no porque tenga nada raro.
-4. Siguiente, siguiente y listo. easypdf.surf queda en el menu Inicio.
+1. Press the button above: `EasyPDF-1.6.2-Setup.exe` downloads.
+2. Double click the downloaded file (it usually lands in your *Downloads* folder).
+3. If Windows shows a blue *Windows protected your PC* notice, press
+   **More info** and then **Run anyway**. It appears because the program is not
+   signed with a paid certificate, not because there is anything odd about it.
+4. Next, next, done. easypdf.surf is in the Start menu.
 
-No necesitas ser administrador ni instalar Python ni nada mas.
+You do not need administrator rights, or Python, or anything else.
 
 <details>
-<summary>Otras descargas (portable y Linux)</summary>
+<summary>Other downloads (portable and Linux)</summary>
 
 <br>
 
-| Descarga | Para que sirve |
+| Download | What it is for |
 |---|---|
-| [**EasyPDF portable para Windows (.zip)**](https://github.com/mefardales/easypdf/releases/download/v1.1.0/EasyPDF-1.1.0-windows-x64-portable.zip) | No instala nada. Descomprime la carpeta y abre `EasyPDF.exe`. Funciona desde un pendrive. |
-| [**EasyPDF para Linux (.tar.xz)**](https://github.com/mefardales/easypdf/releases/download/v1.1.0/EasyPDF-1.1.0-linux-x64.tar.xz) | Descomprime y ejecuta `./EasyPDF`. No necesita instalacion. |
+| [**EasyPDF portable for Windows (.zip)**](https://github.com/mefardales/easypdf/releases/download/v1.6.2/EasyPDF-1.6.2-windows-x64-portable.zip) | Installs nothing. Unpack the folder and open `EasyPDF.exe`. It runs from a USB stick. |
+| [**EasyPDF for Linux (.tar.xz)**](https://github.com/mefardales/easypdf/releases/download/v1.6.2/EasyPDF-1.6.2-linux-x64.tar.xz) | Unpack and run `./EasyPDF`. No installation needed. |
 
-Tambien estan todos en la carpeta [`build/`](build/) y en la
-[pagina de releases](https://github.com/mefardales/easypdf/releases), con sus
-`sha256` para comprobar la descarga.
+They are all in the [`build/`](build/) folder too, and on the
+[releases page](https://github.com/mefardales/easypdf/releases), each with its
+`sha256` so you can check the download.
 
 </details>
 
-## Que hace
+## What it does
 
 | | |
 |---|---|
-| **Leer** | Desplazamiento continuo, miniaturas de paginas, zoom, ajustar al ancho o a la pagina, busqueda de texto (`Ctrl+F`), documentos protegidos con contrasena. |
-| **Crear** | Documentos en blanco (`Ctrl+N`), anadir, duplicar, mover y eliminar paginas, en A4, Carta, A5, A3 u Oficio, en vertical u horizontal. |
-| **Anotar** | Cuadros, resaltado, lineas, flechas, cuadros de texto, dibujo a mano alzada, **tablas** con celdas editables e **imagenes** (arrastralas sobre la ventana). Tipo de letra sans, serif o monoespaciada, negrita, cursiva y alineacion. Se mueven, se redimensionan, se cambian de color y se borran. Deshacer y rehacer ilimitados. |
-| **Reutilizar** | Guarda membretes, tablas o sellos como **plantillas** y crealos de nuevo en otro documento con un clic. |
-| **Imprimir** | Dialogo de impresion del sistema, vista previa, rango de paginas. Lo que se imprime incluye las anotaciones. |
-| **Guardar** | Las anotaciones se escriben como **anotaciones PDF estandar**: se ven igual en Adobe Reader, Edge o Firefox, y el contenido original del documento no se toca. |
+| **Read** | Continuous scrolling, page thumbnails, zoom, fit to width or page, text search (`Ctrl+F`), password protected documents. |
+| **Create** | Blank documents (`Ctrl+N`), add, duplicate, move and delete pages, in A4, Letter, A5, A3 or Legal, portrait or landscape. |
+| **Annotate** | Boxes, highlighting, lines, arrows, text boxes, freehand drawing, **tables** with editable cells and **images** (drag them onto the window). Sans, serif or monospaced font, bold, italic and alignment. They move, resize, change colour and can be deleted. Unlimited undo and redo. |
+| **Erase** | A real eraser: it takes the annotations it runs over with it, and on save it strips the original content underneath as well, so what was rubbed out cannot be selected or copied out of the file afterwards. |
+| **Fill in** | Ready-made **form pieces** — labelled fields, tick boxes, signature lines, tables and separators — dropped onto the page with a click. |
+| **Reuse** | Save letterheads, tables or stamps as **templates** and build them again in another document with one click. |
+| **Print** | The system print dialog, print preview, page ranges. What is printed includes the annotations. |
+| **Save** | Annotations are written as **standard PDF annotations**: they look the same in Adobe Reader, Edge or Firefox, and the document's original content is left untouched. |
 
-Interfaz en **espanol e ingles** (se cambia desde *Ayuda -> Idioma*, y arranca en el
-idioma del sistema), sin cuentas, sin publicidad y sin conexion a internet.
+Interface in **English and Spanish** (switch it under *Help -> Language*; it starts
+in the system's language), no accounts, no ads and no internet connection needed.
+It checks on its own whether a newer version is out and offers to download and
+install it; that check can be turned off in the *Help* menu.
 
-## Capturas
+## Screenshot
 
 <p align="center">
-  <img src="docs/screenshot.png" width="820" alt="Ventana principal de easypdf.surf">
+  <img src="docs/screenshot.png" width="820" alt="The main easypdf.surf window">
 </p>
 
-## Guia rapida
+## Quick guide
 
-| Accion | Atajo |
+| Action | Shortcut |
 |---|---|
-| Abrir / Guardar / Guardar como | `Ctrl+O` / `Ctrl+S` / `Ctrl+Shift+S` |
-| Imprimir / Vista previa | `Ctrl+P` / `Ctrl+Shift+P` |
-| Buscar / Siguiente / Anterior | `Ctrl+F` / `F3` / `Shift+F3` |
-| Deshacer / Rehacer | `Ctrl+Z` / `Ctrl+Y` |
-| Zoom | `Ctrl+rueda`, `Ctrl++`, `Ctrl+-`, `Ctrl+0` |
-| Ajustar al ancho / a la pagina | `Ctrl+1` / `Ctrl+2` |
-| Ir a la pagina | `Ctrl+G` |
-| Nuevo documento / Anadir pagina | `Ctrl+N` / `Ctrl+Shift+N` |
-| Herramientas | `S` seleccionar, `H` mover, `R` cuadro, `M` resaltar, `L` linea, `F` flecha, `T` texto, `D` dibujo, `A` tabla, `I` imagen |
-| Negrita / Cursiva | `Ctrl+B` / `Ctrl+I` |
-| Cancelar / volver a seleccionar | `Esc` |
-| Borrar lo seleccionado | `Supr` |
+| Open / Save / Save as | `Ctrl+O` / `Ctrl+S` / `Ctrl+Shift+S` |
+| Print / Print preview | `Ctrl+P` / `Ctrl+Shift+P` |
+| Find / Next / Previous | `Ctrl+F` / `F3` / `Shift+F3` |
+| Undo / Redo | `Ctrl+Z` / `Ctrl+Y` |
+| Copy / Cut / Paste | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` |
+| Zoom | `Ctrl+wheel`, `Ctrl++`, `Ctrl+-`, `Ctrl+0` |
+| Fit to width / to page | `Ctrl+1` / `Ctrl+2` |
+| Go to page | `Ctrl+G` |
+| New document / Add page | `Ctrl+N` / `Ctrl+Shift+N` |
+| Show or hide the side panel | `F10` |
+| Tools | `S` select, `H` pan, `R` box, `M` highlight, `L` line, `F` arrow, `T` text, `D` drawing, `A` table, `I` image, `E` eraser |
+| Bold / Italic | `Ctrl+B` / `Ctrl+I` |
+| Cancel / back to select | `Esc` |
+| Delete the selection | `Del` |
 
-Detalles utiles:
+Useful details:
 
-- Arrastra un PDF sobre la ventana para abrirlo.
-- Manten **Mayus** mientras dibujas para cuadrados perfectos o lineas a 45 grados.
-- Doble clic en un cuadro de texto para escribir dentro; `Esc` para terminar.
-- Los tiradores azules de una anotacion seleccionada permiten redimensionarla.
-- El color, el grosor y la opacidad de la barra de herramientas se aplican tanto a
-  la siguiente anotacion como a la que tengas seleccionada.
+- Drag a PDF onto the window to open it.
+- Hold **Shift** while drawing for perfect squares or 45 degree lines.
+- Double click a text box to type inside it; `Esc` to finish.
+- The blue handles on a selected annotation resize it.
+- The colour, width and opacity in the toolbar apply both to the next annotation
+  and to whatever you have selected.
+- Drag from a ruler to drop a guide; guides show on every page and annotations
+  snap to them.
+- With the eraser in hand, `Ctrl++` and `Ctrl+-` (or `[` and `]`) change its size.
 
-## Ejecutar desde el codigo fuente
+## Running from source
 
-Funciona igual en Windows, Linux y macOS.
+It works the same on Windows, Linux and macOS.
 
 ```bash
 git clone https://github.com/mefardales/easypdf.git
@@ -120,39 +129,39 @@ python -m venv .venv
 # Linux / macOS:  source .venv/bin/activate
 
 pip install -r requirements.txt
-python -m easypdf                 # o:  python -m easypdf documento.pdf
+python -m easypdf                 # or:  python -m easypdf document.pdf
 ```
 
-En Linux, Qt necesita algunas bibliotecas del sistema:
+On Linux, Qt needs a few system libraries:
 
 ```bash
 sudo apt install libegl1 libgl1 libxkbcommon-x11-0 libxcb-cursor0 libdbus-1-3
 ```
 
-## Compilar el .exe y el instalador
+## Building the .exe and the installer
 
-### Windows: todo de una vez
+### Windows: all at once
 
-Con [Inno Setup 6](https://jrsoftware.org/isdl.php) instalado (opcional):
+With [Inno Setup 6](https://jrsoftware.org/isdl.php) installed (optional):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File packaging\build_windows.ps1
 ```
 
-El script crea el entorno virtual, instala dependencias, regenera el icono, pasa las
-pruebas y deja el resultado en:
+The script creates the virtual environment, installs the dependencies,
+regenerates the icon, runs the tests and leaves the result in:
 
 ```
-dist\EasyPDF\EasyPDF.exe                              <- carpeta ejecutable
-build\EasyPDF-1.1.0-Setup.exe                         <- instalador
-build\EasyPDF-1.1.0-windows-x64-portable.zip          <- portable
+dist\EasyPDF\EasyPDF.exe                              <- runnable folder
+build\EasyPDF-1.6.2-Setup.exe                         <- installer
+build\EasyPDF-1.6.2-windows-x64-portable.zip          <- portable
 ```
 
-### Windows: paso a paso
+### Windows: step by step
 
 ```powershell
 pip install -r requirements-dev.txt
-python tools\make_icon.py                     # genera assets\easypdf.ico
+python tools\make_icon.py                     # builds assets\easypdf.ico
 pyinstaller packaging\easypdf.spec --noconfirm --clean --workpath .pyinstaller
 & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging\installer.iss
 ```
@@ -160,121 +169,127 @@ pyinstaller packaging\easypdf.spec --noconfirm --clean --workpath .pyinstaller
 ### Linux
 
 ```bash
-bash packaging/build_linux.sh                 # -> build/EasyPDF-1.1.0-linux-x64.tar.xz
+bash packaging/build_linux.sh                 # -> build/EasyPDF-1.6.2-linux-x64.tar.xz
 ```
 
-> Los ejecutables de Windows solo se generan desde Windows: PyInstaller no compila
-> para una plataforma distinta de aquella en la que corre.
+> The Windows executables can only be built from Windows: PyInstaller does not
+> cross-compile for a platform other than the one it runs on.
 
-### Compilacion automatica
+### Automated builds
 
-Los flujos `.github/workflows/build-windows.yml` y `build-linux.yml` compilan en
-runners de Windows y de Linux. Se pueden lanzar a mano desde la pestana *Actions*
-(guardan el resultado en `build/`) y ademas se disparan con cada etiqueta. Para
-publicar una version:
+The workflows `.github/workflows/build-windows.yml` and `build-linux.yml` build on
+Windows and Linux runners. They can be started by hand from the *Actions* tab
+(they store the result in `build/`) and they also fire on every tag. To publish a
+version:
 
 ```bash
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.6.2
+git push origin v1.6.2
 ```
 
-GitHub Actions ejecuta las pruebas, empaqueta y adjunta los tres archivos a la
-release.
+GitHub Actions runs the tests, packages everything and attaches the three files to
+the release.
 
-> Para cambiar el numero de version, actualizalo en `src/easypdf/__init__.py`,
-> `pyproject.toml`, `packaging/installer.iss` y `packaging/version_info.txt`.
+> The version number lives in `src/easypdf/__init__.py`. Update it there and in
+> `pyproject.toml`, `packaging/installer.iss` and `packaging/version_info.txt`;
+> `tests/test_version.py` checks the four agree.
 
-### Cambiar el icono
+### Changing the icon
 
-El icono actual esta dibujado por codigo en `src/easypdf/ui/icons.py`. Si prefieres
-usar tu propia imagen, deja un PNG cuadrado (512x512 con fondo transparente va
-perfecto) en `assets/easypdf-original.png` y ejecuta:
+The current icon is drawn in code in `src/easypdf/ui/icons.py`. If you would
+rather use your own image, leave a square PNG (512x512 with a transparent
+background works nicely) at `assets/easypdf-original.png` and run:
 
 ```bash
 python tools/make_icon.py
 ```
 
-Se regeneran `assets/easypdf.ico` y `assets/easypdf.png` con todos los tamanos, y
-esa imagen la usan por igual la ventana, el ejecutable y el instalador.
+`assets/easypdf.ico` and `assets/easypdf.png` are regenerated in every size, and
+the window, the executable and the installer all use that image.
 
-## Como se guardan las anotaciones
+## How annotations are stored
 
-easypdf.surf **nunca modifica el contenido original** del PDF. Guarda siempre los bytes
-del archivo tal y como se abrio y, al guardar, les anade las anotaciones actuales:
+easypdf.surf **never modifies the PDF's original content**. It always keeps the
+file's bytes as they were when it was opened and, on save, adds the current
+annotations to them:
 
-| Herramienta | Anotacion PDF que se escribe |
+| Tool | PDF annotation written |
 |---|---|
-| Cuadro | `Square` |
-| Resaltado | `Highlight` |
-| Linea y flecha | `Line` (la flecha con punta cerrada) |
-| Texto | `FreeText` (Helvetica, Times o Courier; negrita y cursiva en texto enriquecido) |
-| Tabla | `Ink` con la rejilla + un `FreeText` por celda con texto |
-| Imagen | se incrusta en el contenido de la pagina (no es una anotacion, asi se imprime siempre) |
-| Dibujo libre | `Ink` |
+| Box | `Square` |
+| Highlight | `Highlight` |
+| Line and arrow | `Line` (the arrow with a closed head) |
+| Text | `FreeText` (Helvetica, Times or Courier; bold and italic as rich text) |
+| Table | `Ink` for the grid + one `FreeText` per cell that has text |
+| Image | embedded in the page content (not an annotation, so it always prints) |
+| Freehand drawing | `Ink` |
+| Eraser | a redaction: the content underneath is removed from the file |
 
-Como se parte siempre del archivo original, guardar dos veces no duplica nada y las
-anotaciones siguen siendo editables durante toda la sesion. Al volver a abrir el
-archivo guardado, las anotaciones se ven (las dibuja el propio PDF) pero pasan a
-formar parte del documento.
+Because it always starts from the original file, saving twice duplicates nothing
+and the annotations stay editable for the whole session. When the saved file is
+opened again the annotations are visible (the PDF itself draws them) but they are
+part of the document from then on.
 
-Las coordenadas se guardan en puntos PDF con el origen arriba a la izquierda, y se
-corrige la rotacion de la pagina, asi que lo que dibujas es exactamente lo que sale
-impreso, incluso en paginas giradas.
+Coordinates are stored in PDF points with the origin at the top left, and the
+page's rotation is corrected, so what you draw is exactly what comes out printed,
+even on rotated pages.
 
-## Estructura del proyecto
+## Project layout
 
 ```
 src/easypdf/
-  model.py          Modelo de anotaciones (Python puro, sin Qt ni PDF)
-  templates.py      Plantillas reutilizables (JSON)
-  i18n.py           Textos de la interfaz en espanol e ingles
-  document.py       Apertura, render, busqueda y guardado (PyMuPDF)
-  annotations.py    Modelo -> anotaciones PDF reales
-  printing.py       Impresion y vista previa
-  config.py         Preferencias (QSettings)
-  app.py            Arranque de la aplicacion
+  model.py          The annotation model (pure Python, no Qt and no PDF)
+  elements.py       Ready-made pieces for building forms
+  templates.py      Reusable templates (JSON)
+  i18n.py           Interface texts in English and Spanish
+  document.py       Opening, rendering, searching and saving (PyMuPDF)
+  annotations.py    Model -> real PDF annotations
+  printing.py       Printing and print preview
+  updates.py        New version check, download and install
+  config.py         Preferences (QSettings)
+  app.py            Application start-up
   ui/
-    main_window.py  Menus, barras, miniaturas, busqueda
-    page_view.py    Visor, herramientas, zoom y navegacion
-    items.py        Anotaciones dibujadas en pantalla
-    commands.py     Deshacer / rehacer
-    icons.py        Iconos dibujados por codigo
-packaging/          PyInstaller + Inno Setup + guiones de compilacion
-build/              Ejecutables publicados (Windows y Linux)
-site/               Pagina web (ingles en /, espanol en /es/; tools/build_site.py)
-render.yaml         Despliegue de la web en Render
-tools/make_icon.py  Genera assets/easypdf.ico
-tests/              93 pruebas (modelo, PDF, plantillas, interfaz e impresion)
+    main_window.py  Menus, toolbars, thumbnails, search
+    page_view.py    The viewer, the tools, zoom and navigation
+    items.py        Annotations drawn on screen
+    commands.py     Undo / redo
+    rulers.py       Rulers and guides
+    icons.py        Icons drawn in code
+packaging/          PyInstaller + Inno Setup + build scripts
+build/              Published executables (Windows and Linux)
+site/               The web page (English at /, Spanish at /es/; tools/build_site.py)
+render.yaml         Deploying the site on Render
+tools/make_icon.py  Builds assets/easypdf.ico
+tests/              292 tests (model, PDF, templates, interface, printing, updates)
 ```
 
-## Desarrollo
+## Development
 
 ```bash
 pip install -r requirements-dev.txt
-pytest -q          # pruebas (la interfaz se prueba en modo offscreen)
+pytest -q          # tests (the interface is tested in offscreen mode)
 ruff check src tests tools
 ```
 
-Para tocar la web: `python tools/build_site.py` regenera las dos paginas, el
-`robots.txt` y el `sitemap.xml`. Como se publica esta en
-[docs/DESPLIEGUE-WEB.md](docs/DESPLIEGUE-WEB.md).
+To work on the site: `python tools/build_site.py` regenerates both pages, the
+`robots.txt` and the `sitemap.xml`. How it is published is in
+[docs/WEB-DEPLOYMENT.md](docs/WEB-DEPLOYMENT.md).
 
-Las contribuciones son bienvenidas: lee [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome: read [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Hoja de ruta
+## Roadmap
 
-- [ ] Girar paginas y guardar el giro
-- [ ] Seleccionar y copiar texto del documento
-- [ ] Resaltado ajustado a las lineas de texto seleccionadas
-- [x] Sellos y firma con imagen
-- [ ] Unir varios PDF en uno
-- [x] Interfaz en ingles
+- [x] Rotate pages and save the rotation
+- [ ] Select and copy text from the document
+- [ ] Highlighting snapped to the selected lines of text
+- [x] Stamps and signing with an image
+- [ ] Merge several PDFs into one
+- [x] English interface
 
-## Licencia
+## Licence
 
-easypdf.surf es software libre bajo la **[GNU AGPL v3 o posterior](LICENSE)**.
+easypdf.surf is free software under the **[GNU AGPL v3 or later](LICENSE)**.
 
-Usa [PyMuPDF](https://pymupdf.readthedocs.io/) (AGPL-3.0) para leer y escribir PDF y
-[PySide6](https://doc.qt.io/qtforpython/) (LGPL-3.0) para la interfaz. Al enlazar con
-PyMuPDF, cualquier version distribuida debe publicarse tambien bajo AGPL
-con su codigo fuente disponible.
+It uses [PyMuPDF](https://pymupdf.readthedocs.io/) (AGPL-3.0) to read and write
+PDFs and [PySide6](https://doc.qt.io/qtforpython/) (LGPL-3.0) for the interface.
+Because it links against PyMuPDF, any distributed version must also be published
+under the AGPL with its source code available.
