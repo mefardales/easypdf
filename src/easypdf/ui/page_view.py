@@ -357,7 +357,7 @@ class PdfView(QGraphicsView):
             if 0 <= item.ann.page < len(self._page_items):
                 item.setParentItem(self._page_items[item.ann.page])
                 item.apply_model()
-            else:  # pragma: no cover - defensivo
+            else:  # pragma: no cover - defensive
                 self._items.pop(item.ann.id, None)
         self._current_page = min(self._current_page, max(0, len(self._page_items) - 1))
         self.apply_fit()
@@ -453,7 +453,7 @@ class PdfView(QGraphicsView):
                 continue
             try:
                 page = self.document.render_page(item.index, scale)
-            except Exception:  # pragma: no cover - PDF danado
+            except Exception:  # pragma: no cover - damaged PDF
                 continue
             image = QImage(
                 page.samples, page.width, page.height, page.stride, QImage.Format_RGB888
@@ -967,7 +967,7 @@ class PdfView(QGraphicsView):
         if not enabled:
             self.clear_guides()
 
-    def drawForeground(self, painter, rect) -> None:  # pragma: no cover - dibujo
+    def drawForeground(self, painter, rect) -> None:  # pragma: no cover - drawing
         super().drawForeground(painter, rect)
         self._draw_ruler_guides(painter)
         x, y, page = self._guides

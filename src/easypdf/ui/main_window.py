@@ -1,4 +1,4 @@
-"""Ventana principal de easypdf.surf."""
+"""The main window of easypdf.surf."""
 
 from __future__ import annotations
 
@@ -68,13 +68,13 @@ from .page_view import PdfView, Tool
 
 THUMB_WIDTH = 116
 
-#: Borde gris de las miniaturas. Sin el, una pagina en blanco es invisible
-#: sobre el fondo claro del panel y parece que no se ha cargado nada.
+#: Grey border of the thumbnails. Without it, a blank page is invisible
+#: against the panel's light background and looks like nothing loaded.
 THUMB_BORDER = "#9a9a9a"
 
 
 def _framed(pixmap: QPixmap, fill: bool = False) -> QPixmap:
-    """Devuelve la miniatura con un borde fino para que se vea el papel."""
+    """Return the thumbnail with a thin border so the paper shows."""
     from PySide6.QtGui import QPainter, QPen
 
     if fill:
@@ -87,7 +87,7 @@ def _framed(pixmap: QPixmap, fill: bool = False) -> QPixmap:
 
 
 def _swatch(color: QColor | None, size: int = 22) -> QIcon:
-    """Icono cuadrado con el color indicado (o un aspa si no hay color)."""
+    """A square icon in the given colour (or a cross if there is none)."""
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.transparent)
     from PySide6.QtGui import QPainter, QPen
@@ -108,7 +108,7 @@ def _swatch(color: QColor | None, size: int = 22) -> QIcon:
 
 
 class AboutDialog(QDialog):
-    """Ventana de informacion del programa."""
+    """The program's information window."""
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -128,20 +128,20 @@ class AboutDialog(QDialog):
         )
         layout.addWidget(text)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
-        # PySide6 es LGPL y pide avisar de que se usa y bajo que licencia. Va
-        # en su propia ventana para no llenar el "acerca de" de letra pequena,
-        # pero sigue estando a un clic.
-        licencias = buttons.addButton(
+        # PySide6 is LGPL and asks that its use and licence be stated. It goes
+        # in a window of its own so the "about" box is not filled with small
+        # print, but it is still one click away.
+        licences = buttons.addButton(
             tr("about_licences"), QDialogButtonBox.ButtonRole.ActionRole
         )
-        licencias.clicked.connect(lambda: LicencesDialog(self).exec())
+        licences.clicked.connect(lambda: LicencesDialog(self).exec())
         buttons.rejected.connect(self.reject)
         buttons.accepted.connect(self.accept)
         layout.addWidget(buttons)
 
 
 class LicencesDialog(QDialog):
-    """Licencia del programa y de las bibliotecas que usa."""
+    """The licence of the program and of the libraries it uses."""
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -159,7 +159,7 @@ class LicencesDialog(QDialog):
 
 
 class HelpDialog(QDialog):
-    """Guia rapida de uso."""
+    """A quick guide to using the program."""
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -216,7 +216,7 @@ class MainWindow(QMainWindow):
 
     # ------------------------------------------------------------------ acciones
     def _create_actions(self) -> None:
-        # Cada accion guarda las claves de su texto para poder retraducirse.
+        # Every action keeps the keys of its text so it can be retranslated.
         self._action_keys: dict[QAction, tuple[str, str | None]] = {}
 
         def action(key, slot, icon_name=None, shortcut=None, tip=None, checkable=False):
@@ -267,19 +267,19 @@ class MainWindow(QMainWindow):
         self.act_find_prev = action("find_prev", self.view.previous_hit,
                                     shortcut=QKeySequence.FindPrevious)
 
-        # Los botones y el menu siempre amplian o reducen, tambien con la goma
-        # en la mano: si no, no habria forma de acercarse para borrar fino.
+        # The buttons and the menu always zoom in or out, eraser in hand too:
+        # otherwise there would be no way to zoom in for fine rubbing out.
         self.act_zoom_in = action("zoom_in", self.view.zoom_in, "zoom_in")
         self.act_zoom_out = action("zoom_out", self.view.zoom_out, "zoom_out")
 
-        # Los atajos si dependen de la herramienta: con la goma cambian su
-        # tamano, que es lo que se quiere ajustar mientras se borra.
-        # Sin repetir combinaciones: QKeySequence.ZoomIn ya es Ctrl++ en esta
-        # plataforma, y dos atajos iguales en la misma accion hacen que Qt los
-        # considere ambiguos y no dispare ninguno.
-        def _atajos(*candidatos):
+        # The shortcuts do depend on the tool: with the eraser they change its
+        # size, which is what you want to adjust while rubbing out.
+        # No repeated combinations: QKeySequence.ZoomIn is already Ctrl++ on
+        # this platform, and two identical shortcuts on the same action make Qt
+        # call them ambiguous and fire neither.
+        def _shortcuts(*candidates):
             seen, output = set(), []
-            for sec in candidatos:
+            for sec in candidates:
                 text = QKeySequence(sec).toString()
                 if text and text not in seen:
                     seen.add(text)
@@ -287,12 +287,12 @@ class MainWindow(QMainWindow):
             return output
 
         self._sc_zoom_in = QAction(self)
-        self._sc_zoom_in.setShortcuts(_atajos(QKeySequence.ZoomIn, "Ctrl++", "Ctrl+="))
+        self._sc_zoom_in.setShortcuts(_shortcuts(QKeySequence.ZoomIn, "Ctrl++", "Ctrl+="))
         self._sc_zoom_in.triggered.connect(lambda: self.zoom_or_eraser(1))
         self._sc_zoom_out = QAction(self)
-        self._sc_zoom_out.setShortcuts(_atajos(QKeySequence.ZoomOut, "Ctrl+-"))
+        self._sc_zoom_out.setShortcuts(_shortcuts(QKeySequence.ZoomOut, "Ctrl+-"))
         self._sc_zoom_out.triggered.connect(lambda: self.zoom_or_eraser(-1))
-        # y ademas los corchetes, como en cualquier programa de dibujo
+        # and the square brackets as well, as in any drawing program
         self._sc_brush_up = QAction(self)
         self._sc_brush_up.setShortcut(QKeySequence("]"))
         self._sc_brush_up.triggered.connect(lambda: self.view.step_eraser_size(1))
@@ -343,7 +343,7 @@ class MainWindow(QMainWindow):
         self.act_update_auto.toggled.connect(self._set_update_auto)
         self._action_keys[self.act_update_auto] = ("update_auto", None)
 
-        # Herramientas (excluyentes entre si)
+        # Tools (only one at a time)
         self.tool_group = QActionGroup(self)
         self.tool_group.setExclusive(True)
         self.tool_actions = {}
@@ -423,15 +423,15 @@ class MainWindow(QMainWindow):
         self.unit_group = QActionGroup(self)
         self.unit_group.setExclusive(True)
         self.unit_actions = {}
-        for codigo, key in (("mm", "unit_mm"), ("cm", "unit_cm"),
+        for code, key in (("mm", "unit_mm"), ("cm", "unit_cm"),
                               ("in", "unit_in"), ("pt", "unit_pt")):
             act = QAction(tr(key), self)
             act.setCheckable(True)
-            act.setChecked(codigo == "mm")
-            act.triggered.connect(lambda checked=False, c=codigo: self.set_ruler_unit(c))
+            act.setChecked(code == "mm")
+            act.triggered.connect(lambda checked=False, c=code: self.set_ruler_unit(c))
             self.unit_group.addAction(act)
             units.addAction(act)
-            self.unit_actions[codigo] = act
+            self.unit_actions[code] = act
             self._action_keys[act] = (key, None)
 
         self.act_snap = QAction(tr("snap"), self)
@@ -477,8 +477,8 @@ class MainWindow(QMainWindow):
         self.rotate_menu = girar_menu
         self._menu_keys[girar_menu] = "page_rotate_menu"
         doc_menu.addSeparator()
-        tamano_menu = doc_menu.addMenu(tr("page_size_menu"))
-        self._menu_keys[tamano_menu] = "page_size_menu"
+        size_menu = doc_menu.addMenu(tr("page_size_menu"))
+        self._menu_keys[size_menu] = "page_size_menu"
         self.page_size_group = QActionGroup(self)
         self.page_size_group.setExclusive(True)
         chosen = page_size_key(
@@ -491,7 +491,7 @@ class MainWindow(QMainWindow):
             act.setChecked(name == chosen)
             act.triggered.connect(lambda checked=False, n=name: self._set_page_size(n))
             self.page_size_group.addAction(act)
-            tamano_menu.addAction(act)
+            size_menu.addAction(act)
             self.page_size_actions[name] = act
         self.new_page_size = str(chosen)
 
@@ -514,14 +514,14 @@ class MainWindow(QMainWindow):
         self.language_group = QActionGroup(self)
         self.language_group.setExclusive(True)
         self.language_actions = {}
-        for codigo, name in LANGUAGES.items():
+        for code, name in LANGUAGES.items():
             act = QAction(name, self)
             act.setCheckable(True)
-            act.setChecked(codigo == language())
-            act.triggered.connect(lambda checked=False, c=codigo: self.set_language(c))
+            act.setChecked(code == language())
+            act.triggered.connect(lambda checked=False, c=code: self.set_language(c))
             self.language_group.addAction(act)
             idioma_menu.addAction(act)
-            self.language_actions[codigo] = act
+            self.language_actions[code] = act
         help_menu.addSeparator()
         help_menu.addAction(self.act_help)
         help_menu.addAction(self.act_website)
@@ -559,15 +559,15 @@ class MainWindow(QMainWindow):
             tools.addAction(act)
         tools.addSeparator()
 
-        # Color del trazo
+        # Stroke colour
         self.color_button = QToolButton(self)
         self.color_button.setPopupMode(QToolButton.InstantPopup)
         self.color_button.setToolTip(tr("color_tip"))
         self.color_button.setMenu(self._color_menu(self._set_color, allow_none=False))
         tools.addWidget(self.color_button)
 
-        # Color con el que tapa la goma: blanco por defecto, que es el color
-        # del papel, pero se puede elegir otro para tapar sobre fondos de color.
+        # The colour the eraser covers with: white by default, the colour of
+        # paper, but another can be chosen to cover over coloured backgrounds.
         self.eraser_color_button = QToolButton(self)
         self.eraser_color_button.setPopupMode(QToolButton.InstantPopup)
         self.eraser_color_button.setToolTip(tr("eraser_color_tip"))
@@ -619,15 +619,15 @@ class MainWindow(QMainWindow):
         self.addToolBar(tools)
         self.toolbar_tools = tools
 
-        # Los ajustes de estilo van en su propia fila: si no, la barra se
-        # desborda en pantallas normales y aparece el boton de "mas".
-        estilo = QToolBar(tr("toolbar_style"), self)
-        estilo.setObjectName("toolbar_style")
-        estilo.setIconSize(QSize(22, 22))
+        # The style settings go on a row of their own: otherwise the toolbar
+        # overflows on ordinary screens and the "more" button appears.
+        style = QToolBar(tr("toolbar_style"), self)
+        style.setObjectName("toolbar_style")
+        style.setIconSize(QSize(22, 22))
         self.addToolBarBreak(Qt.TopToolBarArea)
-        self.addToolBar(estilo)
-        self.toolbar_style = estilo
-        tools = estilo
+        self.addToolBar(style)
+        self.toolbar_style = style
+        tools = style
 
         self.font_combo = QComboBox(self)
         for familia in (Font.SANS, Font.SERIF, Font.MONO):
@@ -731,7 +731,7 @@ class MainWindow(QMainWindow):
         return menu
 
     def _set_eraser_color(self, color: QColor) -> None:
-        """Cambia el color con el que la goma tapa el documento."""
+        """Change the colour the eraser covers the document with."""
         if color is None:
             return
         self.view.set_eraser_color(to_rgb(color))
@@ -763,7 +763,7 @@ class MainWindow(QMainWindow):
         dock.visibilityChanged.connect(self.act_thumbnails.setChecked)
 
     def _build_view_with_rulers(self):
-        """Coloca la vista con una regla arriba y otra a la izquierda."""
+        """Lay the view out with a ruler on top and another on the left."""
         from PySide6.QtWidgets import QGridLayout, QWidget
 
         from .rulers import RULER_SIZE, Ruler
@@ -783,7 +783,7 @@ class MainWindow(QMainWindow):
         rejilla.addWidget(self.ruler_v, 1, 0)
         rejilla.addWidget(self.view, 1, 1)
 
-        # las reglas se redibujan cuando cambia lo que se ve
+        # the rulers are redrawn whenever what is on screen changes
         self.view.horizontalScrollBar().valueChanged.connect(self.ruler_h.update)
         self.view.verticalScrollBar().valueChanged.connect(self.ruler_v.update)
         self.view.zoomChanged.connect(lambda *_: self._update_rulers())
@@ -797,17 +797,17 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(tr("guides_hint"), 6000)
 
     def _on_guides_changed(self) -> None:
-        """Repinta las reglas y ensena la medida de la guia que se mueve."""
+        """Repaint the rulers and show the measurement of the guide being moved."""
         self._update_rulers()
         drag = self.view._guide_drag
         if drag is None:
             return
-        orientation, _pagina, value, _indice = drag
-        # la guia horizontal se mide en la regla vertical
+        orientation, _page, value, _index = drag
+        # a horizontal guide is measured on the vertical ruler
         ruler = self.ruler_v if orientation == "h" else self.ruler_h
-        _menor, _mayor, por_unidad = ruler._step_pt()
+        _small, _large, per_unit = ruler._step_pt()
         self.statusBar().showMessage(
-            tr("guide_at", value=f"{value / por_unidad:.1f}", unit=ruler.unit), 3000
+            tr("guide_at", value=f"{value / per_unit:.1f}", unit=ruler.unit), 3000
         )
 
     def _update_rulers(self) -> None:
@@ -816,7 +816,7 @@ class MainWindow(QMainWindow):
             self.ruler_v.update()
 
     def _on_mouse_on_page(self, viewport_pos) -> None:
-        """Mueve la marca de las reglas y ensena la medida en la barra."""
+        """Move the rulers' marker and show the measurement in the status bar."""
         if not hasattr(self, "ruler_h"):
             return
         self.ruler_h.set_mouse(viewport_pos.x())
@@ -865,77 +865,77 @@ class MainWindow(QMainWindow):
         column.addLayout(buttons)
 
         # --- pestana de notas ---
-        caja_notas = QWidget(self)
-        col_notas = QVBoxLayout(caja_notas)
-        col_notas.setContentsMargins(4, 4, 4, 4)
-        self.notes_list = QListWidget(caja_notas)
+        notes_box = QWidget(self)
+        notes_col = QVBoxLayout(notes_box)
+        notes_col.setContentsMargins(4, 4, 4, 4)
+        self.notes_list = QListWidget(notes_box)
         self.notes_list.itemClicked.connect(self._go_to_note)
         self.notes_list.itemChanged.connect(self._on_note_checked)
-        col_notas.addWidget(self.notes_list)
-        fila_notas = QHBoxLayout()
-        self.btn_notes_show = QPushButton(tr("notes_show_done"), caja_notas)
+        notes_col.addWidget(self.notes_list)
+        notes_row = QHBoxLayout()
+        self.btn_notes_show = QPushButton(tr("notes_show_done"), notes_box)
         self.btn_notes_show.setCheckable(True)
         self.btn_notes_show.toggled.connect(lambda *_: self.refresh_notes())
-        fila_notas.addWidget(self.btn_notes_show)
-        col_notas.addLayout(fila_notas)
+        notes_row.addWidget(self.btn_notes_show)
+        notes_col.addLayout(notes_row)
 
         # --- pestana de plantillas ---
         from PySide6.QtWidgets import QTabWidget, QTreeWidget
 
-        caja_tpl = QWidget(self)
-        col_tpl = QVBoxLayout(caja_tpl)
-        col_tpl.setContentsMargins(4, 4, 4, 4)
-        self.tpl_tree = QTreeWidget(caja_tpl)
+        tpl_box = QWidget(self)
+        tpl_col = QVBoxLayout(tpl_box)
+        tpl_col.setContentsMargins(4, 4, 4, 4)
+        self.tpl_tree = QTreeWidget(tpl_box)
         self.tpl_tree.setHeaderHidden(True)
         self.tpl_tree.setRootIsDecorated(True)
         self.tpl_tree.itemDoubleClicked.connect(lambda *_: self.use_selected_template())
         self.tpl_tree.currentItemChanged.connect(lambda *_: self._update_template_buttons())
-        col_tpl.addWidget(self.tpl_tree)
+        tpl_col.addWidget(self.tpl_tree)
 
-        fila1 = QHBoxLayout()
-        self.btn_tpl_use = QPushButton(tr("tpl_use"), caja_tpl)
+        tpl_row1 = QHBoxLayout()
+        self.btn_tpl_use = QPushButton(tr("tpl_use"), tpl_box)
         self.btn_tpl_use.clicked.connect(self.use_selected_template)
-        self.btn_tpl_new = QPushButton(tr("tpl_new"), caja_tpl)
+        self.btn_tpl_new = QPushButton(tr("tpl_new"), tpl_box)
         self.btn_tpl_new.clicked.connect(self.new_from_selected_template)
-        fila1.addWidget(self.btn_tpl_use)
-        fila1.addWidget(self.btn_tpl_new)
-        col_tpl.addLayout(fila1)
+        tpl_row1.addWidget(self.btn_tpl_use)
+        tpl_row1.addWidget(self.btn_tpl_new)
+        tpl_col.addLayout(tpl_row1)
 
-        fila2 = QHBoxLayout()
-        self.btn_tpl_save = QPushButton(tr("tpl_save"), caja_tpl)
+        tpl_row2 = QHBoxLayout()
+        self.btn_tpl_save = QPushButton(tr("tpl_save"), tpl_box)
         self.btn_tpl_save.clicked.connect(self.save_as_template)
-        self.btn_tpl_del = QPushButton(tr("tpl_delete"), caja_tpl)
+        self.btn_tpl_del = QPushButton(tr("tpl_delete"), tpl_box)
         self.btn_tpl_del.clicked.connect(self.delete_selected_template)
-        fila2.addWidget(self.btn_tpl_save)
-        fila2.addWidget(self.btn_tpl_del)
-        col_tpl.addLayout(fila2)
+        tpl_row2.addWidget(self.btn_tpl_save)
+        tpl_row2.addWidget(self.btn_tpl_del)
+        tpl_col.addLayout(tpl_row2)
 
-        # --- pestana de elementos de formulario ---
-        caja_el = QWidget(self)
-        col_el = QVBoxLayout(caja_el)
-        col_el.setContentsMargins(4, 4, 4, 4)
-        self.el_tree = QTreeWidget(caja_el)
+        # --- form elements tab ---
+        el_box = QWidget(self)
+        el_col = QVBoxLayout(el_box)
+        el_col.setContentsMargins(4, 4, 4, 4)
+        self.el_tree = QTreeWidget(el_box)
         self.el_tree.setHeaderHidden(True)
         self.el_tree.itemDoubleClicked.connect(lambda *_: self.insert_selected_element())
         self.el_tree.currentItemChanged.connect(lambda *_: self._update_element_buttons())
-        col_el.addWidget(self.el_tree)
-        self.el_hint = QLabel(tr("el_hint"), caja_el)
+        el_col.addWidget(self.el_tree)
+        self.el_hint = QLabel(tr("el_hint"), el_box)
         self.el_hint.setWordWrap(True)
         self.el_hint.setStyleSheet("color:#666")
-        col_el.addWidget(self.el_hint)
-        self.btn_el_insert = QPushButton(tr("el_insert"), caja_el)
+        el_col.addWidget(self.el_hint)
+        self.btn_el_insert = QPushButton(tr("el_insert"), el_box)
         self.btn_el_insert.clicked.connect(self.insert_selected_element)
-        col_el.addWidget(self.btn_el_insert)
+        el_col.addWidget(self.btn_el_insert)
 
         self.side_tabs = QTabWidget(self)
         self.side_tabs.addTab(box, tr("bookmarks_dock"))
-        self.side_tabs.addTab(caja_notas, tr("notes_tab"))
-        self.side_tabs.addTab(caja_el, tr("elements_tab"))
-        self.side_tabs.addTab(caja_tpl, tr("templates_tab"))
+        self.side_tabs.addTab(notes_box, tr("notes_tab"))
+        self.side_tabs.addTab(el_box, tr("elements_tab"))
+        self.side_tabs.addTab(tpl_box, tr("templates_tab"))
 
-        # Sin un minimo, Qt le daba al panel lo que sobraba de las miniaturas
-        # (unos 190 px): el arbol de plantillas ensenaba tres filas y el boton
-        # de guardar quedaba pegado al borde.
+        # Without a minimum, Qt gave the panel whatever the thumbnails left
+        # over (some 190 px): the template tree showed three rows and the save
+        # button ended up jammed against the edge.
         self.side_tabs.setMinimumHeight(300)
 
         dock = QDockWidget(tr("side_dock"), self)
@@ -947,7 +947,7 @@ class MainWindow(QMainWindow):
         dock.visibilityChanged.connect(self.act_side_panel.setChecked)
 
     def refresh_bookmarks(self) -> None:
-        """Rehace la lista con los marcadores del documento abierto."""
+        """Rebuild the list with the bookmarks of the open document."""
         if not hasattr(self, "bookmark_list"):
             return
         self.bookmark_list.clear()
@@ -968,19 +968,19 @@ class MainWindow(QMainWindow):
             self.view.go_to_page(int(page_item))
 
     def add_bookmark(self) -> None:
-        """Marca la pagina actual con el nombre que elija el usuario."""
+        """Bookmark the current page under whatever name the user chooses."""
         if not self.view.has_document():
             return
         page_item = self.view.current_page
-        propuesto = tr("bookmark_default", page=page_item + 1)
+        suggested = tr("bookmark_default", page=page_item + 1)
         title, accepted = QInputDialog.getText(
-            self, tr("bookmarks_dock"), tr("bookmark_prompt"), text=propuesto
+            self, tr("bookmarks_dock"), tr("bookmark_prompt"), text=suggested
         )
         if not accepted or not title.strip():
             return
         bookmarks = self.view.document.bookmarks()
         bookmarks.append((title.strip(), page_item))
-        bookmarks.sort(key=lambda m: m[1])          # en orden de pagina
+        bookmarks.sort(key=lambda m: m[1])          # in page order
         self.view.document.set_bookmarks(bookmarks)
         self.refresh_bookmarks()
         self.refresh_notes()
@@ -1002,7 +1002,7 @@ class MainWindow(QMainWindow):
         self.view.notify_modified()
 
     def refresh_elements(self) -> None:
-        """Rellena el catalogo de piezas, agrupado por tipo."""
+        """Fill the catalogue of pieces, grouped by category."""
         from PySide6.QtWidgets import QTreeWidgetItem
 
         from ..elements import CATEGORIES as EL_CATEGORIES
@@ -1045,7 +1045,7 @@ class MainWindow(QMainWindow):
         )
 
     def insert_selected_element(self) -> bool:
-        """Suelta la pieza elegida en la pagina que se esta viendo."""
+        """Drop the chosen piece on the page being viewed."""
         from ..elements import build
 
         key = self._chosen_element()
@@ -1059,7 +1059,7 @@ class MainWindow(QMainWindow):
         return True
 
     def refresh_templates(self) -> None:
-        """Rehace el arbol del panel: primero las de serie, luego las tuyas."""
+        """Rebuild the panel tree: the built-in ones first, then yours."""
         if not hasattr(self, "tpl_tree"):
             return
         from PySide6.QtWidgets import QTreeWidgetItem
@@ -1071,19 +1071,19 @@ class MainWindow(QMainWindow):
             if not templates:
                 continue
             root = QTreeWidgetItem([title])
-            root.setFlags(Qt.ItemIsEnabled)          # el grupo no se elige
+            root.setFlags(Qt.ItemIsEnabled)          # the group is not selectable
             self.tpl_tree.addTopLevelItem(root)
-            por_tipo: dict[str, list] = {}
+            by_category: dict[str, list] = {}
             for info in templates:
-                por_tipo.setdefault(info.category, []).append(info)
-            for categoria in CATEGORIES:
-                lote = por_tipo.get(categoria)
-                if not lote:
+                by_category.setdefault(info.category, []).append(info)
+            for category in CATEGORIES:
+                batch = by_category.get(category)
+                if not batch:
                     continue
-                rama = QTreeWidgetItem([tr(f"cat_{categoria}")])
-                rama.setFlags(Qt.ItemIsEnabled)
-                root.addChild(rama)
-                for info in lote:
+                branch = QTreeWidgetItem([tr(f"cat_{category}")])
+                branch.setFlags(Qt.ItemIsEnabled)
+                root.addChild(branch)
+                for info in batch:
                     sheet = QTreeWidgetItem([
                         tr("tpl_entry", name=info.name, pages=info.pages,
                            count=info.annotations)
@@ -1091,14 +1091,14 @@ class MainWindow(QMainWindow):
                     sheet.setData(0, Qt.UserRole, info.path)
                     sheet.setData(0, Qt.UserRole + 1, info.builtin)
                     sheet.setToolTip(0, info.saved_at or info.name)
-                    rama.addChild(sheet)
+                    branch.addChild(sheet)
             root.setExpanded(True)
             for i in range(root.childCount()):
                 root.child(i).setExpanded(True)
         self._update_template_buttons()
 
     def _selected_template(self):
-        """(ruta, es_de_serie) de la plantilla elegida, o None."""
+        """(path, is_built_in) of the chosen template, or None."""
         item = self.tpl_tree.currentItem() if hasattr(self, "tpl_tree") else None
         if item is None:
             return None
@@ -1113,17 +1113,17 @@ class MainWindow(QMainWindow):
         self.btn_tpl_use.setEnabled(chosen is not None and hay_doc)
         self.btn_tpl_new.setEnabled(chosen is not None)
         self.btn_tpl_save.setEnabled(hay_doc)
-        # las de serie no se borran: vienen con el programa
+        # the built-in ones are not deleted: they come with the program
         self.btn_tpl_del.setEnabled(chosen is not None and not chosen[1])
 
     def _load_selected(self):
-        """Carga la plantilla elegida venga de donde venga."""
+        """Load the chosen template, wherever it comes from."""
         chosen = self._selected_template()
         if chosen is None:
             return None
-        path, de_serie = chosen
+        path, built_in = chosen
         try:
-            if de_serie:
+            if built_in:
                 return load_builtin(path.split(":", 1)[1])
             return load_template(path)
         except TemplateError as exc:
@@ -1131,14 +1131,14 @@ class MainWindow(QMainWindow):
             return None
 
     def use_selected_template(self) -> bool:
-        """Pone la plantilla encima del documento abierto."""
+        """Lay the template over the open document."""
         if not self.view.has_document():
             QMessageBox.information(self, __app_name__, tr("tpl_none"))
             return False
         data = self._load_selected()
         if data is None:
             return False
-        name, _paginas, annotations = data
+        name, _pages, annotations = data
         placed = self.view.apply_template(annotations)
         self.statusBar().showMessage(
             tr("template_applied", name=name, count=placed,
@@ -1148,7 +1148,7 @@ class MainWindow(QMainWindow):
         return True
 
     def new_from_selected_template(self) -> bool:
-        """Crea un documento nuevo a partir de la plantilla."""
+        """Start a new document from the template."""
         data = self._load_selected()
         if data is None:
             return False
@@ -1172,10 +1172,10 @@ class MainWindow(QMainWindow):
         return True
 
     def refresh_notes(self) -> None:
-        """Rehace la lista de notas del documento.
+        """Rebuild the document's list of notes.
 
-        Las leidas desaparecen, salvo que se pida verlas. Asi la lista es lo
-        que queda por mirar, no un inventario.
+        The ones marked read disappear, unless you ask to see them. That way
+        the list is what is left to look at, not an inventory.
         """
         if not hasattr(self, "notes_list"):
             return
@@ -1201,9 +1201,9 @@ class MainWindow(QMainWindow):
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
             item.setCheckState(Qt.Checked if ann.done else Qt.Unchecked)
             if ann.done:
-                fuente = item.font()
-                fuente.setStrikeOut(True)
-                item.setFont(fuente)
+                font = item.font()
+                font.setStrikeOut(True)
+                item.setFont(font)
             self.notes_list.addItem(item)
         self.notes_list.blockSignals(False)
         index = self.side_tabs.indexOf(self.notes_list.parentWidget())
@@ -1220,27 +1220,27 @@ class MainWindow(QMainWindow):
         return None
 
     def _go_to_note(self, item) -> None:
-        """Lleva a la nota y ensena su texto."""
+        """Jump to the note and show its text."""
         ann = self._note_by_id(item.data(Qt.UserRole))
         if ann is None:
             return
         self.view.go_to_page(ann.page)
-        grafico = self.view._items.get(ann.id)
-        if grafico is not None:
-            self.view.centerOn(grafico)
+        graphic = self.view._items.get(ann.id)
+        if graphic is not None:
+            self.view.centerOn(graphic)
             self.view._scene.clearSelection()
-            grafico.setSelected(True)
+            graphic.setSelected(True)
         self.statusBar().showMessage(ann.text or tr("note_empty"), 8000)
 
     def _on_note_checked(self, item) -> None:
-        """Marca o desmarca una nota como leida."""
+        """Mark a note as read, or unmark it."""
         ann = self._note_by_id(item.data(Qt.UserRole))
         if ann is None:
             return
-        leida = item.checkState() == Qt.Checked
-        if leida == ann.done:
+        read = item.checkState() == Qt.Checked
+        if read == ann.done:
             return
-        ann.done = leida
+        ann.done = read
         self.view.notify_modified()
         self.refresh_notes()
 
@@ -1284,12 +1284,12 @@ class MainWindow(QMainWindow):
         self.view.undo_stack.cleanChanged.connect(lambda clean: self._update_title())
 
     def _on_text_editing(self, editing: bool) -> None:
-        """Mientras se escribe en un cuadro de texto, Supr y Ctrl+A son del editor."""
+        """While typing in a text box, Del and Ctrl+A belong to the editor."""
         self._update_actions()
         if editing:
             self.statusBar().showMessage(tr("status_editing"), 4000)
 
-    # ------------------------------------------------------------------ ajustes
+    # ----------------------------------------------------------------- settings
     def _restore_settings(self) -> None:
         geometry = self.settings.window_geometry()
         if geometry:
@@ -1298,9 +1298,9 @@ class MainWindow(QMainWindow):
         if state:
             self.restoreState(state)
         else:
-            # Primer arranque: la columna izquierda se reparte a medias entre
-            # las miniaturas y el panel. Si el usuario la ha movido alguna vez,
-            # manda lo que dejo guardado.
+            # First run: the left column is split evenly between thumbnails
+            # and panel. If the user has ever moved it, what they left stored
+            # is what counts.
             self.resizeDocks(
                 [self.thumb_dock, self.bookmark_dock], [55, 45], Qt.Vertical
             )
@@ -1414,7 +1414,7 @@ class MainWindow(QMainWindow):
         self.view.apply_style_to_selection(cols=int(value))
 
     def choose_image(self) -> bool:
-        """Pide una imagen y la deja lista para colocarla. False si se cancela."""
+        """Ask for an image and get it ready to place. False if cancelled."""
         path, _ = QFileDialog.getOpenFileName(
             self,
             tr("image_title"),
@@ -1515,7 +1515,7 @@ class MainWindow(QMainWindow):
         self._after_page_change(min(current, self.view.page_count - 1))
 
     def edit_note(self, item) -> None:
-        """Pide (o cambia) el texto de una nota adhesiva."""
+        """Ask for (or change) the text of a sticky note."""
         text, accepted = QInputDialog.getMultiLineText(
             self, tr("note_title"), tr("note_prompt"), item.ann.text or ""
         )
@@ -1528,10 +1528,10 @@ class MainWindow(QMainWindow):
         self.refresh_notes()
 
     def zoom_or_eraser(self, delta: int) -> None:
-        """Ctrl+ y Ctrl-: cambian la goma si esta activa, si no el zoom.
+        """Ctrl+ and Ctrl-: change the eraser if it is active, otherwise the zoom.
 
-        Con la goma en la mano lo que se quiere ajustar es su tamano, igual
-        que en cualquier programa de dibujo.
+        With the eraser in hand what you want to adjust is its size, just like
+        in any drawing program.
         """
         if self.view.tool is Tool.ERASER:
             self.view.step_eraser_size(delta)
@@ -1557,7 +1557,7 @@ class MainWindow(QMainWindow):
             self._after_page_change(target)
 
     def _after_page_change(self, page_item: int) -> None:
-        """Rehace las miniaturas y coloca la vista en la pagina indicada."""
+        """Rebuild the thumbnails and put the view on the given page."""
         self._build_thumbnails()
         self.view.go_to_page(max(0, min(page_item, self.view.page_count - 1)))
         self._update_actions()
@@ -1565,22 +1565,22 @@ class MainWindow(QMainWindow):
 
     # ------------------------------------------------------------------ plantillas
     def templates_dir(self) -> str:
-        """Carpeta donde se guardan las plantillas del usuario."""
+        """The folder where the user's templates are kept."""
         from PySide6.QtCore import QStandardPaths
 
         base = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
-        if not base:  # pragma: no cover - sistemas raros
+        if not base:  # pragma: no cover - odd systems
             base = os.path.join(os.path.expanduser("~"), ".easypdf")
         folder = os.path.join(base, "Templates")
-        # La carpeta se llamaba "plantillas". Si existe y todavia no hay una
-        # con el nombre nuevo, se renombra: asi no se pierde nada de lo que
-        # el usuario tuviera guardado.
-        antigua = os.path.join(base, "plantillas")
-        if os.path.isdir(antigua) and not os.path.exists(folder):
+        # The folder used to be called "plantillas". If it exists and there is
+        # no folder under the new name yet, it is renamed: that way nothing the
+        # user had saved is lost.
+        old = os.path.join(base, "plantillas")
+        if os.path.isdir(old) and not os.path.exists(folder):
             try:
-                os.rename(antigua, folder)
-            except OSError:  # pragma: no cover - permisos raros
-                return antigua
+                os.rename(old, folder)
+            except OSError:  # pragma: no cover - odd permissions
+                return old
         return folder
 
     def _refresh_templates_menu(self) -> None:
@@ -1643,7 +1643,7 @@ class MainWindow(QMainWindow):
         return path
 
     def save_as_template(self) -> bool:
-        """Guarda las anotaciones actuales como plantilla reutilizable."""
+        """Save the current annotations as a reusable template."""
         if not self.view.has_document():
             return False
         annotations = list(self.view.annotations())
@@ -1654,9 +1654,9 @@ class MainWindow(QMainWindow):
                 tr("template_empty"),
             )
             return False
-        propuesto = os.path.splitext(self.view.document.name)[0]
+        suggested = os.path.splitext(self.view.document.name)[0]
         name, ok = QInputDialog.getText(
-            self, tr("template_name_title"), tr("template_name_label"), text=propuesto
+            self, tr("template_name_title"), tr("template_name_label"), text=suggested
         )
         if not ok or not name.strip():
             return False
@@ -1666,14 +1666,14 @@ class MainWindow(QMainWindow):
         )
         if not ok:
             return False
-        categoria = CATEGORIES[labels.index(chosen)]
+        category = CATEGORIES[labels.index(chosen)]
         try:
             path = save_template(
                 self._ensure_templates_dir(),
                 name,
                 annotations,
                 self.view.document.page_sizes(),
-                category=categoria,
+                category=category,
             )
         except TemplateError as exc:
             QMessageBox.critical(self, __app_name__, str(exc))
@@ -1685,11 +1685,11 @@ class MainWindow(QMainWindow):
         return True
 
     def apply_template(self, path: str) -> bool:
-        """Coloca las anotaciones de una plantilla sobre el documento abierto."""
+        """Lay a template's annotations over the open document."""
         if not self.view.has_document():
             return False
         try:
-            name, _paginas, annotations = load_template(path)
+            name, _pages, annotations = load_template(path)
         except TemplateError as exc:
             QMessageBox.critical(self, __app_name__, str(exc))
             return False
@@ -1702,7 +1702,7 @@ class MainWindow(QMainWindow):
         return placed > 0
 
     def new_from_template(self, path: str) -> bool:
-        """Crea un documento nuevo con las paginas y anotaciones de la plantilla."""
+        """Start a new document with the template's pages and annotations."""
         try:
             name, page_items, annotations = load_template(path)
         except TemplateError as exc:
@@ -1711,7 +1711,7 @@ class MainWindow(QMainWindow):
         return self._document_from_template(name, page_items, annotations)
 
     def _document_from_template(self, name, page_items, annotations) -> bool:
-        """Crea el documento. Lo comparten el menu y el panel de plantillas."""
+        """Create the document. The menu and the template panel share this."""
         if not self._confirm_discard():
             return False
         previous = self.view.document
@@ -1753,7 +1753,7 @@ class MainWindow(QMainWindow):
 
     # ------------------------------------------------------------------ idioma
     def set_language(self, code: str) -> None:
-        """Cambia el idioma de la interfaz y la retraduce al vuelo."""
+        """Change the interface language and retranslate on the fly."""
         set_language(code)
         self.settings.set_language(code)
         if code in self.language_actions:
@@ -1762,15 +1762,15 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(tr("language_changed"), 4000)
 
     def retranslate(self) -> None:
-        """Vuelve a poner todos los textos en el idioma activo."""
+        """Put every text back in the active language."""
         for act, (key, tip) in self._action_keys.items():
             act.setText(tr(key, app=__app_name__))
             act.setStatusTip(tr(tip) if tip else tr(key, app=__app_name__))
         for menu, key in self._menu_keys.items():
             menu.setTitle(tr(key))
         if hasattr(self, "side_tabs"):
-            # Por indice de la pestana no: al anadir "Elementos" en medio,
-            # el numero fijo acababa poniendole el nombre de otra.
+            # Not by tab index: when "Elements" was added in the middle, the
+            # fixed number ended up giving one tab another one's name.
             for widget, key in ((self.bookmark_list, "bookmarks_dock"),
                                   (self.notes_list, "notes_tab"),
                                   (self.el_tree, "elements_tab"),
@@ -1860,7 +1860,7 @@ class MainWindow(QMainWindow):
             self.open_path(path)
 
     def open_path(self, path: str) -> bool:
-        """Abre un archivo pidiendo confirmacion si hay cambios sin guardar."""
+        """Open a file, asking first if there are unsaved changes."""
         if not self._confirm_discard():
             return False
         path = os.path.abspath(path)
@@ -2008,8 +2008,8 @@ class MainWindow(QMainWindow):
 
     # ------------------------------------------------------------------ miniaturas
     def _build_thumbnails(self) -> None:
-        # Se rehace la lista entera sin avisar: quien llama coloca despues la
-        # pagina que toca, y sin esto el setCurrentRow(0) saltaria a la primera.
+        # The whole list is rebuilt silently: the caller then sets the right
+        # page, and without this setCurrentRow(0) would jump to the first one.
         blocked = self.thumb_list.blockSignals(True)
         try:
             self.thumb_list.clear()
@@ -2039,9 +2039,9 @@ class MainWindow(QMainWindow):
             index = self._thumb_queue.popleft()
             if index >= self.thumb_list.count():
                 continue
-            # El documento se puede cerrar entre dos disparos del temporizador
-            # (cerrar el archivo o la ventana), asi que aqui no se da por hecho
-            # que la pagina siga existiendo.
+            # The document can be closed between two ticks of the timer
+            # (closing the file or the window), so this does not take for
+            # granted that the page is still there.
             try:
                 if index >= document.page_count:
                     continue
@@ -2049,7 +2049,7 @@ class MainWindow(QMainWindow):
                 if width <= 0:
                     continue
                 page = document.render_page(index, THUMB_WIDTH / width)
-            except Exception:  # pragma: no cover - PDF cerrado o danado
+            except Exception:  # pragma: no cover - PDF closed or damaged
                 self._thumb_timer.stop()
                 self._thumb_queue.clear()
                 return
@@ -2067,7 +2067,7 @@ class MainWindow(QMainWindow):
             self.view.go_to_page(row)
 
     def _on_thumbnail_dropped(self, source: int, target: int) -> None:
-        """Reordena el documento tras arrastrar una miniatura."""
+        """Reorder the document after a thumbnail is dragged."""
         if not self.view.has_document():
             return
         if not (0 <= source < self.view.page_count):
@@ -2082,7 +2082,7 @@ class MainWindow(QMainWindow):
         )
 
     def _thumbnail_menu(self, pos) -> None:
-        """Menu contextual de una miniatura: duplicar, insertar y eliminar."""
+        """A thumbnail's context menu: duplicate, insert and delete."""
         if not self.view.has_document():
             return
         item = self.thumb_list.itemAt(pos)
@@ -2096,23 +2096,23 @@ class MainWindow(QMainWindow):
             self.run_page_action(actions.get(chosen), page_item)
 
     def build_page_menu(self, page_item: int):
-        """Menu de una pagina. Separado del gesto para poder probarlo."""
+        """A page's menu. Kept apart from the gesture so it can be tested."""
         menu = QMenu(self)
         actions = {}
 
-        def submenu_insertar(key: str, text: str) -> None:
-            """Insertar una pagina, eligiendo su tamano en el momento."""
+        def insert_submenu(key: str, text: str) -> None:
+            """Insert a page, choosing its size right there."""
             sub = menu.addMenu(text)
-            igual = sub.addAction(tr("size_same"))
-            actions[igual] = f"{key}:"          # sin tamano = como la vecina
+            same = sub.addAction(tr("size_same"))
+            actions[same] = f"{key}:"          # no size = same as its neighbour
             sub.addSeparator()
             for name in PAGE_SIZES:
                 actions[sub.addAction(page_size_label(name))] = f"{key}:{name}"
 
-        submenu_insertar("insert_before", tr("page_insert_before"))
-        submenu_insertar("insert_after", tr("page_insert_after"))
+        insert_submenu("insert_before", tr("page_insert_before"))
+        insert_submenu("insert_after", tr("page_insert_after"))
         menu.addSeparator()
-        duplicar = menu.addAction(tr("page_duplicate"))
+        duplicate = menu.addAction(tr("page_duplicate"))
         menu.addSeparator()
         girar_izq = menu.addAction(tr("page_rotate_left"))
         girar_der = menu.addAction(tr("page_rotate_right"))
@@ -2126,7 +2126,7 @@ class MainWindow(QMainWindow):
         erase_it = menu.addAction(tr("page_delete"))
         erase_it.setEnabled(self.view.page_count > 1)
         actions.update({
-            duplicar: "duplicate",
+            duplicate: "duplicate",
             girar_izq: "rotate_left",
             girar_der: "rotate_right",
             girar_180: "rotate_180",
@@ -2137,11 +2137,11 @@ class MainWindow(QMainWindow):
         return menu, actions
 
     def run_page_action(self, action: str | None, page_item: int) -> None:
-        """Ejecuta una de las opciones del menu de pagina."""
+        """Run one of the options from the page menu."""
         if action is None or not self.view.has_document():
             return
-        # Las opciones de insertar llevan el tamano detras: "insert_after:A4".
-        # Sin nada detras, la pagina nueva copia el tamano de la de al lado.
+        # The insert options carry the size behind them: "insert_after:A4".
+        # With nothing behind, the new page copies its neighbour's size.
         size = None
         if ":" in action:
             action, _, name = action.partition(":")
@@ -2176,7 +2176,7 @@ class MainWindow(QMainWindow):
         self.search_edit.selectAll()
 
     def close_search(self) -> None:
-        """Cierra la barra y quita el resaltado amarillo de los resultados."""
+        """Close the bar and clear the yellow highlight from the results."""
         self.view.clear_search()
         self.search_label.setText("  ")
         self.toolbar_search.setVisible(False)
@@ -2232,16 +2232,16 @@ class MainWindow(QMainWindow):
         self.settings.set_show_thumbnails(checked)
 
     def toggle_side_panel(self, checked: bool) -> None:
-        """Ensena o esconde el panel de marcadores, notas y elementos."""
+        """Show or hide the panel with bookmarks, notes and elements."""
         self.bookmark_dock.setVisible(checked)
         self.settings.set_value("view/side_panel", bool(checked))
 
     def _nothing_selected(self) -> None:
-        """Explica por que no pasa nada, en vez de quedarse callado.
+        """Explain why nothing happens, instead of staying silent.
 
-        Con una herramienta de dibujo activa el clic pinta en lugar de
-        seleccionar, asi que no hay nada que borrar ni que copiar. Antes DEL
-        no hacia absolutamente nada y no habia forma de saber por que.
+        With a drawing tool active a click paints rather than selects, so there
+        is nothing to delete and nothing to copy. DEL used to do absolutely
+        nothing and there was no way of knowing why.
         """
         key = "status_no_selection" if self.view.tool is Tool.SELECT else "status_pick_select"
         self.statusBar().showMessage(tr(key), 4000)
@@ -2322,13 +2322,13 @@ class MainWindow(QMainWindow):
         for act in self.tool_group.actions():
             act.setEnabled(has_doc)
         editing = self.view.is_editing_text
-        # Estas tres van activas aunque no haya nada seleccionado: si se
-        # desactivan, el atajo no llega a dispararse y DEL o Ctrl+C no hacen
-        # nada ni dicen nada. Prefieren avisar en la barra de estado.
+        # These three stay enabled even with nothing selected: if they are
+        # disabled the shortcut never fires and DEL or Ctrl+C do nothing and
+        # say nothing. Better that they explain themselves in the status bar.
         self.act_delete.setEnabled(has_doc and not editing)
-        # Mientras se escribe dentro de un texto, copiar y pegar son los del
-        # editor: si las acciones siguieran activas robarian el atajo y no se
-        # podria copiar una palabra.
+        # While typing inside a text, copy and paste belong to the editor: if
+        # these actions stayed enabled they would steal the shortcut and you
+        # could not copy a single word.
         self.act_copy.setEnabled(has_doc and not editing)
         self.act_cut.setEnabled(has_doc and not editing)
         self.act_paste.setEnabled(has_doc and not editing)
@@ -2362,9 +2362,10 @@ class MainWindow(QMainWindow):
         return answer == QMessageBox.Discard
 
     def closeEvent(self, event) -> None:
-        # Lo que se estuviera escribiendo en una celda se guarda antes de
-        # preguntar nada: si no, se perderia sin avisar y ademas quedaria un
-        # editor vivo colgando de la tabla mientras Qt desmonta la escena.
+        # Whatever was being typed in a cell is saved before anything is
+        # asked: otherwise it would be lost without warning, and an editor
+        # would be left alive hanging off the table while Qt tears the scene
+        # down.
         self.view.finish_all_editing()
         if not self._confirm_discard():
             event.ignore()
@@ -2373,8 +2374,8 @@ class MainWindow(QMainWindow):
         self.settings.set_window_state(self.saveState())
         self.settings.set_show_thumbnails(self.thumb_dock.isVisible())
         self.settings.sync()
-        # Antes de cerrar el documento hay que parar el temporizador: si no,
-        # sigue pidiendo miniaturas de un PDF que ya no esta abierto.
+        # The timer has to be stopped before closing the document: otherwise
+        # it keeps asking for thumbnails of a PDF that is no longer open.
         self._thumb_timer.stop()
         self._thumb_queue.clear()
         if hasattr(self, "updater"):
@@ -2415,7 +2416,7 @@ class MainWindow(QMainWindow):
                 return
 
     def insert_image_from_file(self, path: str, window_pos=None) -> bool:
-        """Coloca una imagen del disco donde se haya soltado."""
+        """Place an image from disk wherever it was dropped."""
         try:
             with open(path, "rb") as fh:
                 data = fh.read()
@@ -2437,7 +2438,7 @@ class MainWindow(QMainWindow):
 
     # ------------------------------------------------------------------ actualizaciones
     def _setup_updates(self) -> None:
-        """Prepara el aviso de version nueva y lo lanza si toca."""
+        """Set the new version notice up and fire it if it is due."""
         from .update_check import UpdateChecker
 
         self._update_manual = False
@@ -2448,14 +2449,14 @@ class MainWindow(QMainWindow):
         self.act_update_auto.setChecked(bool(active))
         self.act_update_auto.blockSignals(False)
         if active:
-            # Se retrasa un poco: primero que arranque la ventana.
+            # Delayed a little: let the window start up first.
             QTimer.singleShot(2500, lambda: self.check_updates(manual=False))
 
     def _set_update_auto(self, active: bool) -> None:
         self.settings.set_value("updates/auto", bool(active))
 
     def check_updates(self, manual: bool = False) -> None:
-        """Pregunta a la web oficial si hay una version mas nueva."""
+        """Ask the official site whether there is a newer version."""
         if self.updater.running:
             return
         self._update_manual = manual
@@ -2470,32 +2471,32 @@ class MainWindow(QMainWindow):
                     self, __app_name__, tr("update_none", version=__version__)
                 )
             return
-        nueva = str(data.get("version", ""))
-        if not self._update_manual and nueva == self.settings.value("updates/skip", ""):
-            return                       # el usuario dijo que no le avisaran
-        self._ask_to_update(nueva, data)
+        new_version = str(data.get("version", ""))
+        if not self._update_manual and new_version == self.settings.value("updates/skip", ""):
+            return                       # the user asked not to be told
+        self._ask_to_update(new_version, data)
 
-    def _ask_to_update(self, nueva: str, data: dict) -> None:
+    def _ask_to_update(self, new_version: str, data: dict) -> None:
         from .update_download import UpdateDialog
 
-        dialogo = UpdateDialog(self, nueva, data, install_cb=self.install_update)
-        dialogo.exec()
-        if dialogo.skipped:
-            self.settings.set_value("updates/skip", nueva)
+        dialog = UpdateDialog(self, new_version, data, install_cb=self.install_update)
+        dialog.exec()
+        if dialog.skipped:
+            self.settings.set_value("updates/skip", new_version)
 
     def install_update(self, path: str) -> bool:
-        """Cierra el programa y arranca el instalador que se acaba de bajar.
+        """Close the program and start the installer just downloaded.
 
-        Devuelve False si el usuario cancela al cerrar (por ejemplo porque
-        tenia un documento sin guardar): entonces no se instala nada.
+        Returns False if the user cancels on close (because they had an unsaved
+        document, for instance): then nothing is installed.
         """
         from ..updates import launch_installer
 
-        if not self.close():             # respeta el aviso de cambios sin guardar
+        if not self.close():             # honour the unsaved changes warning
             return False
         try:
             launch_installer(path)
-        except Exception as exc:         # pragma: no cover - depende del sistema
+        except Exception as exc:         # pragma: no cover - system dependent
             QMessageBox.warning(
                 self, __app_name__, tr("update_download_failed", error=str(exc))
             )
