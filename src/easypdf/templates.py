@@ -1,13 +1,12 @@
-"""Plantillas: guardar lo creado para reutilizarlo en otros documentos.
+"""Templates: keeping what you made so it can be used in other documents.
 
-Una plantilla es un archivo JSON con el tamano de sus paginas y todas sus
-anotaciones (incluidas las imagenes, guardadas dentro del propio archivo). Se
-puede usar de dos maneras:
+A template is a JSON file with its page sizes and all its annotations (images
+included, stored inside the file itself). It can be used two ways:
 
-* crear un documento nuevo a partir de ella (paginas + anotaciones), o
-* aplicarla encima del documento que ya se tiene abierto.
+* start a new document from it (pages + annotations), or
+* lay it over the document already open.
 
-Este modulo no depende de Qt para poder probarse sin interfaz.
+This module does not depend on Qt so it can be tested without an interface.
 """
 
 from __future__ import annotations
@@ -22,29 +21,29 @@ from datetime import datetime, timezone
 
 from .model import Align, Annotation, Font, Kind
 
-#: Version del formato, por si algun dia cambia.
+#: Version of the format, in case it ever changes.
 FORMAT_VERSION = 1
 
 EXTENSION = ".easypdf-template.json"
 
-#: Como se llamaban antes. Se siguen leyendo para no perder lo que ya
-#: hubiera guardado el usuario; lo nuevo se escribe con EXTENSION.
+#: What they used to be called. They are still read so nothing the user had
+#: already saved is lost; new ones are written with EXTENSION.
 LEGACY_EXTENSIONS = (".easypdf-plantilla.json",)
 
-#: Tipos de plantilla. Sirven para ordenar el panel: una cosa es un documento
-#: entero y otra un membrete que se pone encima de lo que ya hay.
+#: Kinds of template. They sort the panel: a whole document is one thing, a
+#: letterhead laid over what is already there is another.
 CATEGORIES = ("letterhead", "document", "report", "certificate", "table",
               "form", "other")
 DEFAULT_CATEGORY = "other"
 
 
 class TemplateError(RuntimeError):
-    """Error al leer o escribir una plantilla."""
+    """Something went wrong reading or writing a template."""
 
 
 @dataclass(frozen=True)
 class TemplateInfo:
-    """Datos de una plantilla guardada, sin cargar su contenido."""
+    """Details of a saved template, without loading its contents."""
 
     name: str
     path: str
@@ -56,15 +55,15 @@ class TemplateInfo:
 
 
 def safe_filename(name: str) -> str:
-    """Nombre de archivo valido a partir del nombre que escriba el usuario."""
-    limpio = re.sub(r"[^\w\s.-]", "", name, flags=re.UNICODE).strip()
-    limpio = re.sub(r"\s+", " ", limpio)
-    return limpio or "plantilla"
+    """A valid file name built from whatever name the user types."""
+    clean = re.sub(r"[^\w\s.-]", "", name, flags=re.UNICODE).strip()
+    clean = re.sub(r"\s+", " ", clean)
+    return clean or "template"
 
 
-# ---------------------------------------------------------------- serializar
+# ------------------------------------------------------------- serialising
 def annotation_to_dict(ann: Annotation) -> dict:
-    """Convierte una anotacion en datos guardables."""
+    """Turn an annotation into data that can be stored."""
     data: dict = {
         "kind": Kind(ann.kind).value,
         "page": int(ann.page),
@@ -98,11 +97,11 @@ def annotation_to_dict(ann: Annotation) -> dict:
 
 
 def annotation_from_dict(data: dict) -> Annotation:
-    """Reconstruye una anotacion guardada."""
+    """Rebuild a stored annotation."""
     try:
         kind = Kind(data["kind"])
     except (KeyError, ValueError) as exc:
-        raise TemplateError(f"tipo de anotacion desconocido: {data.get('kind')!r}") from exc
+        raise TemplateError(f"unknown annotation kind: {data.get('kind')!r}") from exc
     ann = Annotation(kind=kind, page=int(data.get("page", 0)))
     ann.rect = tuple(data.get("rect", ann.rect))
     ann.color = tuple(data.get("color", ann.color))
@@ -136,10 +135,10 @@ def save_template(
     page_sizes: Sequence[tuple[float, float]] = (),
     category: str = DEFAULT_CATEGORY,
 ) -> str:
-    """Guarda una plantilla y devuelve la ruta del archivo."""
+    """Save a template and return the path of the file."""
     name = name.strip()
     if not name:
-        raise TemplateError("La plantilla necesita un nombre.")
+        raise TemplateError("The template needs a name.")
     os.makedirs(directory, exist_ok=True)
     content = {
         "version": FORMAT_VERSION,
@@ -166,7 +165,7 @@ def save_template(
 
 
 def load_template(path: str) -> tuple[str, list[tuple[float, float]], list[Annotation]]:
-    """Lee una plantilla: devuelve (nombre, tamanos de pagina, anotaciones)."""
+    """Read a template: returns (name, page sizes, annotations)."""
     try:
         with open(path, encoding="utf-8") as fh:
             data = json.load(fh)
@@ -183,7 +182,7 @@ def load_template(path: str) -> tuple[str, list[tuple[float, float]], list[Annot
 
 
 def list_templates(directory: str) -> list[TemplateInfo]:
-    """Plantillas guardadas en la carpeta, ordenadas por nombre."""
+    """Templates saved in the folder, sorted by name."""
     if not os.path.isdir(directory):
         return []
     found: list[TemplateInfo] = []
@@ -205,7 +204,7 @@ def list_templates(directory: str) -> list[TemplateInfo]:
                 )
             )
         except (OSError, json.JSONDecodeError):
-            continue  # un archivo roto no debe romper la lista
+            continue  # one broken file must not break the whole list
     return sorted(found, key=lambda t: t.name.lower())
 
 
@@ -217,13 +216,13 @@ def delete_template(path: str) -> None:
 
 
 def shift_to_page(annotations: Iterable[Annotation], first_page: int, page_count: int):
-    """Recoloca las anotaciones de una plantilla a partir de la pagina indicada."""
+    """Move a template's annotations so they start on the given page."""
     result = []
     for ann in annotations:
-        copia = ann.copy()
-        copia.id = Annotation(kind=copia.kind, page=0).id  # identidad nueva
-        copia.page = min(max(0, first_page + ann.page), max(0, page_count - 1))
-        result.append(copia)
+        copy_ann = ann.copy()
+        copy_ann.id = Annotation(kind=copy_ann.kind, page=0).id  # a new identity
+        copy_ann.page = min(max(0, first_page + ann.page), max(0, page_count - 1))
+        result.append(copy_ann)
     return result
 
 
@@ -241,15 +240,15 @@ __all__ = [
 ]
 
 
-# ---------------------------------------------------------------- de serie
+# ------------------------------------------------------------ the built-ins
 A4 = (595.0, 842.0)
-IZQ, DER = 56.0, 539.0          # margenes de la hoja
+LEFT, RIGHT = 56.0, 539.0          # margins of the sheet
 GREY = (0.42, 0.45, 0.50)
 RULE = (0.72, 0.74, 0.78)
 INK = (0.10, 0.12, 0.16)
 
-#: Textos de las plantillas incluidas. Van aparte de i18n.py porque son
-#: contenido de documento, no interfaz, y este modulo no depende de Qt.
+#: Texts of the built-in templates. They live apart from i18n.py because they
+#: are document content, not interface, and this module does not depend on Qt.
 BUILTIN_TEXTS = {
     "en": {
         "letterhead": "Letterhead",
@@ -391,115 +390,115 @@ BUILTIN_TEXTS = {
 
 
 def _t(key: str) -> str:
-    """Texto de plantilla en el idioma de la interfaz."""
+    """A template text in the language of the interface."""
     from .i18n import DEFAULT_LANGUAGE, language
 
     language = language()
-    tabla = BUILTIN_TEXTS.get(language) or BUILTIN_TEXTS[DEFAULT_LANGUAGE]
-    return tabla.get(key, BUILTIN_TEXTS[DEFAULT_LANGUAGE].get(key, key))
+    table = BUILTIN_TEXTS.get(language) or BUILTIN_TEXTS[DEFAULT_LANGUAGE]
+    return table.get(key, BUILTIN_TEXTS[DEFAULT_LANGUAGE].get(key, key))
 
 
-def _texto(x, y, width, height, text, tam=11.0, negrita=False,
+def _text(x, y, width, height, text, size=11.0, bold=False,
            align=Align.LEFT, color=INK) -> Annotation:
     return Annotation(
         kind=Kind.TEXT, page=0, rect=(x, y, x + width, y + height), text=text,
-        font_size=tam, bold=negrita, align=align, color=color, width=0.0,
+        font_size=size, bold=bold, align=align, color=color, width=0.0,
     )
 
 
-def _linea(y, x0=IZQ, x1=DER, color=RULE, thickness=0.8) -> Annotation:
+def _rule(y, x0=LEFT, x1=RIGHT, color=RULE, thickness=0.8) -> Annotation:
     return Annotation(kind=Kind.LINE, page=0, p1=(x0, y), p2=(x1, y),
                       color=color, width=thickness)
 
 
-def _tabla(y, height, rows, headers, ancho_x0=IZQ, ancho_x1=DER) -> Annotation:
+def _table(y, height, rows, headers, x0=LEFT, x1=RIGHT) -> Annotation:
     cells = list(headers) + [""] * (len(headers) * (rows - 1))
     return Annotation(
-        kind=Kind.TABLE, page=0, rect=(ancho_x0, y, ancho_x1, y + height),
+        kind=Kind.TABLE, page=0, rect=(x0, y, x1, y + height),
         rows=rows, cols=len(headers), cells=cells,
         align=Align.LEFT, width=0.8, color=INK,
     )
 
 
-def _cabecera() -> list[Annotation]:
-    """Membrete: nombre de la empresa, datos y raya."""
+def _header() -> list[Annotation]:
+    """Letterhead: company name, details and a rule."""
     return [
-        _texto(IZQ, 48, 340, 24, _t("company"), 15, True),
-        _texto(IZQ, 72, 340, 14, _t("company_sub"), 9, color=GREY),
-        _linea(96.0),
+        _text(LEFT, 48, 340, 24, _t("company"), 15, True),
+        _text(LEFT, 72, 340, 14, _t("company_sub"), 9, color=GREY),
+        _rule(96.0),
     ]
 
 
-def _pie() -> Annotation:
-    return _texto(IZQ, 790, DER - IZQ, 14, _t("page1"), 9,
+def _footer() -> Annotation:
+    return _text(LEFT, 790, RIGHT - LEFT, 14, _t("page1"), 9,
                   align=Align.CENTER, color=GREY)
 
 
 def builtin_templates() -> list[tuple[str, str, list[tuple[float, float]], list[Annotation]]]:
-    """Plantillas que trae el programa: (nombre, tipo, paginas, anotaciones).
+    """The templates the program ships: (name, kind, pages, annotations).
 
-    Estan hechas con las mismas anotaciones que crearia el usuario, asi que
-    una vez cargadas se pueden mover y editar como cualquier otra cosa. Los
-    textos salen en el idioma de la interfaz.
+    They are made of the same annotations the user would create, so once
+    loaded they can be moved and edited like anything else. The texts come out
+    in the language of the interface.
     """
-    width = DER - IZQ
+    width = RIGHT - LEFT
 
-    membrete = _cabecera() + [_pie()]
+    letterhead = _header() + [_footer()]
 
-    carta = _cabecera() + [
-        _texto(IZQ, 130, width, 16, _t("date"), 11),
-        _texto(IZQ, 156, width, 16, _t("to"), 11),
-        _texto(IZQ, 182, width, 16, _t("subject"), 11, True),
-        _linea(208.0),
-        _texto(IZQ, 230, width, 420, "", 11),
-        _texto(IZQ, 690, 220, 16, _t("signature"), 10, color=GREY),
-        _linea(686.0, IZQ, IZQ + 220),
+    letter = _header() + [
+        _text(LEFT, 130, width, 16, _t("date"), 11),
+        _text(LEFT, 156, width, 16, _t("to"), 11),
+        _text(LEFT, 182, width, 16, _t("subject"), 11, True),
+        _rule(208.0),
+        _text(LEFT, 230, width, 420, "", 11),
+        _text(LEFT, 690, 220, 16, _t("signature"), 10, color=GREY),
+        _rule(686.0, LEFT, LEFT + 220),
     ]
 
-    memo = _cabecera() + [
-        _texto(IZQ, 128, width, 22, _t("memo").upper(), 14, True),
-        _texto(IZQ, 160, 240, 16, _t("to"), 10),
-        _texto(300, 160, 239, 16, _t("from"), 10),
-        _texto(IZQ, 182, 240, 16, _t("date"), 10),
-        _texto(300, 182, 239, 16, _t("subject"), 10),
-        _linea(208.0),
-        _texto(IZQ, 228, width, 440, "", 11),
+    memo = _header() + [
+        _text(LEFT, 128, width, 22, _t("memo").upper(), 14, True),
+        _text(LEFT, 160, 240, 16, _t("to"), 10),
+        _text(300, 160, 239, 16, _t("from"), 10),
+        _text(LEFT, 182, 240, 16, _t("date"), 10),
+        _text(300, 182, 239, 16, _t("subject"), 10),
+        _rule(208.0),
+        _text(LEFT, 228, width, 440, "", 11),
     ]
 
-    acta = _cabecera() + [
-        _texto(IZQ, 128, width, 22, _t("minutes_title"), 14, True, Align.CENTER),
-        _texto(IZQ, 164, 240, 16, _t("date"), 10),
-        _texto(300, 164, 239, 16, _t("place"), 10),
-        _texto(IZQ, 186, width, 16, _t("attendees"), 10),
-        _linea(212.0),
-        _texto(IZQ, 228, width, 16, _t("agreements"), 11, True),
-        _tabla(250, 150, 5, [_t("agreement"), _t("owner"), _t("due")]),
-        _texto(IZQ, 690, 220, 16, _t("signature"), 10, color=GREY),
-        _linea(686.0, IZQ, IZQ + 220),
+    minutes = _header() + [
+        _text(LEFT, 128, width, 22, _t("minutes_title"), 14, True, Align.CENTER),
+        _text(LEFT, 164, 240, 16, _t("date"), 10),
+        _text(300, 164, 239, 16, _t("place"), 10),
+        _text(LEFT, 186, width, 16, _t("attendees"), 10),
+        _rule(212.0),
+        _text(LEFT, 228, width, 16, _t("agreements"), 11, True),
+        _table(250, 150, 5, [_t("agreement"), _t("owner"), _t("due")]),
+        _text(LEFT, 690, 220, 16, _t("signature"), 10, color=GREY),
+        _rule(686.0, LEFT, LEFT + 220),
     ]
 
     cover = [
-        _linea(300.0, IZQ, DER, INK, 2.0),
-        _texto(IZQ, 316, width, 40, _t("report_title"), 26, True),
-        _texto(IZQ, 366, width, 20, _t("department"), 12, color=GREY),
-        _texto(IZQ, 390, width, 20, _t("period"), 12, color=GREY),
-        _texto(IZQ, 414, width, 20, _t("prepared"), 12, color=GREY),
-        _linea(450.0, IZQ, DER, INK, 2.0),
-        _texto(IZQ, 780, width, 16, _t("company"), 10, color=GREY),
+        _rule(300.0, LEFT, RIGHT, INK, 2.0),
+        _text(LEFT, 316, width, 40, _t("report_title"), 26, True),
+        _text(LEFT, 366, width, 20, _t("department"), 12, color=GREY),
+        _text(LEFT, 390, width, 20, _t("period"), 12, color=GREY),
+        _text(LEFT, 414, width, 20, _t("prepared"), 12, color=GREY),
+        _rule(450.0, LEFT, RIGHT, INK, 2.0),
+        _text(LEFT, 780, width, 16, _t("company"), 10, color=GREY),
     ]
 
-    informe = _cabecera() + [
-        _texto(IZQ, 128, width, 24, _t("report_title"), 15, True),
-        _texto(IZQ, 158, 240, 16, _t("period"), 10, color=GREY),
-        _texto(300, 158, 239, 16, _t("prepared"), 10, color=GREY),
-        _linea(182.0),
-        _texto(IZQ, 200, width, 16, _t("summary"), 12, True),
-        _texto(IZQ, 222, width, 90, "", 11),
-        _texto(IZQ, 326, width, 16, _t("figures"), 12, True),
-        _tabla(348, 120, 4, [_t("indicator"), _t("value"), _t("change")]),
-        _texto(IZQ, 488, width, 16, _t("notes"), 12, True),
-        _texto(IZQ, 510, width, 220, "", 11),
-        _pie(),
+    report = _header() + [
+        _text(LEFT, 128, width, 24, _t("report_title"), 15, True),
+        _text(LEFT, 158, 240, 16, _t("period"), 10, color=GREY),
+        _text(300, 158, 239, 16, _t("prepared"), 10, color=GREY),
+        _rule(182.0),
+        _text(LEFT, 200, width, 16, _t("summary"), 12, True),
+        _text(LEFT, 222, width, 90, "", 11),
+        _text(LEFT, 326, width, 16, _t("figures"), 12, True),
+        _table(348, 120, 4, [_t("indicator"), _t("value"), _t("change")]),
+        _text(LEFT, 488, width, 16, _t("notes"), 12, True),
+        _text(LEFT, 510, width, 220, "", 11),
+        _footer(),
     ]
 
     diploma = [
@@ -507,104 +506,104 @@ def builtin_templates() -> list[tuple[str, str, list[tuple[float, float]], list[
                    color=INK, width=2.0),
         Annotation(kind=Kind.RECT, page=0, rect=(48.0, 48.0, 547.0, 794.0),
                    color=RULE, width=0.8),
-        _texto(IZQ, 150, width, 44, _t("diploma_title"), 30, True, Align.CENTER),
-        _linea(210.0, 180.0, 415.0, INK, 1.2),
-        _texto(IZQ, 250, width, 20, _t("diploma_given"), 12, align=Align.CENTER,
+        _text(LEFT, 150, width, 44, _t("diploma_title"), 30, True, Align.CENTER),
+        _rule(210.0, 180.0, 415.0, INK, 1.2),
+        _text(LEFT, 250, width, 20, _t("diploma_given"), 12, align=Align.CENTER,
                color=GREY),
-        _texto(IZQ, 290, width, 34, _t("diploma_name"), 22, True, Align.CENTER),
-        _texto(IZQ, 344, width, 20, _t("diploma_body"), 12, align=Align.CENTER,
+        _text(LEFT, 290, width, 34, _t("diploma_name"), 22, True, Align.CENTER),
+        _text(LEFT, 344, width, 20, _t("diploma_body"), 12, align=Align.CENTER,
                color=GREY),
-        _texto(IZQ, 378, width, 26, _t("diploma_course"), 16, True, Align.CENTER),
-        _texto(IZQ, 470, width, 18, _t("date"), 11, align=Align.CENTER, color=GREY),
-        _linea(650.0, 150.0, 330.0),
-        _texto(150, 656, 180, 16, _t("signature"), 10, align=Align.CENTER, color=GREY),
-        _linea(650.0, 360.0, 540.0),
-        _texto(360, 656, 180, 16, _t("signature"), 10, align=Align.CENTER, color=GREY),
+        _text(LEFT, 378, width, 26, _t("diploma_course"), 16, True, Align.CENTER),
+        _text(LEFT, 470, width, 18, _t("date"), 11, align=Align.CENTER, color=GREY),
+        _rule(650.0, 150.0, 330.0),
+        _text(150, 656, 180, 16, _t("signature"), 10, align=Align.CENTER, color=GREY),
+        _rule(650.0, 360.0, 540.0),
+        _text(360, 656, 180, 16, _t("signature"), 10, align=Align.CENTER, color=GREY),
     ]
 
     attendance = [
         Annotation(kind=Kind.RECT, page=0, rect=(36.0, 36.0, 559.0, 806.0),
                    color=INK, width=2.0),
-        _texto(IZQ, 170, width, 34, _t("attendance_cert"), 22, True, Align.CENTER),
-        _linea(224.0, 200.0, 395.0, INK, 1.2),
-        _texto(IZQ, 280, width, 20, _t("diploma_given"), 12, align=Align.CENTER,
+        _text(LEFT, 170, width, 34, _t("attendance_cert"), 22, True, Align.CENTER),
+        _rule(224.0, 200.0, 395.0, INK, 1.2),
+        _text(LEFT, 280, width, 20, _t("diploma_given"), 12, align=Align.CENTER,
                color=GREY),
-        _texto(IZQ, 316, width, 30, _t("diploma_name"), 20, True, Align.CENTER),
-        _texto(IZQ, 364, width, 20, _t("attendance_body"), 12, align=Align.CENTER,
+        _text(LEFT, 316, width, 30, _t("diploma_name"), 20, True, Align.CENTER),
+        _text(LEFT, 364, width, 20, _t("attendance_body"), 12, align=Align.CENTER,
                color=GREY),
-        _texto(IZQ, 396, width, 26, _t("diploma_course"), 15, True, Align.CENTER),
-        _texto(IZQ, 470, width, 18, _t("date"), 11, align=Align.CENTER, color=GREY),
-        _linea(640.0, 200.0, 395.0),
-        _texto(200, 646, 195, 16, _t("signature"), 10, align=Align.CENTER, color=GREY),
+        _text(LEFT, 396, width, 26, _t("diploma_course"), 15, True, Align.CENTER),
+        _text(LEFT, 470, width, 18, _t("date"), 11, align=Align.CENTER, color=GREY),
+        _rule(640.0, 200.0, 395.0),
+        _text(200, 646, 195, 16, _t("signature"), 10, align=Align.CENTER, color=GREY),
     ]
 
-    box = [
-        _texto(IZQ, 56, width, 24, _t("data_table"), 13, True),
-        _tabla(92, 280, 10, [_t("concept"), _t("qty"), _t("price"), _t("total")]),
+    data_table = [
+        _text(LEFT, 56, width, 24, _t("data_table"), 13, True),
+        _table(92, 280, 10, [_t("concept"), _t("qty"), _t("price"), _t("total")]),
     ]
 
-    factura = _cabecera() + [
-        _texto(IZQ, 128, width, 24, _t("invoice_title"), 16, True),
-        _texto(IZQ, 160, 240, 16, _t("invoice_no"), 10),
-        _texto(300, 160, 239, 16, _t("date"), 10),
-        _texto(IZQ, 182, width, 16, _t("customer"), 10),
-        _linea(208.0),
-        _tabla(224, 260, 9, [_t("concept"), _t("qty"), _t("price"), _t("total")]),
-        _texto(340, 500, 120, 18, _t("total"), 12, True, Align.RIGHT),
-        _linea(496.0, 340.0, DER),
-        _pie(),
+    invoice = _header() + [
+        _text(LEFT, 128, width, 24, _t("invoice_title"), 16, True),
+        _text(LEFT, 160, 240, 16, _t("invoice_no"), 10),
+        _text(300, 160, 239, 16, _t("date"), 10),
+        _text(LEFT, 182, width, 16, _t("customer"), 10),
+        _rule(208.0),
+        _table(224, 260, 9, [_t("concept"), _t("qty"), _t("price"), _t("total")]),
+        _text(340, 500, 120, 18, _t("total"), 12, True, Align.RIGHT),
+        _rule(496.0, 340.0, RIGHT),
+        _footer(),
     ]
 
-    presupuesto = _cabecera() + [
-        _texto(IZQ, 128, width, 24, _t("quote_title"), 16, True),
-        _texto(IZQ, 160, 240, 16, _t("customer"), 10),
-        _texto(300, 160, 239, 16, _t("valid"), 10),
-        _linea(186.0),
-        _tabla(202, 260, 9, [_t("concept"), _t("qty"), _t("price"), _t("total")]),
-        _texto(340, 478, 120, 18, _t("total"), 12, True, Align.RIGHT),
-        _linea(474.0, 340.0, DER),
-        _texto(IZQ, 690, 220, 16, _t("signature"), 10, color=GREY),
-        _linea(686.0, IZQ, IZQ + 220),
+    quote = _header() + [
+        _text(LEFT, 128, width, 24, _t("quote_title"), 16, True),
+        _text(LEFT, 160, 240, 16, _t("customer"), 10),
+        _text(300, 160, 239, 16, _t("valid"), 10),
+        _rule(186.0),
+        _table(202, 260, 9, [_t("concept"), _t("qty"), _t("price"), _t("total")]),
+        _text(340, 478, 120, 18, _t("total"), 12, True, Align.RIGHT),
+        _rule(474.0, 340.0, RIGHT),
+        _text(LEFT, 690, 220, 16, _t("signature"), 10, color=GREY),
+        _rule(686.0, LEFT, LEFT + 220),
     ]
 
-    firmas = _cabecera() + [
-        _texto(IZQ, 128, width, 24, _t("signatures_title"), 14, True, Align.CENTER),
-        _texto(IZQ, 162, 240, 16, _t("date"), 10),
-        _texto(300, 162, 239, 16, _t("place"), 10),
-        _tabla(196, 480, 13, [_t("name"), _t("role"), _t("signature")]),
-        _pie(),
+    signatures = _header() + [
+        _text(LEFT, 128, width, 24, _t("signatures_title"), 14, True, Align.CENTER),
+        _text(LEFT, 162, 240, 16, _t("date"), 10),
+        _text(300, 162, 239, 16, _t("place"), 10),
+        _table(196, 480, 13, [_t("name"), _t("role"), _t("signature")]),
+        _footer(),
     ]
 
-    check_flag = _cabecera() + [
-        _texto(IZQ, 128, width, 24, _t("checklist_title"), 14, True),
-        _texto(IZQ, 158, width, 16, _t("date"), 10, color=GREY),
-        _tabla(186, 480, 15, [_t("task"), _t("who"), _t("done")]),
-        _pie(),
+    checklist = _header() + [
+        _text(LEFT, 128, width, 24, _t("checklist_title"), 14, True),
+        _text(LEFT, 158, width, 16, _t("date"), 10, color=GREY),
+        _table(186, 480, 15, [_t("task"), _t("who"), _t("done")]),
+        _footer(),
     ]
 
     return [
-        (_t("letterhead"), "letterhead", [A4], membrete),
-        (_t("letter"), "document", [A4], carta),
+        (_t("letterhead"), "letterhead", [A4], letterhead),
+        (_t("letter"), "document", [A4], letter),
         (_t("memo"), "document", [A4], memo),
-        (_t("minutes"), "document", [A4], acta),
+        (_t("minutes"), "document", [A4], minutes),
         (_t("report_cover"), "report", [A4], cover),
-        (_t("report"), "report", [A4], informe),
+        (_t("report"), "report", [A4], report),
         (_t("diploma"), "certificate", [A4], diploma),
         (_t("attendance_cert"), "certificate", [A4], attendance),
-        (_t("data_table"), "table", [A4], box),
-        (_t("invoice"), "table", [A4], factura),
-        (_t("quote"), "table", [A4], presupuesto),
-        (_t("signatures"), "form", [A4], firmas),
-        (_t("checklist"), "form", [A4], check_flag),
+        (_t("data_table"), "table", [A4], data_table),
+        (_t("invoice"), "table", [A4], invoice),
+        (_t("quote"), "table", [A4], quote),
+        (_t("signatures"), "form", [A4], signatures),
+        (_t("checklist"), "form", [A4], checklist),
     ]
 
 
 def builtin_infos() -> list[TemplateInfo]:
-    """Las de serie, con el mismo aspecto que las guardadas por el usuario."""
+    """The built-in ones, looking just like the ones the user saved."""
     return [
         TemplateInfo(name=name, path=f"builtin:{name}", pages=len(page_items),
-                     annotations=len(anns), category=tipo, builtin=True)
-        for name, tipo, page_items, anns in builtin_templates()
+                     annotations=len(anns), category=category, builtin=True)
+        for name, category, page_items, anns in builtin_templates()
     ]
 
 
