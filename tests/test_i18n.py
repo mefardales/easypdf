@@ -1,4 +1,4 @@
-"""Pruebas de los textos de la interfaz."""
+"""Tests of the interface texts."""
 
 import pytest
 
@@ -28,21 +28,21 @@ def test_both_languages_have_the_same_keys():
 
 
 def test_there_are_no_empty_texts():
-    for codigo, textos in TEXTS.items():
-        vacios = [key for key, value in textos.items() if not value.strip()]
-        assert not vacios, f"{codigo} tiene textos vacios: {vacios}"
+    for code, texts in TEXTS.items():
+        empty = [key for key, value in texts.items() if not value.strip()]
+        assert not empty, f"{code} has empty texts: {empty}"
 
 
 def test_the_format_fields_match_across_languages():
-    """Si un texto lleva {name}, la traduccion tiene que llevarlo tambien."""
+    """If a text carries {name}, the translation has to carry it too."""
     import string
 
-    def campos(text):
+    def fields(text):
         return {c for _, c, _, _ in string.Formatter().parse(text) if c}
 
     for key, text in TEXTS[DEFAULT_LANGUAGE].items():
-        for codigo, textos in TEXTS.items():
-            assert campos(textos[key]) == campos(text), f"{key} en {codigo}"
+        for code, texts in TEXTS.items():
+            assert fields(texts[key]) == fields(text), f"{key} in {code}"
 
 
 def test_it_translates_and_switches_language():

@@ -1,9 +1,9 @@
-"""easypdf.surf: lector y anotador de PDF sencillo para Windows, Linux y macOS."""
+"""easypdf.surf: a simple PDF reader and annotator for Windows, Linux and macOS."""
 
 __version__ = "1.6.2"
-#: Nombre que se muestra al usuario (ventana, instalador, accesos directos).
-#: Los archivos y carpetas siguen llamandose EasyPDF: un archivo llamado
-#: "easypdf.surf.exe" pareceria tener una extension rara.
+#: The name shown to the user (window, installer, shortcuts). Files and
+#: folders are still called EasyPDF: a file named "easypdf.surf.exe" would
+#: look like it had an odd extension.
 __app_name__ = "easypdf.surf"
 __author__ = "easypdf.surf contributors"
 __license__ = "AGPL-3.0-or-later"

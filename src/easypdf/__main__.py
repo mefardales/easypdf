@@ -1,8 +1,8 @@
-"""Permite ejecutar la aplicacion con ``python -m easypdf``.
+"""Lets the application run with ``python -m easypdf``.
 
-Se usa un import absoluto a proposito: PyInstaller ejecuta este archivo como
-guion suelto (sin paquete padre), y un import relativo fallaria al arrancar el
-ejecutable.
+The import is absolute on purpose: PyInstaller runs this file as a loose
+script (with no parent package), and a relative import would fail when the
+executable starts.
 """
 
 from easypdf.app import main
