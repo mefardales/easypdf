@@ -1,8 +1,8 @@
-"""Elementos graficos que representan las anotaciones sobre la pagina.
+"""Graphics items that stand for the annotations on the page.
 
-Cada item vive dentro de un ``PageItem`` y trabaja directamente en **puntos
-PDF**, asi que no hay conversiones de zoom: lo que se dibuja es exactamente lo
-que se escribe despues en el archivo.
+Every item lives inside a ``PageItem`` and works directly in **PDF points**,
+so there are no zoom conversions: what is drawn is exactly what is written to
+the file afterwards.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ from ..model import (
     snap_offset,
 )
 
-#: Tamano del tirador de redimension, en pixeles de pantalla.
+#: Size of the resize handle, in screen pixels.
 HANDLE_PX = 9.0
 MIN_SIZE = 4.0
 SELECTION_COLOR = QColor("#1565c0")
@@ -59,7 +59,7 @@ _CURSORS: dict[str, Qt.CursorShape] = {
 
 
 def annotation_font(ann: Annotation) -> QFont:
-    """QFont equivalente al estilo guardado en la anotacion."""
+    """The QFont matching the style stored in the annotation."""
     font = QFont(Font(ann.font).qt_family)
     font.setPixelSize(max(1, int(round(ann.font_size))))
     font.setBold(bool(ann.bold))
@@ -75,7 +75,7 @@ ALIGN_FLAGS = {
 
 
 def qcolor(rgb: tuple[float, float, float] | None, opacity: float = 1.0) -> QColor:
-    """Convierte un color del modelo (0..1) en QColor."""
+    """Turn a model colour (0..1) into a QColor."""
     if rgb is None:
         return QColor(Qt.transparent)
     color = QColor.fromRgbF(
@@ -98,8 +98,8 @@ class AnnotationItemMixin:
 
     def _init_common(self, ann: Annotation) -> None:
         self.ann = ann
-        # Mientras se vuelca el modelo sobre el item, los cambios de posicion
-        # que emite Qt no deben reescribir el modelo con datos a medias.
+        # While the model is being poured into the item, the position changes
+        # Qt emits must not write half-finished data back to the model.
         self._applying = False
         self._active_handle: str | None = None
         self._drag_origin = QPointF()
@@ -122,7 +122,7 @@ class AnnotationItemMixin:
         return HANDLE_PX / self.view_scale()
 
     def handles(self) -> dict[str, QPointF]:
-        """Tiradores en coordenadas locales del item."""
+        """Handles in the item's own coordinates."""
         return {}
 
     def handle_at(self, pos: QPointF) -> str | None:
@@ -133,7 +133,7 @@ class AnnotationItemMixin:
         return None
 
     def resize_to(self, handle: str, pos: QPointF) -> None:  # pragma: no cover - UI
-        """Aplica el arrastre de un tirador (coordenadas locales)."""
+        """Apply a handle drag (local coordinates)."""
 
     def paint_handles(self, painter: QPainter) -> None:
         handles = self.handles()
@@ -159,7 +159,7 @@ class AnnotationItemMixin:
 
     # -- modelo ----------------------------------------------------------
     def apply_model(self) -> None:
-        """Vuelca el modelo sobre el item (modelo -> pantalla)."""
+        """Pour the model into the item (model -> screen)."""
         self._applying = True
         try:
             self._apply_model()
@@ -167,16 +167,16 @@ class AnnotationItemMixin:
             self._applying = False
 
     def sync_model(self) -> None:
-        """Vuelca el item sobre el modelo (pantalla -> modelo)."""
+        """Pour the item into the model (screen -> model)."""
         if getattr(self, "_applying", False):
             return
         self._sync_model()
 
-    def _apply_model(self) -> None:  # pragma: no cover - lo implementa cada item
-        """Geometria y estilo del item a partir de ``self.ann``."""
+    def _apply_model(self) -> None:  # pragma: no cover - each item implements it
+        """Geometry and style of the item, taken from ``self.ann``."""
 
-    def _sync_model(self) -> None:  # pragma: no cover - lo implementa cada item
-        """Actualiza ``self.ann`` con la geometria actual del item."""
+    def _sync_model(self) -> None:  # pragma: no cover - each item implements it
+        """Update ``self.ann`` with the item's current geometry."""
 
     def notify_scene(self, event: str) -> None:
         scene = self.scene()
@@ -234,63 +234,63 @@ class AnnotationItemMixin:
             self.sync_model()
         return super().itemChange(change, value)
 
-    # -- alineacion ------------------------------------------------------
+    # -- alignment -------------------------------------------------------
     def snap_candidates(self) -> tuple[list[float], list[float]]:
-        """Lineas a las que se puede alinear: la pagina y las demas anotaciones."""
+        """Lines to align against: the page and the other annotations."""
         page_item = self.parentItem()
         if page_item is None:
             return ([], [])
         box = page_item.boundingRect()
-        # bordes y centro de la hoja
+        # edges and centre of the sheet
         xs = [box.left(), box.center().x(), box.right()]
         ys = [box.top(), box.center().y(), box.bottom()]
-        for otro in page_item.childItems():
-            if otro is self or not isinstance(otro, AnnotationItemMixin):
+        for other in page_item.childItems():
+            if other is self or not isinstance(other, AnnotationItemMixin):
                 continue
-            x0, y0, x1, y1 = otro.ann.bounds()
+            x0, y0, x1, y1 = other.ann.bounds()
             xs += [x0, (x0 + x1) / 2.0, x1]
             ys += [y0, (y0 + y1) / 2.0, y1]
-        # y las guias que el usuario haya sacado de las reglas, que es
-        # justamente para lo que las coloca
+        # and the guides the user has pulled out of the rulers, which is
+        # exactly what they put them there for
         view = self._view()
         if view is not None and hasattr(view, "page_guides"):
-            propias = view.page_guides(self.ann.page)
-            xs += list(propias["v"])
-            ys += list(propias["h"])
+            own = view.page_guides(self.ann.page)
+            xs += list(own["v"])
+            ys += list(own["h"])
         return (xs, ys)
 
-    def _snap(self, nueva_pos):
-        """Ajusta la posicion propuesta para que encaje con alguna guia.
+    def _snap(self, new_pos):
+        """Adjust the proposed position so it lines up with a guide.
 
-        Solo actua mientras el usuario arrastra con el raton. Si no, se
-        dispararia tambien al crear o cargar anotaciones, y dejaria guias
-        pintadas en la pagina sin que nadie este moviendo nada.
+        It only acts while the user is dragging with the mouse. Otherwise it
+        would also fire when creating or loading annotations, and would leave
+        guides painted on the page with nobody moving anything.
         """
         scene = self.scene()
         if scene is None or scene.mouseGrabberItem() is not self:
-            return nueva_pos
-        return self.compute_snap(nueva_pos)
+            return new_pos
+        return self.compute_snap(new_pos)
 
-    def compute_snap(self, nueva_pos):
-        """Calculo del ajuste, sin mirar si hay un arrastre en curso."""
+    def compute_snap(self, new_pos):
+        """The snap calculation itself, without checking for a drag in progress."""
         view = self._view()
         if view is None or not getattr(view, "snap_enabled", False):
-            return nueva_pos
-        escala = max(view.transform().m11(), 1e-6)
-        umbral = SNAP_PIXELS / escala
+            return new_pos
+        scale = max(view.transform().m11(), 1e-6)
+        threshold = SNAP_PIXELS / scale
 
-        # los bordes se calculan sobre el modelo, que siempre esta en
-        # coordenadas de la pagina, sea cual sea el tipo de anotacion
-        dx = nueva_pos.x() - self.pos().x()
-        dy = nueva_pos.y() - self.pos().y()
+        # the edges are worked out on the model, which is always in page
+        # coordinates whatever the kind of annotation
+        dx = new_pos.x() - self.pos().x()
+        dy = new_pos.y() - self.pos().y()
         x0, y0, x1, y1 = self.ann.bounds()
         x0, x1, y0, y1 = x0 + dx, x1 + dx, y0 + dy, y1 + dy
 
         xs, ys = self.snap_candidates()
-        ajuste_x, guia_x = snap_offset([x0, (x0 + x1) / 2.0, x1], xs, umbral)
-        ajuste_y, guia_y = snap_offset([y0, (y0 + y1) / 2.0, y1], ys, umbral)
-        view.show_guides(guia_x, guia_y, self.parentItem())
-        return QPointF(nueva_pos.x() + ajuste_x, nueva_pos.y() + ajuste_y)
+        offset_x, guide_x = snap_offset([x0, (x0 + x1) / 2.0, x1], xs, threshold)
+        offset_y, guide_y = snap_offset([y0, (y0 + y1) / 2.0, y1], ys, threshold)
+        view.show_guides(guide_x, guide_y, self.parentItem())
+        return QPointF(new_pos.x() + offset_x, new_pos.y() + offset_y)
 
     def _view(self):
         scene = self.scene()
@@ -365,7 +365,7 @@ class RectItem(AnnotationItemMixin, QGraphicsRectItem):
             r.setWidth(MIN_SIZE)
         if r.height() < MIN_SIZE:
             r.setHeight(MIN_SIZE)
-        # Se reubica el item para que el rectangulo local empiece en (0, 0).
+        # The item is moved so the local rectangle starts at (0, 0).
         self.setPos(self.pos() + r.topLeft())
         self.setRect(0, 0, r.width(), r.height())
 
@@ -380,7 +380,7 @@ class RectItem(AnnotationItemMixin, QGraphicsRectItem):
         return path
 
     def paint(self, painter: QPainter, option, widget=None) -> None:
-        option.state &= ~QStyle.State_Selected  # el marco por defecto sobra
+        option.state &= ~QStyle.State_Selected  # the default frame is not wanted
         painter.setPen(self.pen())
         painter.setBrush(self.brush())
         painter.drawRect(self.rect())
@@ -390,7 +390,7 @@ class RectItem(AnnotationItemMixin, QGraphicsRectItem):
 
 
 class LineItem(AnnotationItemMixin, QGraphicsLineItem):
-    """Linea recta, con o sin punta de flecha."""
+    """Straight line, with or without an arrow head."""
 
     def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
         super().__init__(parent)
@@ -426,13 +426,13 @@ class LineItem(AnnotationItemMixin, QGraphicsLineItem):
         self.setLine(line)
 
     def _arrow_points(self):
-        """Punta de flecha, con la misma geometria que se guarda en el PDF."""
+        """Arrow head, with the same geometry that goes into the PDF."""
         line = self.line()
         p1 = (line.x1(), line.y1())
         p2 = (line.x2(), line.y2())
-        _base, punta, left, right = arrow_head(p1, p2, self.ann.width)
-        poligono = QPolygonF([QPointF(*punta), QPointF(*left), QPointF(*right)])
-        return poligono, QPointF(*arrow_line_end(p1, p2, self.ann.width))
+        _base, tip, left, right = arrow_head(p1, p2, self.ann.width)
+        polygon = QPolygonF([QPointF(*tip), QPointF(*left), QPointF(*right)])
+        return polygon, QPointF(*arrow_line_end(p1, p2, self.ann.width))
 
     def boundingRect(self) -> QRectF:
         margin = max(self.pen().widthF() * 3, self.handle_size()) + 4.0
@@ -463,12 +463,12 @@ class LineItem(AnnotationItemMixin, QGraphicsLineItem):
         painter.setPen(self.pen())
         painter.setBrush(Qt.NoBrush)
         if self.ann.kind is Kind.ARROW:
-            poligono, fin = self._arrow_points()
-            # El trazo termina dentro de la punta para que no asome por delante.
-            painter.drawLine(QLineF(self.line().p1(), fin))
+            polygon, end = self._arrow_points()
+            # The stroke ends inside the head so it does not poke out in front.
+            painter.drawLine(QLineF(self.line().p1(), end))
             painter.setPen(QPen(Qt.NoPen))
             painter.setBrush(QBrush(qcolor(self.ann.color)))
-            painter.drawPolygon(poligono)
+            painter.drawPolygon(polygon)
         else:
             painter.drawLine(self.line())
         if self.isSelected():
@@ -486,8 +486,8 @@ class InkItem(AnnotationItemMixin, QGraphicsPathItem):
     def _apply_model(self) -> None:
         ann = self.ann
         self.setPos(0, 0)
-        # Copia de los trazos tal y como estan en el modelo: al arrastrar, el
-        # desplazamiento vive en la posicion del item y se suma sobre esta base.
+        # A copy of the strokes as the model holds them: while dragging, the
+        # offset lives in the item position and is added on top of this base.
         self._base = [list(stroke) for stroke in ann.strokes]
         path = QPainterPath()
         for stroke in ann.strokes:
@@ -505,7 +505,7 @@ class InkItem(AnnotationItemMixin, QGraphicsPathItem):
         self.setOpacity(ann.opacity)
 
     def append_point(self, point: QPointF, new_stroke: bool = False) -> None:
-        """Anade un punto al trazo actual mientras se dibuja."""
+        """Add a point to the current stroke while drawing."""
         if new_stroke or not self.ann.strokes:
             self.ann.strokes.append([])
         self.ann.strokes[-1].append((point.x(), point.y()))
@@ -513,9 +513,9 @@ class InkItem(AnnotationItemMixin, QGraphicsPathItem):
         self.apply_model()
 
     def _sync_model(self) -> None:
-        # Nunca se toca setPos() aqui: esto se llama desde itemChange mientras
-        # Qt esta arrastrando el item, y mover la posicion en mitad del arrastre
-        # hacia que el dibujo saliera disparado fuera de la pantalla.
+        # setPos() is never touched here: this is called from itemChange while
+        # Qt is dragging the item, and moving the position mid-drag sent the
+        # drawing flying off the screen.
         offset = self.pos()
         base = getattr(self, "_base", None) or self.ann.strokes
         self.ann.strokes = [
@@ -523,8 +523,8 @@ class InkItem(AnnotationItemMixin, QGraphicsPathItem):
         ]
 
     def boundingRect(self) -> QRectF:
-        # El recuadro de seleccion se dibuja justo sobre el borde del trazo, asi
-        # que hay que declarar tambien ese margen o deja rastro al arrastrar.
+        # The selection box is drawn right on the edge of the stroke, so that
+        # margin has to be declared too or dragging leaves a trail.
         margin = self.pen().widthF() / 2.0 + 2.0 / self.view_scale()
         return self.path().boundingRect().adjusted(-margin, -margin, margin, margin)
 
@@ -538,7 +538,7 @@ class InkItem(AnnotationItemMixin, QGraphicsPathItem):
 
 
 class TextItem(AnnotationItemMixin, QGraphicsTextItem):
-    """Cuadro de texto editable en pantalla."""
+    """Text box that can be edited on screen."""
 
     def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
         super().__init__(parent)
@@ -567,16 +567,16 @@ class TextItem(AnnotationItemMixin, QGraphicsTextItem):
         self.setOpacity(ann.opacity)
 
     def content_rect(self) -> QRectF:
-        """Rectangulo del cuadro de texto, sin el margen de seleccion."""
+        """The text box rectangle, without the selection margin."""
         return QGraphicsTextItem.boundingRect(self)
 
     def boundingRect(self) -> QRectF:
-        """Area a repintar: el cuadro mas el borde y los tiradores.
+        """The area to repaint: the box plus its border and handles.
 
-        QGraphicsTextItem solo declara el rectangulo del texto, pero el tirador
-        de anchura se dibuja centrado en el lado derecho y sobresale la mitad.
-        Sin este margen, al arrastrar el cuadro esa mitad no se borraba y
-        quedaba un rastro azul detras.
+        QGraphicsTextItem only declares the text rectangle, but the width
+        handle is drawn centred on the right side and sticks half way out.
+        Without this margin, dragging the box left that half unpainted and a
+        blue trail behind it.
         """
         margin = max(self.ann.width, self.handle_size()) + 2.0
         return self.content_rect().adjusted(-margin, -margin, margin, margin)
@@ -673,7 +673,7 @@ class TextItem(AnnotationItemMixin, QGraphicsTextItem):
             self.paint_selection(painter, rect)
             self.paint_handles(painter)
         elif ann.width <= 0 and not ann.fill:
-            # Guia tenue para localizar el cuadro sin borde (no se imprime).
+            # A faint guide to find the borderless box (it is not printed).
             pen = QPen(QColor(0, 0, 0, 40))
             pen.setStyle(Qt.DotLine)
             pen.setWidthF(0.8 / self.view_scale())
@@ -683,7 +683,7 @@ class TextItem(AnnotationItemMixin, QGraphicsTextItem):
 
 
 class ImageItem(AnnotationItemMixin, QGraphicsRectItem):
-    """Imagen colocada encima de la pagina."""
+    """Image placed on top of the page."""
 
     def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
         super().__init__(parent)
@@ -715,7 +715,7 @@ class ImageItem(AnnotationItemMixin, QGraphicsRectItem):
 
     @property
     def aspect(self) -> float:
-        """Proporcion ancho/alto de la imagen original."""
+        """Width to height ratio of the original image."""
         if self._pixmap.isNull() or self._pixmap.height() == 0:
             return 1.0
         return self._pixmap.width() / self._pixmap.height()
@@ -747,7 +747,7 @@ class ImageItem(AnnotationItemMixin, QGraphicsRectItem):
             r.setWidth(MIN_SIZE)
         if r.height() < MIN_SIZE:
             r.setHeight(MIN_SIZE)
-        # Las esquinas conservan la proporcion; los lados estiran libremente.
+        # Corners keep the ratio; the sides stretch freely.
         if handle in ("tl", "tr", "bl", "br") and self.aspect > 0:
             height = r.width() / self.aspect
             if "t" in handle:
@@ -781,21 +781,21 @@ class ImageItem(AnnotationItemMixin, QGraphicsRectItem):
             self.paint_handles(painter)
 
 
-#: Margen del texto dentro de una celda, en puntos PDF. Lo comparten el
-#: pintado, el editor y lo que se escribe en el PDF, para que el texto no
-#: se mueva al pasar de uno a otro.
+#: Padding of the text inside a cell, in PDF points. Painting, the editor and
+#: what goes into the PDF all share it, so the text does not shift when moving
+#: from one to the next.
 CELL_PADDING = 2.5
 
 
 class TableItem(AnnotationItemMixin, QGraphicsRectItem):
-    """Tabla: rejilla de filas y columnas con texto en las celdas."""
+    """Table: a grid of rows and columns with text in the cells."""
 
     def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
         super().__init__(parent)
-        # Una tabla larga tarda milisegundos en dibujarse (son decenas de
-        # lineas mas el texto de cada celda), y Qt la repinta en cada
-        # movimiento del raton. Con la cache, al arrastrarla mueve la imagen
-        # ya dibujada y solo la rehace cuando cambia de verdad.
+        # A long table takes milliseconds to draw (dozens of lines plus the
+        # text of every cell), and Qt repaints it on every mouse move. With
+        # the cache, dragging moves the image already drawn and only redraws
+        # it when something really changes.
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         self._init_common(ann)
         self._editor: QGraphicsTextItem | None = None
@@ -868,21 +868,21 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         path.addRect(self.rect().adjusted(-margin, -margin, margin, margin))
         return path
 
-    # -- celdas ----------------------------------------------------------
+    # -- cells -----------------------------------------------------------
     def _cached_font(self) -> QFont:
-        """Fuente de la tabla, rehecha solo cuando cambia su estilo."""
+        """The table font, rebuilt only when its style changes."""
         ann = self.ann
         key = (ann.font, ann.font_size, ann.bold, ann.italic)
-        if getattr(self, "_font_clave", None) != key:
+        if getattr(self, "_font_key", None) != key:
             self._font_cache = annotation_font(ann)
-            self._font_clave = key
+            self._font_key = key
         return self._font_cache
 
     def local_cell_rects(self) -> list[QRectF]:
-        """Rectangulos de las celdas en coordenadas del propio item.
+        """Cell rectangles in the item's own coordinates.
 
-        Se memorizan: se recalculaban en cada repintado, y con una tabla de
-        muchas filas eso se notaba al arrastrarla.
+        They are remembered: they used to be recomputed on every repaint, and
+        with a table of many rows that showed while dragging it.
         """
         r = self.rect()
         rows, columns = max(1, self.ann.rows), max(1, self.ann.cols)
@@ -905,33 +905,33 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         return -1
 
     def edit_cell(self, index: int) -> None:
-        """Abre un editor de texto encima de la celda indicada."""
+        """Open a text editor on top of the given cell."""
         cells = self.local_cell_rects()
         if not (0 <= index < len(cells)):
             return
         self.finish_editing()
         self.notify_scene("begin_edit")
         self.notify_scene("text_editing_started")
-        textos = self.ann.normalized_cells()
+        texts = self.ann.normalized_cells()
         editor = QGraphicsTextItem(self)
-        editor.setPlainText(textos[index])
+        editor.setPlainText(texts[index])
         editor.setFont(annotation_font(self.ann))
         editor.setDefaultTextColor(qcolor(self.ann.color))
         cell = cells[index]
-        # Mismo margen y misma alineacion que usa paint(): si no, el texto se
-        # ve en un sitio mientras se escribe y salta a otro al terminar.
+        # The same padding and alignment paint() uses: otherwise the text sits
+        # in one place while typing and jumps elsewhere when finished.
         alignment = ALIGN_FLAGS.get(Align(self.ann.align), Qt.AlignLeft)
         options = editor.document().defaultTextOption()
         options.setAlignment(alignment)
         editor.document().setDefaultTextOption(options)
         editor.document().setDocumentMargin(0)
-        # defaultTextOption no re-alinea los parrafos que ya existen, y el
-        # texto se dibuja con la alineacion del bloque, no con la de la
-        # opcion. Ademas, reemplazar el contenido crea un bloque nuevo con el
-        # formato por omision, asi que se vuelve a poner cada vez que cambia.
+        # defaultTextOption does not re-align paragraphs that already exist,
+        # and the text is drawn with the block's alignment, not the option's.
+        # Replacing the content also creates a new block with the default
+        # format, so it is set again every time the content changes.
         self._alignment = alignment
-        self._realinear()
-        editor.document().contentsChanged.connect(self._realinear)
+        self._realign()
+        editor.document().contentsChanged.connect(self._realign)
         editor.setTextWidth(max(10.0, cell.width() - 2 * CELL_PADDING))
         editor.setPos(cell.topLeft() + QPointF(CELL_PADDING, CELL_PADDING))
         editor.setTextInteractionFlags(Qt.TextEditorInteraction)
@@ -945,10 +945,11 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         self._editing_cell = index
         self.update()
 
-    def _realinear(self) -> None:
-        """Deja el texto del editor con la alineacion de la tabla.
+    def _realign(self) -> None:
+        """Leave the editor's text with the table's alignment.
 
-        Se usa un cursor aparte para no mover el del usuario mientras escribe.
+        A separate cursor is used so the user's own one does not move while
+        they type.
         """
         from PySide6.QtGui import QTextCursor
 
@@ -957,29 +958,29 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
             return
         cursor = QTextCursor(editor.document())
         cursor.select(QTextCursor.SelectionType.Document)
-        formato = cursor.blockFormat()
-        if formato.alignment() == self._alignment:
-            return                       # ya esta bien: nada que tocar
-        formato.setAlignment(self._alignment)
-        cursor.mergeBlockFormat(formato)
+        block = cursor.blockFormat()
+        if block.alignment() == self._alignment:
+            return                       # already right: nothing to touch
+        block.setAlignment(self._alignment)
+        cursor.mergeBlockFormat(block)
 
     def finish_editing(self) -> None:
-        """Guarda lo escrito y cierra el editor."""
+        """Save what was typed and close the editor."""
         editor, index = self._editor, self._editing_cell
         self._editor, self._editing_cell = None, -1
         if editor is None:
             return
-        textos = self.ann.normalized_cells()
+        texts = self.ann.normalized_cells()
         try:
-            textos[index] = editor.toPlainText()
+            texts[index] = editor.toPlainText()
             editor.setParentItem(None)
             if editor.scene() is not None:
                 editor.scene().removeItem(editor)
         except RuntimeError:
-            # Qt ya lo habia destruido (al cerrar la ventana, por ejemplo).
-            # Lo escrito se pierde, pero la tabla queda en un estado sano.
+            # Qt had already destroyed it (on closing the window, say). What
+            # was typed is lost, but the table is left in a sound state.
             pass
-        self.ann.cells = textos
+        self.ann.cells = texts
         self.update()
         self.notify_scene("end_edit")
         self.notify_scene("text_editing_finished")
@@ -1041,7 +1042,7 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         ):
             if not text or index == self._editing_cell:
                 continue
-            # en una tabla larga solo se dibuja el texto de lo que se ve
+            # in a long table only the text of what is visible is drawn
             if visible is not None and not visible.isEmpty() and not visible.intersects(cell):
                 continue
             painter.drawText(
@@ -1055,12 +1056,12 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
             self.paint_handles(painter)
 
 
-#: Lado del icono de una nota, en puntos PDF. Fijo: no se redimensiona.
+#: Side of a note icon, in PDF points. Fixed: it is not resized.
 NOTE_SIZE = 20.0
 
 
 class NoteItem(AnnotationItemMixin, QGraphicsRectItem):
-    """Nota adhesiva: un icono fijo que guarda un texto detras."""
+    """Sticky note: a fixed icon with a text behind it."""
 
     def __init__(self, ann: Annotation, parent: QGraphicsItem | None = None) -> None:
         super().__init__(parent)
@@ -1082,10 +1083,10 @@ class NoteItem(AnnotationItemMixin, QGraphicsRectItem):
         )
 
     def handles(self) -> dict:
-        return {}          # tamano fijo: no se estira
+        return {}          # fixed size: it does not stretch
 
     def mouseDoubleClickEvent(self, event) -> None:
-        """Abre el texto de la nota. Sin esto, pulsarla no hacia nada."""
+        """Open the note's text. Without this, clicking it did nothing."""
         view = self._view()
         if view is not None and hasattr(view, "noteCreated"):
             view.noteCreated.emit(self)
@@ -1106,26 +1107,26 @@ class NoteItem(AnnotationItemMixin, QGraphicsRectItem):
         option.state &= ~QStyle.State_Selected
         rect = self.rect()
         color = qcolor(self.ann.color)
-        # cuerpo de la nota con la esquina doblada
+        # the note body with its folded corner
         body = QPainterPath()
-        pliegue = rect.width() * 0.34
+        fold_size = rect.width() * 0.34
         body.moveTo(rect.left(), rect.top())
         body.lineTo(rect.right(), rect.top())
-        body.lineTo(rect.right(), rect.bottom() - pliegue)
-        body.lineTo(rect.right() - pliegue, rect.bottom())
+        body.lineTo(rect.right(), rect.bottom() - fold_size)
+        body.lineTo(rect.right() - fold_size, rect.bottom())
         body.lineTo(rect.left(), rect.bottom())
         body.closeSubpath()
         painter.setPen(QPen(color.darker(140), rect.width() * 0.06))
         painter.setBrush(QBrush(color))
         painter.drawPath(body)
         # la esquina doblada
-        doblez = QPainterPath()
-        doblez.moveTo(rect.right() - pliegue, rect.bottom())
-        doblez.lineTo(rect.right() - pliegue, rect.bottom() - pliegue)
-        doblez.lineTo(rect.right(), rect.bottom() - pliegue)
+        fold = QPainterPath()
+        fold.moveTo(rect.right() - fold_size, rect.bottom())
+        fold.lineTo(rect.right() - fold_size, rect.bottom() - fold_size)
+        fold.lineTo(rect.right(), rect.bottom() - fold_size)
         painter.setBrush(QBrush(color.darker(125)))
-        painter.drawPath(doblez)
-        # renglones, para que se lea como una nota escrita
+        painter.drawPath(fold)
+        # ruled lines, so it reads like a written note
         painter.setPen(QPen(color.darker(190), rect.width() * 0.05))
         for i in (0.34, 0.52, 0.70):
             y = rect.top() + rect.height() * i
@@ -1138,7 +1139,7 @@ class NoteItem(AnnotationItemMixin, QGraphicsRectItem):
 
 
 def create_item(ann: Annotation, parent: QGraphicsItem | None = None):
-    """Crea el item grafico adecuado para una anotacion."""
+    """Create the right graphics item for an annotation."""
     if ann.kind in (Kind.RECT, Kind.HIGHLIGHT):
         return RectItem(ann, parent)
     if ann.kind in (Kind.LINE, Kind.ARROW):
