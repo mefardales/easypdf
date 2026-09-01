@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Genera la web de easypdf.surf en espanol e ingles.
+"""Builds the easypdf.surf site in English and Spanish.
 
-Se escriben dos paginas independientes (``site/index.html`` y
-``site/en/index.html``) en vez de traducir con JavaScript: cada idioma tiene su
-propia URL, su etiqueta ``lang`` y sus ``hreflang``, que es lo que entienden los
-buscadores. Tambien se generan ``robots.txt`` y ``sitemap.xml``.
+Two independent pages are written (``site/index.html`` and
+``site/en/index.html``) rather than translating with JavaScript: each language
+gets its own URL, its own ``lang`` attribute and its own ``hreflang``, which is
+what search engines understand. ``robots.txt`` and ``sitemap.xml`` are
+generated too.
 
-Uso:  python tools/build_site.py
+Usage:  python tools/build_site.py
 """
 
 from __future__ import annotations
@@ -26,41 +27,41 @@ DOMAIN = "https://easypdf.surf"
 REPO = "https://github.com/mefardales/easypdf"
 
 
-def _leer_version() -> str:
-    """Lee __version__ de src/easypdf/__init__.py sin importar el paquete.
+def _read_version() -> str:
+    """Read __version__ from src/easypdf/__init__.py without importing the package.
 
-    Importarlo arrastraria PySide6, que no hace falta para generar la web.
+    Importing it would drag in PySide6, which the site build does not need.
     """
     import re
 
     path = pathlib.Path(__file__).resolve().parent.parent / "src" / "easypdf" / "__init__.py"
     found = re.search(r'__version__\s*=\s*"([^"]+)"', path.read_text(encoding="utf-8"))
     if not found:
-        raise RuntimeError(f"no se encuentra __version__ en {path}")
+        raise RuntimeError(f"__version__ not found in {path}")
     return found.group(1)
-#: Las descargas apuntan a los archivos de la release, no a los del repositorio:
-#: GitHub solo cuenta las descargas de las releases, y de ese numero sale el
-#: contador de la portada.
-#: La version sale del propio paquete, que es la unica fuente. Asi los enlaces
-#: de descarga apuntan siempre a la release que se acaba de publicar y la web no
-#: se queda ofreciendo binarios viejos.
-VERSION = _leer_version()
-DESCARGAS_URL = f"{REPO}/releases/download/v{VERSION}"
+#: The downloads point at the release files, not at the repository ones:
+#: GitHub only counts downloads of releases, and the front page counter comes
+#: from that number.
+#: The version comes from the package itself, the single source. That way the
+#: download links always point at the release just published and the site is
+#: never left offering old binaries.
+VERSION = _read_version()
+DOWNLOADS_URL = f"{REPO}/releases/download/v{VERSION}"
 
-#: De donde salen los numeros que se ensenan en la portada.
+#: Where the numbers shown on the front page come from.
 #:
-#: * Descargas: las cuenta GitHub en cada archivo de una release. Es un numero
-#:   real del servidor, no se puede falsear desde el navegador.
-#: * Visitas: contador publico y sin cookies (counterapi.dev). No guarda nada
-#:   de quien visita: solo suma uno. Si algun dia se prefiere una analitica de
-#:   verdad, basta con cambiar estas dos constantes.
+#: * Downloads: GitHub counts them on every file of a release. It is a real
+#:   figure from the server, it cannot be faked from the browser.
+#: * Visits: a public, cookie-free counter (counterapi.dev). It stores nothing
+#:   about who visits: it just adds one. If real analytics are ever preferred,
+#:   changing these two constants is enough.
 RELEASES_API = "https://api.github.com/repos/mefardales/easypdf/releases"
 VISITS_API = "https://api.counterapi.dev/v1/easypdf-surf"
 
 FILES = {
-    "setup": f"{DESCARGAS_URL}/EasyPDF-{VERSION}-Setup.exe",
-    "portable": f"{DESCARGAS_URL}/EasyPDF-{VERSION}-windows-x64-portable.zip",
-    "linux": f"{DESCARGAS_URL}/EasyPDF-{VERSION}-linux-x64.tar.xz",
+    "setup": f"{DOWNLOADS_URL}/EasyPDF-{VERSION}-Setup.exe",
+    "portable": f"{DOWNLOADS_URL}/EasyPDF-{VERSION}-windows-x64-portable.zip",
+    "linux": f"{DOWNLOADS_URL}/EasyPDF-{VERSION}-linux-x64.tar.xz",
 }
 
 TEXTS = {
@@ -268,7 +269,7 @@ TEXTS = {
     },
 }
 
-# Iconos de linea, 20x20, para la lista de funciones.
+# Line icons, 20x20, for the feature list.
 ICONS = {
     "read": '<path d="M3 5.2A1.2 1.2 0 0 1 4.2 4H9a3 3 0 0 1 3 3v11a2.4 2.4 0 0 0-2.4-2H4.2A1.2 1.2 0 0 1 3 14.8Z"/><path d="M21 5.2A1.2 1.2 0 0 0 19.8 4H15a3 3 0 0 0-3 3v11a2.4 2.4 0 0 1 2.4-2h5.4A1.2 1.2 0 0 0 21 14.8Z"/>',
     "write": '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
@@ -285,9 +286,9 @@ def esc(text: str) -> str:
 
 def build_page(lang: str) -> str:
     t = TEXTS[lang]
-    otro = TEXTS[t["other_lang"]]
+    other = TEXTS[t["other_lang"]]
     base = f"{DOMAIN}/{t['path']}"
-    prefijo = "../" if t["path"] else ""
+    prefix = "../" if t["path"] else ""
 
     features = "\n".join(
         "        <li>\n"
@@ -297,28 +298,28 @@ def build_page(lang: str) -> str:
         for key, title, text in t["features"]
     )
 
-    descargas = "\n".join(
+    downloads = "\n".join(
         f'        <a class="dl" href="{FILES[key]}">\n'
         f'          <span class="dl-os">{esc(title)}</span>\n'
-        f'          <span class="dl-note">{esc(detalle)}</span>\n'
-        f'          <span class="dl-size">{esc(peso)}</span>\n'
+        f'          <span class="dl-note">{esc(detail)}</span>\n'
+        f'          <span class="dl-size">{esc(size)}</span>\n'
         '          <span class="dl-go" aria-hidden="true">&darr;</span>\n'
         "        </a>"
-        for key, title, detalle, peso in t["downloads"]
+        for key, title, detail, size in t["downloads"]
     )
 
     faq = "\n".join(
         "        <details>\n"
-        f"          <summary>{esc(pregunta)}</summary>\n"
+        f"          <summary>{esc(question)}</summary>\n"
         f"          <p>{esc(response)}</p>\n"
         "        </details>"
-        # Van todas, no las cuatro primeras: los datos estructurados de abajo
-        # declaran la lista entera, y Google pide que lo declarado se vea en
-        # la pagina. Como son <details> plegados, no alargan nada.
-        for pregunta, response in t["faq"]
+        # All of them, not just the first four: the structured data below
+        # declares the whole list, and Google asks that what is declared be
+        # visible on the page. As folded <details> they add no length.
+        for question, response in t["faq"]
     )
 
-    datos_app = {
+    app_data = {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "easypdf.surf",
@@ -335,7 +336,7 @@ def build_page(lang: str) -> str:
         "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
         "inLanguage": ["en", "es"],
     }
-    datos_faq = {
+    faq_data = {
         "@context": "https://schema.org",
         "@type": "FAQPage",
         "mainEntity": [
@@ -352,25 +353,25 @@ def build_page(lang: str) -> str:
     return template.safe_substitute(
         lang=t["lang"],
         title=esc(t["title"]),
-        OTRO_LANG=otro["lang"].upper(),
+        OTHER_LANG=other["lang"].upper(),
         url_setup=FILES["setup"],
         description=esc(t["description"]),
-        claves=esc(t["keywords"]),
+        keywords=esc(t["keywords"]),
         base=base,
-        dominio=DOMAIN,
-        prefijo=prefijo,
+        domain=DOMAIN,
+        prefix=prefix,
         locale="en_US" if lang == "en" else "es_ES",
-        json_app=json.dumps(datos_app, ensure_ascii=False),
-        json_faq=json.dumps(datos_faq, ensure_ascii=False),
-        saltar=esc(t["skip"]),
-        inicio="../" if t["path"] else "./",
+        json_app=json.dumps(app_data, ensure_ascii=False),
+        json_faq=json.dumps(faq_data, ensure_ascii=False),
+        skip=esc(t["skip"]),
+        home="../" if t["path"] else "./",
         nav_features=esc(t["nav_features"]),
         nav_download=esc(t["nav_download"]),
         nav_cta=esc(t["nav_cta"]),
-        otro_lang=otro["lang"],
-        otro_path=otro["path"],
-        otro_nombre=esc(otro["switch"]),
-        tema=esc(t["theme"]),
+        other_lang=other["lang"],
+        other_path=other["path"],
+        other_name=esc(other["switch"]),
+        theme=esc(t["theme"]),
         version=VERSION,
         h1=t["h1_html"],
         sub=esc(t["sub"]),
@@ -383,7 +384,7 @@ def build_page(lang: str) -> str:
         features_title=esc(t["features_title"]),
         features=features,
         downloads_title=esc(t["downloads_title"]),
-        descargas=descargas,
+        downloads=downloads,
         mac=esc(t["mac"]),
         warn_short=t["warn_short"],
         faq_title=esc(t["faq_title"]),
@@ -439,9 +440,9 @@ Sitemap: {DOMAIN}/sitemap.xml
 """
     with open(os.path.join(SITE, "sitemap.xml"), "w", encoding="utf-8") as fh:
         fh.write(sitemap)
-    # Archivo que consulta el programa instalado para saber si hay version
-    # nueva. Sale de la misma fuente que los enlaces de descarga, asi que no
-    # hay nada que actualizar a mano.
+    # The file the installed program reads to learn whether there is a new
+    # version. It comes from the same source as the download links, so there is
+    # nothing to update by hand.
     last_tick = {
         "version": VERSION,
         "url": DOMAIN,

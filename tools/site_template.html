@@ -3,27 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>$titulo</title>
-<meta name="description" content="$descripcion">
-<meta name="keywords" content="$claves">
+<title>$title</title>
+<meta name="description" content="$description">
+<meta name="keywords" content="$keywords">
 <meta name="theme-color" content="#ffffff">
 <link rel="canonical" href="$base">
-<link rel="alternate" hreflang="en" href="$dominio/">
-<link rel="alternate" hreflang="es" href="$dominio/es/">
-<link rel="alternate" hreflang="x-default" href="$dominio/">
-<link rel="icon" href="${prefijo}easypdf.png" type="image/png">
-<link rel="apple-touch-icon" href="${prefijo}easypdf.png">
+<link rel="alternate" hreflang="en" href="$domain/">
+<link rel="alternate" hreflang="es" href="$domain/es/">
+<link rel="alternate" hreflang="x-default" href="$domain/">
+<link rel="icon" href="${prefix}easypdf.png" type="image/png">
+<link rel="apple-touch-icon" href="${prefix}easypdf.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="easypdf.surf">
 <meta property="og:locale" content="$locale">
 <meta property="og:url" content="$base">
-<meta property="og:title" content="$titulo">
-<meta property="og:description" content="$descripcion">
-<meta property="og:image" content="$dominio/captura.png">
+<meta property="og:title" content="$title">
+<meta property="og:description" content="$description">
+<meta property="og:image" content="$domain/captura.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="$titulo">
-<meta name="twitter:description" content="$descripcion">
-<meta name="twitter:image" content="$dominio/captura.png">
+<meta name="twitter:title" content="$title">
+<meta name="twitter:description" content="$description">
+<meta name="twitter:image" content="$domain/captura.png">
 <script type="application/ld+json">$json_app</script>
 <script type="application/ld+json">$json_faq</script>
 <style>
@@ -157,19 +157,19 @@
 </style>
 </head>
 <body>
-<a class="skip" href="#main">$saltar</a>
+<a class="skip" href="#main">$skip</a>
 
 <header id="top">
   <div class="wrap bar">
-    <a class="brand" href="$inicio">
-      <img src="${prefijo}easypdf.png" alt="" width="24" height="24"> easypdf.surf
+    <a class="brand" href="$home">
+      <img src="${prefix}easypdf.png" alt="" width="24" height="24"> easypdf.surf
     </a>
     <nav>
       <a class="nl" href="#features">$nav_features</a>
       <a class="nl" href="#downloads">$nav_download</a>
-      <a class="ib" href="$dominio/$otro_path" hreflang="$otro_lang" lang="$otro_lang"
-         title="$otro_nombre">$OTRO_LANG</a>
-      <button class="ib" id="theme" type="button" aria-label="$tema" title="$tema">
+      <a class="ib" href="$domain/$other_path" hreflang="$other_lang" lang="$other_lang"
+         title="$other_name">$OTHER_LANG</a>
+      <button class="ib" id="theme" type="button" aria-label="$theme" title="$theme">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <g id="i-sun"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.9 1.9M17.2 17.2l1.9 1.9M19.1 4.9l-1.9 1.9M6.8 17.2l-1.9 1.9"/></g>
@@ -200,20 +200,20 @@
 <div class="wrap">
   <figure class="shot">
     <div class="chrome"><i></i><i></i><i></i><b>easypdf.surf $version</b></div>
-    <img src="${prefijo}captura.png" width="1280" height="860" alt="$alt">
+    <img src="${prefix}captura.png" width="1280" height="860" alt="$alt">
   </figure>
 </div>
 
 <section class="wrap" id="features">
   <h2>$features_title</h2>
   <ul class="feat">
-$funciones
+$features
   </ul>
 </section>
 
 <section class="wrap" id="downloads">
   <h2>$downloads_title</h2>
-$descargas
+$downloads
   <p class="fine">$mac &middot; $warn_short</p>
 </section>
 
@@ -229,7 +229,7 @@ $faq
     <nav>
       <a href="$repo">$footer_source</a>
       <a href="$repo/issues">$footer_issues</a>
-      <a href="$dominio/$otro_path" hreflang="$otro_lang">$otro_nombre</a>
+      <a href="$domain/$other_path" hreflang="$other_lang">$other_name</a>
     </nav>
   </div>
 </footer>

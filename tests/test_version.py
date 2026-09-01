@@ -53,9 +53,9 @@ def test_the_windows_metadata_declares_the_same_version():
 
 def test_the_site_links_the_packages_version():
     """The download links have to point at this version."""
-    for page_item in ("site/index.html", "site/es/index.html"):
-        links = re.findall(r"releases/download/v([\d.]+)/EasyPDF-([\d.]+)-", _read(page_item))
-        assert links, f"{page_item} has no download links"
+    for page in ("site/index.html", "site/es/index.html"):
+        links = re.findall(r"releases/download/v([\d.]+)/EasyPDF-([\d.]+)-", _read(page))
+        assert links, f"{page} has no download links"
         for label, file in links:
-            assert label == __version__, f"{page_item} links v{label}"
-            assert file == __version__, f"{page_item} enlaza el archivo {file}"
+            assert label == __version__, f"{page} links v{label}"
+            assert file == __version__, f"{page} links the file {file}"
