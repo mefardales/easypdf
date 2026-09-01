@@ -141,7 +141,7 @@ def save_template(
     if not name:
         raise TemplateError("La plantilla necesita un nombre.")
     os.makedirs(directory, exist_ok=True)
-    contenido = {
+    content = {
         "version": FORMAT_VERSION,
         "name": name,
         "category": category if category in CATEGORIES else DEFAULT_CATEGORY,
@@ -153,7 +153,7 @@ def save_template(
     temporary = path + ".tmp"
     try:
         with open(temporary, "w", encoding="utf-8") as fh:
-            json.dump(contenido, fh, ensure_ascii=False, indent=1)
+            json.dump(content, fh, ensure_ascii=False, indent=1)
         os.replace(temporary, path)
     except OSError as exc:
         if os.path.exists(temporary):
@@ -478,7 +478,7 @@ def builtin_templates() -> list[tuple[str, str, list[tuple[float, float]], list[
         _linea(686.0, IZQ, IZQ + 220),
     ]
 
-    portada = [
+    cover = [
         _linea(300.0, IZQ, DER, INK, 2.0),
         _texto(IZQ, 316, width, 40, _t("report_title"), 26, True),
         _texto(IZQ, 366, width, 20, _t("department"), 12, color=GREY),
@@ -522,7 +522,7 @@ def builtin_templates() -> list[tuple[str, str, list[tuple[float, float]], list[
         _texto(360, 656, 180, 16, _t("signature"), 10, align=Align.CENTER, color=GREY),
     ]
 
-    asistencia = [
+    attendance = [
         Annotation(kind=Kind.RECT, page=0, rect=(36.0, 36.0, 559.0, 806.0),
                    color=INK, width=2.0),
         _texto(IZQ, 170, width, 34, _t("attendance_cert"), 22, True, Align.CENTER),
@@ -538,7 +538,7 @@ def builtin_templates() -> list[tuple[str, str, list[tuple[float, float]], list[
         _texto(200, 646, 195, 16, _t("signature"), 10, align=Align.CENTER, color=GREY),
     ]
 
-    cuadro = [
+    box = [
         _texto(IZQ, 56, width, 24, _t("data_table"), 13, True),
         _tabla(92, 280, 10, [_t("concept"), _t("qty"), _t("price"), _t("total")]),
     ]
@@ -575,7 +575,7 @@ def builtin_templates() -> list[tuple[str, str, list[tuple[float, float]], list[
         _pie(),
     ]
 
-    comprobacion = _cabecera() + [
+    check_flag = _cabecera() + [
         _texto(IZQ, 128, width, 24, _t("checklist_title"), 14, True),
         _texto(IZQ, 158, width, 16, _t("date"), 10, color=GREY),
         _tabla(186, 480, 15, [_t("task"), _t("who"), _t("done")]),
@@ -587,15 +587,15 @@ def builtin_templates() -> list[tuple[str, str, list[tuple[float, float]], list[
         (_t("letter"), "document", [A4], carta),
         (_t("memo"), "document", [A4], memo),
         (_t("minutes"), "document", [A4], acta),
-        (_t("report_cover"), "report", [A4], portada),
+        (_t("report_cover"), "report", [A4], cover),
         (_t("report"), "report", [A4], informe),
         (_t("diploma"), "certificate", [A4], diploma),
-        (_t("attendance_cert"), "certificate", [A4], asistencia),
-        (_t("data_table"), "table", [A4], cuadro),
+        (_t("attendance_cert"), "certificate", [A4], attendance),
+        (_t("data_table"), "table", [A4], box),
         (_t("invoice"), "table", [A4], factura),
         (_t("quote"), "table", [A4], presupuesto),
         (_t("signatures"), "form", [A4], firmas),
-        (_t("checklist"), "form", [A4], comprobacion),
+        (_t("checklist"), "form", [A4], check_flag),
     ]
 
 

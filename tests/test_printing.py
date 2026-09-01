@@ -27,20 +27,20 @@ def _printer(path, dpi: int = 150) -> QPrinter:
     return printer
 
 
-def test_imprime_todas_las_paginas(qapp, tmp_path, sample_pdf_bytes):
+def test_it_prints_every_page(qapp, tmp_path, sample_pdf_bytes):
     output = tmp_path / "impreso.pdf"
     assert render_to_printer(sample_pdf_bytes, _printer(output))
     assert output.exists()
     assert pymupdf.open(str(output)).page_count == 3
 
 
-def test_imprime_solo_las_paginas_pedidas(qapp, tmp_path, sample_pdf_bytes):
+def test_it_prints_only_the_requested_pages(qapp, tmp_path, sample_pdf_bytes):
     output = tmp_path / "una.pdf"
     assert render_to_printer(sample_pdf_bytes, _printer(output), pages=[1])
     assert pymupdf.open(str(output)).page_count == 1
 
 
-def test_la_impresion_incluye_las_anotaciones(qapp, tmp_path, sample_pdf_bytes):
+def test_printing_includes_the_annotations(qapp, tmp_path, sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     data = doc.export_bytes(
         [Annotation(kind=Kind.RECT, page=0, rect=(60, 60, 400, 300),
@@ -61,11 +61,11 @@ def test_la_impresion_incluye_las_anotaciones(qapp, tmp_path, sample_pdf_bytes):
     assert rojos > 50
 
 
-def test_sin_paginas_no_imprime(qapp, tmp_path, sample_pdf_bytes):
+def test_with_no_pages_it_does_not_print(qapp, tmp_path, sample_pdf_bytes):
     assert not render_to_printer(sample_pdf_bytes, _printer(tmp_path / "vacio.pdf"), pages=[])
 
 
-def test_page_scale_respeta_los_topes():
+def test_page_scale_honours_the_caps():
     a4 = (595.0, 842.0)
     # Hoja pequena: manda el ajuste a la hoja
     assert page_scale(*a4, 595.0, 842.0) == pytest.approx(1.0)
@@ -82,7 +82,7 @@ def test_page_scale_respeta_los_topes():
     assert page_scale(0.0, 0.0, 100.0, 100.0) == 1.0
 
 
-def test_rango_de_paginas_del_dialogo(qapp, tmp_path, sample_pdf_bytes):
+def test_page_range_from_the_dialog(qapp, tmp_path, sample_pdf_bytes):
     printer = _printer(tmp_path / "rango.pdf")
     printer.setPrintRange(QPrinter.PageRange)
     printer.setFromTo(2, 3)

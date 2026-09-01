@@ -19,12 +19,12 @@ from easypdf.updates import check, fetch_latest, is_newer, parse_version
 @pytest.fixture()
 def servidor():
     """Servidor local que sirve un latest.json que la prueba decide."""
-    estado = {"cuerpo": json.dumps({"version": "9.9.9"}), "codigo": 200}
+    state = {"cuerpo": json.dumps({"version": "9.9.9"}), "codigo": 200}
 
     class Manejador(BaseHTTPRequestHandler):
         def do_GET(self):
-            body = estado["cuerpo"].encode("utf-8")
-            self.send_response(estado["codigo"])
+            body = state["cuerpo"].encode("utf-8")
+            self.send_response(state["codigo"])
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
@@ -35,77 +35,77 @@ def servidor():
 
     servidor = HTTPServer(("127.0.0.1", 0), Manejador)
     threading.Thread(target=servidor.serve_forever, daemon=True).start()
-    estado["url"] = f"http://127.0.0.1:{servidor.server_address[1]}/latest.json"
-    yield estado
+    state["url"] = f"http://127.0.0.1:{servidor.server_address[1]}/latest.json"
+    yield state
     servidor.shutdown()
 
 
 # -- comparacion de versiones -------------------------------------------
-def test_parse_version_convierte_a_numeros():
+def test_parse_version_turns_it_into_numbers():
     assert parse_version("1.2.0") == (1, 2, 0)
     assert parse_version("v1.3") == (1, 3)
     assert parse_version("1.2.0-beta") == (1, 2, 0)
 
 
-def test_una_version_sin_numeros_pierde_contra_cualquiera():
+def test_a_version_with_no_digits_loses_to_anything():
     assert parse_version("nada") == (0,)
     assert parse_version("") == (0,)
     assert is_newer("0.0.1", "nada")
 
 
-def test_compara_los_numeros_no_el_texto():
+def test_it_compares_numbers_not_text():
     """'1.10.0' es posterior a '1.9.0', aunque como texto sea menor."""
     assert is_newer("1.10.0", "1.9.0")
     assert is_newer("2.0.0", "1.99.99")
     assert not is_newer("1.9.0", "1.10.0")
 
 
-def test_la_misma_version_no_es_mas_nueva():
+def test_the_same_version_is_not_newer():
     assert not is_newer("1.2.0", "1.2.0")
 
 
 # -- consulta ------------------------------------------------------------
-def test_lee_el_archivo_de_la_web(servidor):
+def test_it_reads_the_file_from_the_site(servidor):
     assert fetch_latest(servidor["url"]) == {"version": "9.9.9"}
 
 
-def test_avisa_solo_si_hay_algo_mas_nuevo(servidor):
+def test_it_only_reports_something_newer(servidor):
     assert check("1.0.0", servidor["url"]) == {"version": "9.9.9"}
     assert check("9.9.9", servidor["url"]) is None
     assert check("10.0.0", servidor["url"]) is None
 
 
-def test_sin_internet_no_rompe():
+def test_no_internet_does_not_break_it():
     # puerto 1: no hay nadie escuchando
     assert fetch_latest("http://127.0.0.1:1/latest.json", timeout=1) is None
     assert check("1.0.0", "http://127.0.0.1:1/latest.json", timeout=1) is None
 
 
-def test_una_respuesta_que_no_es_json_no_rompe(servidor):
+def test_a_response_that_is_not_json_does_not_break_it(servidor):
     servidor["cuerpo"] = "<html>pagina de error</html>"
     assert fetch_latest(servidor["url"]) is None
     assert check("1.0.0", servidor["url"]) is None
 
 
-def test_un_json_sin_version_no_avisa(servidor):
+def test_json_without_a_version_says_nothing(servidor):
     servidor["cuerpo"] = json.dumps({"url": "https://easypdf.surf"})
     assert check("1.0.0", servidor["url"]) is None
 
 
-def test_un_json_que_no_es_un_objeto_no_rompe(servidor):
+def test_json_that_is_not_an_object_does_not_break_it(servidor):
     servidor["cuerpo"] = json.dumps(["1.2.3"])
     assert fetch_latest(servidor["url"]) is None
 
 
-def test_cerrar_la_ventana_mientras_se_consulta_no_rompe(qapp, servidor):
+def test_closing_the_window_mid_check_does_not_break(qapp, servidor):
     """El hilo no puede avisar a una ventana que ya no existe."""
     import time
 
     from easypdf.ui.update_check import UpdateChecker
 
     checker = UpdateChecker()
-    recibido = []
-    checker.finished.connect(recibido.append)
+    received = []
+    checker.finished.connect(received.append)
     checker.cancel()                      # como al cerrar la ventana
     checker.start(servidor["url"], current="1.0.0")
 
@@ -113,23 +113,23 @@ def test_cerrar_la_ventana_mientras_se_consulta_no_rompe(qapp, servidor):
     while checker.running and time.monotonic() < fin:
         qapp.processEvents()
     qapp.processEvents()
-    assert recibido == []                 # no avisa, y no suelta ningun error
+    assert received == []                 # no avisa, y no suelta ningun error
 
 
-def test_la_consulta_avisa_del_resultado(qapp, servidor):
+def test_the_check_reports_its_result(qapp, servidor):
     import time
 
     from easypdf.ui.update_check import UpdateChecker
 
     checker = UpdateChecker()
-    recibido = []
-    checker.finished.connect(recibido.append)
+    received = []
+    checker.finished.connect(received.append)
     checker.start(servidor["url"], current="1.0.0")
 
     fin = time.monotonic() + 5
-    while not recibido and time.monotonic() < fin:
+    while not received and time.monotonic() < fin:
         qapp.processEvents()
-    assert recibido and recibido[0]["version"] == "9.9.9"
+    assert received and received[0]["version"] == "9.9.9"
 
 
 # -- descarga ------------------------------------------------------------
@@ -139,10 +139,10 @@ def servidor_archivos(tmp_path):
     import hashlib
     from http.server import SimpleHTTPRequestHandler
 
-    contenido = b"esto hace de instalador" * 5000
-    (tmp_path / "EasyPDF-9.9.9-Setup.exe").write_bytes(contenido)
+    content = b"esto hace de instalador" * 5000
+    (tmp_path / "EasyPDF-9.9.9-Setup.exe").write_bytes(content)
     (tmp_path / "EasyPDF-9.9.9-Setup.exe.sha256").write_text(
-        hashlib.sha256(contenido).hexdigest() + "  EasyPDF-9.9.9-Setup.exe\n"
+        hashlib.sha256(content).hexdigest() + "  EasyPDF-9.9.9-Setup.exe\n"
     )
 
     class Manejador(SimpleHTTPRequestHandler):
@@ -162,13 +162,13 @@ def servidor_archivos(tmp_path):
     yield {
         "base": base,
         "url": f"{base}/EasyPDF-9.9.9-Setup.exe",
-        "contenido": contenido,
+        "contenido": content,
         "dir": tmp_path,
     }
     servidor.shutdown()
 
 
-def test_elige_el_paquete_que_toca_en_cada_sistema(monkeypatch):
+def test_it_picks_the_right_package_for_each_system(monkeypatch):
     import sys as _sys
 
     from easypdf.updates import asset_for_platform
@@ -185,7 +185,7 @@ def test_elige_el_paquete_que_toca_en_cada_sistema(monkeypatch):
     assert asset_for_platform(data) is None      # todavia no hay paquete de Mac
 
 
-def test_sin_enlace_para_este_sistema_no_hay_descarga(monkeypatch):
+def test_no_link_for_this_system_means_no_download(monkeypatch):
     import sys as _sys
 
     from easypdf.updates import asset_for_platform
@@ -195,7 +195,7 @@ def test_sin_enlace_para_este_sistema_no_hay_descarga(monkeypatch):
     assert asset_for_platform({}) is None
 
 
-def test_descarga_el_archivo_y_va_contando(servidor_archivos, tmp_path):
+def test_it_downloads_the_file_and_reports_progress(servidor_archivos, tmp_path):
     from easypdf.updates import download
 
     avance = []
@@ -208,7 +208,7 @@ def test_descarga_el_archivo_y_va_contando(servidor_archivos, tmp_path):
     assert avance[-1][1] == len(servidor_archivos["contenido"])   # el total del servidor
 
 
-def test_la_descarga_comprueba_el_sha256(servidor_archivos, tmp_path):
+def test_the_download_checks_the_sha256(servidor_archivos, tmp_path):
     from easypdf.updates import download_verified, sha256_of
 
     target = str(tmp_path / "bajado.exe")
@@ -218,7 +218,7 @@ def test_la_descarga_comprueba_el_sha256(servidor_archivos, tmp_path):
     )
 
 
-def test_si_el_sha256_no_cuadra_se_tira_el_archivo(servidor_archivos, tmp_path):
+def test_a_mismatched_sha256_throws_the_file_away(servidor_archivos, tmp_path):
     """Lo que se baja se va a ejecutar: si no es lo publicado, no vale."""
     from easypdf.updates import DownloadError, download_verified
 
@@ -231,7 +231,7 @@ def test_si_el_sha256_no_cuadra_se_tira_el_archivo(servidor_archivos, tmp_path):
     assert not os.path.exists(target)
 
 
-def test_sin_sha256_publicado_la_descarga_sigue_valiendo(servidor_archivos, tmp_path):
+def test_a_download_without_a_published_sha256_is_still_valid(servidor_archivos, tmp_path):
     """Los paquetes antiguos pueden no llevarlo; no es motivo para no bajarlos."""
     from easypdf.updates import download_verified
 
@@ -241,7 +241,7 @@ def test_sin_sha256_publicado_la_descarga_sigue_valiendo(servidor_archivos, tmp_
     assert open(target, "rb").read() == servidor_archivos["contenido"]
 
 
-def test_al_cancelar_no_queda_ningun_resto(servidor_archivos, tmp_path):
+def test_cancelling_leaves_no_leftovers(servidor_archivos, tmp_path):
     from easypdf.updates import DownloadError, download
 
     target = str(tmp_path / "bajado.exe")
@@ -251,7 +251,7 @@ def test_al_cancelar_no_queda_ningun_resto(servidor_archivos, tmp_path):
     assert not os.path.exists(target + ".parte")
 
 
-def test_una_url_que_no_existe_da_un_error_claro(servidor_archivos, tmp_path):
+def test_a_url_that_does_not_exist_gives_a_clear_error(servidor_archivos, tmp_path):
     from easypdf.updates import DownloadError, download
 
     target = str(tmp_path / "bajado.exe")
@@ -260,7 +260,7 @@ def test_una_url_que_no_existe_da_un_error_claro(servidor_archivos, tmp_path):
     assert not os.path.exists(target)
 
 
-def test_solo_se_instala_el_exe_de_windows(monkeypatch):
+def test_only_the_windows_exe_is_installed(monkeypatch):
     from easypdf.updates import is_installer
 
     monkeypatch.setattr(os, "name", "nt")
@@ -270,7 +270,7 @@ def test_solo_se_instala_el_exe_de_windows(monkeypatch):
     assert not is_installer("/home/x/EasyPDF-2.0.0-Setup.exe")
 
 
-def test_no_se_intenta_ejecutar_un_paquete_que_no_es_instalador():
+def test_a_package_that_is_not_an_installer_is_never_run():
     from easypdf.updates import DownloadError, launch_installer
 
     with pytest.raises(DownloadError):
@@ -288,18 +288,18 @@ def _boton(dialogo, text):
     return None
 
 
-def _esperar(qapp, condicion, segundos=10):
+def _esperar(qapp, condition, segundos=10):
     import time
 
     fin = time.monotonic() + segundos
-    while not condicion() and time.monotonic() < fin:
+    while not condition() and time.monotonic() < fin:
         qapp.processEvents()
     qapp.processEvents()
-    return condicion()
+    return condition()
 
 
 @pytest.fixture()
-def dialogo_de_actualizacion(qapp, servidor_archivos, tmp_path, monkeypatch):
+def update_dialog(qapp, servidor_archivos, tmp_path, monkeypatch):
     """Crea la ventana de aviso apuntando al servidor local."""
     from easypdf.i18n import tr
     from easypdf.ui import update_download
@@ -328,23 +328,23 @@ def dialogo_de_actualizacion(qapp, servidor_archivos, tmp_path, monkeypatch):
         dialogo.deleteLater()
 
 
-def test_el_aviso_ofrece_descargar(dialogo_de_actualizacion):
-    crear, tr = dialogo_de_actualizacion
+def test_the_notice_offers_to_download(update_dialog):
+    crear, tr = update_dialog
     dialogo = crear()
     assert _boton(dialogo, tr("update_download")) is not None
     assert _boton(dialogo, tr("update_go")) is not None
     assert _boton(dialogo, tr("update_skip")) is not None
 
 
-def test_saltar_la_version_queda_apuntado(dialogo_de_actualizacion):
-    crear, tr = dialogo_de_actualizacion
+def test_skipping_the_version_is_remembered(update_dialog):
+    crear, tr = update_dialog
     dialogo = crear()
     assert not dialogo.skipped
     _boton(dialogo, tr("update_skip")).click()
     assert dialogo.skipped
 
 
-def test_sin_paquete_para_este_sistema_no_hay_boton_de_descarga(qapp, monkeypatch):
+def test_no_package_for_this_system_means_no_download_button(qapp, monkeypatch):
     from easypdf.i18n import tr
     from easypdf.ui import update_download
 
@@ -359,11 +359,11 @@ def test_sin_paquete_para_este_sistema_no_hay_boton_de_descarga(qapp, monkeypatc
         dialogo.deleteLater()
 
 
-def test_descarga_desde_la_ventana_y_avisa_de_que_esta_lista(
-    qapp, dialogo_de_actualizacion, servidor_archivos
+def test_downloading_from_the_window_reports_when_it_is_ready(
+    qapp, update_dialog, servidor_archivos
 ):
     """El caso completo: se pulsa descargar y acaba con el archivo comprobado."""
-    crear, tr = dialogo_de_actualizacion
+    crear, tr = update_dialog
     dialogo = crear(instalable=False)
     _boton(dialogo, tr("update_download")).click()
 
@@ -377,8 +377,8 @@ def test_descarga_desde_la_ventana_y_avisa_de_que_esta_lista(
     assert _boton(dialogo, tr("update_skip")) is None
 
 
-def test_al_terminar_en_windows_ofrece_instalar(qapp, dialogo_de_actualizacion):
-    crear, tr = dialogo_de_actualizacion
+def test_when_done_on_windows_it_offers_to_install(qapp, update_dialog):
+    crear, tr = update_dialog
     instalados = []
     dialogo = crear(install_cb=lambda path: instalados.append(path) or True, instalable=True)
     _boton(dialogo, tr("update_download")).click()
@@ -390,9 +390,9 @@ def test_al_terminar_en_windows_ofrece_instalar(qapp, dialogo_de_actualizacion):
     assert instalados == [dialogo._archivo]
 
 
-def test_si_el_usuario_se_echa_atras_al_cerrar_no_se_instala(qapp, dialogo_de_actualizacion):
+def test_backing_out_of_the_close_cancels_the_install(qapp, update_dialog):
     """install_cb devuelve False cuando hay cambios sin guardar y se cancela."""
-    crear, tr = dialogo_de_actualizacion
+    crear, tr = update_dialog
     dialogo = crear(install_cb=lambda path: False, instalable=True)
     _boton(dialogo, tr("update_download")).click()
     assert _esperar(qapp, lambda: bool(dialogo._archivo))
@@ -401,7 +401,7 @@ def test_si_el_usuario_se_echa_atras_al_cerrar_no_se_instala(qapp, dialogo_de_ac
     assert dialogo.isVisible() or not dialogo.result()   # la ventana sigue ahi
 
 
-def test_una_descarga_fallida_se_cuenta_y_deja_ir_a_la_web(
+def test_a_failed_download_is_reported_and_offers_the_site(
     qapp, servidor_archivos, tmp_path, monkeypatch
 ):
     from easypdf.i18n import tr
@@ -425,11 +425,11 @@ def test_una_descarga_fallida_se_cuenta_y_deja_ir_a_la_web(
         dialogo.deleteLater()
 
 
-def test_mientras_baja_dice_cuanto_lleva(dialogo_de_actualizacion):
+def test_while_downloading_it_reports_how_far_it_got(update_dialog):
     """El avance se lee debajo de la barra, no encima de la parte pintada."""
     from easypdf.ui.update_download import MEGA
 
-    crear, tr = dialogo_de_actualizacion
+    crear, tr = update_dialog
     dialogo = crear()
     dialogo._progreso(5 * MEGA, 20 * MEGA)
     assert dialogo.note.text() == tr("update_progress", done="5.0", total="20.0")
@@ -441,17 +441,17 @@ def test_mientras_baja_dice_cuanto_lleva(dialogo_de_actualizacion):
     assert dialogo.note.text() == tr("update_verifying")
 
 
-def test_si_el_servidor_no_dice_el_tamano_sigue_contando(dialogo_de_actualizacion):
+def test_it_keeps_counting_when_the_server_omits_the_size(update_dialog):
     from easypdf.ui.update_download import MEGA
 
-    crear, tr = dialogo_de_actualizacion
+    crear, tr = update_dialog
     dialogo = crear()
     dialogo._progreso(3 * MEGA, 0)
     assert dialogo.note.text() == tr("update_progress_unknown", done="3.0")
 
 
 # -- el aviso al arrancar -------------------------------------------------
-def test_al_arrancar_comprueba_solo_y_ensena_el_cartel(qapp, servidor, monkeypatch, tmp_path):
+def test_on_start_up_it_checks_by_itself_and_shows_the_notice(qapp, servidor, monkeypatch, tmp_path):
     """Sin tocar nada: se abre el programa y sale el aviso si hay version nueva."""
     import time
 
@@ -498,14 +498,14 @@ def test_al_arrancar_comprueba_solo_y_ensena_el_cartel(qapp, servidor, monkeypat
         window.close()
 
 
-def test_si_se_apaga_la_comprobacion_no_molesta_al_arrancar(qapp, servidor, monkeypatch):
+def test_with_the_check_off_it_does_not_bother_you_on_start_up(qapp, servidor, monkeypatch):
     from easypdf.ui import update_check, update_download
     from easypdf.ui.main_window import MainWindow
 
     monkeypatch.setattr(update_check, "LATEST_URL", servidor["url"])
-    llamadas = []
+    calls = []
     monkeypatch.setattr(update_download.UpdateDialog, "exec",
-                        lambda self: llamadas.append(1) or 0)
+                        lambda self: calls.append(1) or 0)
 
     # La preferencia se guarda antes de abrir la ventana: es al construirla
     # cuando decide si programa la consulta.
@@ -521,7 +521,7 @@ def test_si_se_apaga_la_comprobacion_no_molesta_al_arrancar(qapp, servidor, monk
         while time.monotonic() < fin:
             qapp.processEvents()
             time.sleep(0.01)
-        assert llamadas == []
+        assert calls == []
     finally:
         Settings().set_value("updates/auto", True)
         window.updater.cancel()
@@ -530,9 +530,9 @@ def test_si_se_apaga_la_comprobacion_no_molesta_al_arrancar(qapp, servidor, monk
         window.close()
 
 
-def test_el_aviso_no_lleva_la_nota_del_antivirus(dialogo_de_actualizacion):
+def test_the_notice_has_no_antivirus_note(update_dialog):
     """Se pidio quitarla: el aviso solo dice que hay version nueva."""
-    crear, tr = dialogo_de_actualizacion
+    crear, tr = update_dialog
     dialogo = crear()
     assert "antivirus" not in dialogo.note.text().lower()
     assert not dialogo.note.isVisible() or dialogo.note.text() == ""

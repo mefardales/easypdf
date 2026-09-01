@@ -5,19 +5,19 @@ import pytest
 from easypdf.model import Annotation, AnnotationStore, Kind
 
 
-def test_normalized_rect_ordena_las_esquinas():
+def test_normalized_rect_orders_the_corners():
     ann = Annotation(kind=Kind.RECT, page=0, rect=(200, 300, 100, 150))
     assert ann.normalized_rect() == (100, 150, 200, 300)
 
 
-def test_bounds_de_linea_y_dibujo():
+def test_bounds_of_line_and_drawing():
     line = Annotation(kind=Kind.LINE, page=0, p1=(10, 90), p2=(80, 20))
     assert line.bounds() == (10, 20, 80, 90)
     dibujo = Annotation(kind=Kind.INK, page=0, strokes=[[(5, 5), (30, 40)], [(60, 10)]])
     assert dibujo.bounds() == (5, 5, 60, 40)
 
 
-def test_translate_mueve_todas_las_geometrias():
+def test_translate_moves_every_geometry():
     ann = Annotation(
         kind=Kind.INK, page=0, rect=(0, 0, 10, 10), p1=(1, 1), p2=(2, 2),
         strokes=[[(3, 3), (4, 4)]],
@@ -28,7 +28,7 @@ def test_translate_mueve_todas_las_geometrias():
     assert ann.strokes == [[(8, 1), (9, 2)]]
 
 
-def test_copy_no_comparte_los_trazos():
+def test_copy_does_not_share_the_strokes():
     ann = Annotation(kind=Kind.INK, page=0, strokes=[[(1, 1), (2, 2)]])
     clon = ann.copy()
     clon.strokes[0].append((3, 3))
@@ -36,21 +36,21 @@ def test_copy_no_comparte_los_trazos():
     assert clon.id == ann.id
 
 
-def test_is_empty_descarta_lo_diminuto():
+def test_is_empty_discards_the_tiny():
     assert Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 11, 11)).is_empty()
     assert not Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 60, 40)).is_empty()
     assert Annotation(kind=Kind.LINE, page=0, p1=(1, 1), p2=(1, 1)).is_empty()
     assert Annotation(kind=Kind.INK, page=0, strokes=[[(1, 1)]]).is_empty()
 
 
-def test_store_agrega_y_elimina():
+def test_store_adds_and_removes():
     store = AnnotationStore()
-    primera = store.add(Annotation(kind=Kind.RECT, page=0))
+    first_tick = store.add(Annotation(kind=Kind.RECT, page=0))
     segunda = store.add(Annotation(kind=Kind.TEXT, page=1))
     assert len(store) == 2
     assert store.for_page(1) == [segunda]
     assert store.pages_used() == [0, 1]
-    assert store.remove(primera) == 0
+    assert store.remove(first_tick) == 0
     assert len(store) == 1
     store.clear()
     assert len(store) == 0
@@ -61,7 +61,7 @@ def test_every_kind_has_a_readable_label():
     assert Kind.INK.label == "Drawing"
 
 
-def test_tabla_reparte_las_celdas():
+def test_a_table_lays_out_its_cells():
     tabla = Annotation(kind=Kind.TABLE, page=0, rect=(10, 20, 110, 80), rows=2, cols=4)
     cells = tabla.cell_rects()
     assert len(cells) == 8
@@ -71,14 +71,14 @@ def test_tabla_reparte_las_celdas():
     assert len(tabla.grid_lines()) == (2 + 1) + (4 + 1)
 
 
-def test_tabla_ajusta_los_textos_al_numero_de_celdas():
+def test_a_table_fits_the_texts_to_the_cell_count():
     tabla = Annotation(kind=Kind.TABLE, page=0, rows=2, cols=2, cells=["a", "b", "c", "d", "e"])
     assert tabla.normalized_cells() == ["a", "b", "c", "d"]
     tabla.cells = ["a"]
     assert tabla.normalized_cells() == ["a", "", "", ""]
 
 
-def test_la_punta_de_flecha_crece_con_el_grosor_pero_no_pasa_de_la_linea():
+def test_the_arrow_head_grows_with_width_but_never_exceeds_the_line():
     from easypdf.model import arrow_head
 
     base_fina, punta, left, right = arrow_head((0, 0), (100, 0), 1.0)
@@ -95,7 +95,7 @@ def test_la_punta_de_flecha_crece_con_el_grosor_pero_no_pasa_de_la_linea():
 # Giro de pagina
 # --------------------------------------------------------------------------
 
-def test_rotate_point_lleva_las_esquinas_a_su_sitio():
+def test_rotate_point_takes_the_corners_where_they_belong():
     from easypdf.model import rotate_point
 
     width, height = 600.0, 800.0
@@ -108,7 +108,7 @@ def test_rotate_point_lleva_las_esquinas_a_su_sitio():
     assert rotate_point((10.0, 20.0), 0, width, height) == (10.0, 20.0)
 
 
-def test_cuatro_giros_de_90_devuelven_el_punto_al_origen():
+def test_four_ninety_degree_turns_return_the_point_home():
     from easypdf.model import rotate_point
 
     point, width, height = (123.0, 456.0), 600.0, 800.0
@@ -119,7 +119,7 @@ def test_cuatro_giros_de_90_devuelven_el_punto_al_origen():
     assert (width, height) == (600.0, 800.0)
 
 
-def test_rotate_annotation_gira_rectangulo_linea_y_trazos():
+def test_rotate_annotation_turns_rect_line_and_strokes():
     from easypdf.model import rotate_annotation
 
     ann = Annotation(
@@ -133,7 +133,7 @@ def test_rotate_annotation_gira_rectangulo_linea_y_trazos():
     assert ann.strokes == [[(800.0, 0.0), (790.0, 10.0)]]
 
 
-def test_rotate_annotation_no_toca_nada_si_el_giro_es_cero():
+def test_rotate_annotation_does_nothing_at_zero():
     from easypdf.model import rotate_annotation
 
     ann = Annotation(kind=Kind.RECT, page=0, rect=(1.0, 2.0, 3.0, 4.0))
@@ -145,20 +145,20 @@ def test_rotate_annotation_no_toca_nada_si_el_giro_es_cero():
 # Alineacion con guias
 # --------------------------------------------------------------------------
 
-def test_snap_offset_pega_a_la_guia_mas_cercana():
+def test_snap_offset_sticks_to_the_nearest_guide():
     from easypdf.model import snap_offset
 
     # el borde izquierdo esta a 2 de la guia 100
     assert snap_offset([98.0, 148.0, 198.0], [0.0, 100.0, 300.0], 6.0) == (2.0, 100.0)
 
 
-def test_snap_offset_no_hace_nada_si_esta_lejos():
+def test_snap_offset_does_nothing_when_far_away():
     from easypdf.model import snap_offset
 
     assert snap_offset([80.0], [100.0], 6.0) == (0.0, None)
 
 
-def test_snap_offset_elige_la_guia_mas_proxima_entre_varias():
+def test_snap_offset_picks_the_closest_guide_of_several():
     from easypdf.model import snap_offset
 
     # 97 esta a 3 de 100 y a 3 de 94: gana la primera que empata por orden
@@ -168,13 +168,13 @@ def test_snap_offset_elige_la_guia_mas_proxima_entre_varias():
     assert snap_offset([97.0], [100.0, 96.0], 6.0) == (-1.0, 96.0)
 
 
-def test_snap_offset_no_mueve_lo_que_ya_esta_alineado():
+def test_snap_offset_leaves_what_is_already_aligned():
     from easypdf.model import snap_offset
 
     assert snap_offset([100.0], [100.0], 6.0) == (0.0, 100.0)
 
 
-def test_mover_una_anotacion_arrastra_todo_lo_que_la_compone():
+def test_moving_an_annotation_drags_everything_it_is_made_of():
     """El rectangulo no basta: las lineas viven en sus extremos y la tinta en sus trazos."""
     from easypdf.model import move_annotation
 
@@ -190,7 +190,7 @@ def test_mover_una_anotacion_arrastra_todo_lo_que_la_compone():
     assert ann.strokes == [[(7.0, -3.0), (12.0, 2.0)]]
 
 
-def test_mover_cero_no_toca_nada():
+def test_moving_by_zero_touches_nothing():
     from easypdf.model import move_annotation
 
     ann = Annotation(kind=Kind.RECT, page=0, rect=(1.0, 2.0, 3.0, 4.0))

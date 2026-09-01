@@ -289,7 +289,7 @@ def build_page(lang: str) -> str:
     base = f"{DOMAIN}/{t['path']}"
     prefijo = "../" if t["path"] else ""
 
-    funciones = "\n".join(
+    features = "\n".join(
         "        <li>\n"
         f'          <svg viewBox="0 0 24 24" aria-hidden="true">{ICONS[key]}</svg>\n'
         f"          <div><b>{esc(title)}</b><span>{esc(text)}</span></div>\n"
@@ -354,7 +354,7 @@ def build_page(lang: str) -> str:
         title=esc(t["title"]),
         OTRO_LANG=otro["lang"].upper(),
         url_setup=FILES["setup"],
-        descripcion=esc(t["description"]),
+        description=esc(t["description"]),
         claves=esc(t["keywords"]),
         base=base,
         dominio=DOMAIN,
@@ -381,7 +381,7 @@ def build_page(lang: str) -> str:
         stat_today=esc(t["stat_today"]),
         alt=esc(t["shot_alt"]),
         features_title=esc(t["features_title"]),
-        funciones=funciones,
+        features=features,
         downloads_title=esc(t["downloads_title"]),
         descargas=descargas,
         mac=esc(t["mac"]),
@@ -442,7 +442,7 @@ Sitemap: {DOMAIN}/sitemap.xml
     # Archivo que consulta el programa instalado para saber si hay version
     # nueva. Sale de la misma fuente que los enlaces de descarga, asi que no
     # hay nada que actualizar a mano.
-    ultima = {
+    last_tick = {
         "version": VERSION,
         "url": DOMAIN,
         "setup": FILES["setup"],
@@ -450,7 +450,7 @@ Sitemap: {DOMAIN}/sitemap.xml
         "linux": FILES["linux"],
     }
     with open(os.path.join(SITE, "latest.json"), "w", encoding="utf-8") as fh:
-        json.dump(ultima, fh, ensure_ascii=False, indent=2)
+        json.dump(last_tick, fh, ensure_ascii=False, indent=2)
     print(f"Escrito latest.json (version {VERSION})")
 
     print("Escritos robots.txt y sitemap.xml")

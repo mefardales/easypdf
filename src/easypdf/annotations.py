@@ -319,9 +319,9 @@ def apply_erasures(doc: pymupdf.Document, erasures: Iterable[Annotation]) -> int
         if 0 <= ann.page < doc.page_count:
             por_pagina.setdefault(ann.page, []).append(ann)
 
-    for index, pasadas in por_pagina.items():
+    for index, passes in por_pagina.items():
         page = doc[index]
-        for ann in pasadas:
+        for ann in passes:
             relleno = _color(ann.color)
             for box in stroke_boxes(ann.strokes, ann.width):
                 rect = pymupdf.Rect(*box) & page.rect

@@ -920,16 +920,16 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         cell = cells[index]
         # Mismo margen y misma alineacion que usa paint(): si no, el texto se
         # ve en un sitio mientras se escribe y salta a otro al terminar.
-        alineacion = ALIGN_FLAGS.get(Align(self.ann.align), Qt.AlignLeft)
+        alignment = ALIGN_FLAGS.get(Align(self.ann.align), Qt.AlignLeft)
         options = editor.document().defaultTextOption()
-        options.setAlignment(alineacion)
+        options.setAlignment(alignment)
         editor.document().setDefaultTextOption(options)
         editor.document().setDocumentMargin(0)
         # defaultTextOption no re-alinea los parrafos que ya existen, y el
         # texto se dibuja con la alineacion del bloque, no con la de la
         # opcion. Ademas, reemplazar el contenido crea un bloque nuevo con el
         # formato por omision, asi que se vuelve a poner cada vez que cambia.
-        self._alineacion = alineacion
+        self._alignment = alignment
         self._realinear()
         editor.document().contentsChanged.connect(self._realinear)
         editor.setTextWidth(max(10.0, cell.width() - 2 * CELL_PADDING))
@@ -958,9 +958,9 @@ class TableItem(AnnotationItemMixin, QGraphicsRectItem):
         cursor = QTextCursor(editor.document())
         cursor.select(QTextCursor.SelectionType.Document)
         formato = cursor.blockFormat()
-        if formato.alignment() == self._alineacion:
+        if formato.alignment() == self._alignment:
             return                       # ya esta bien: nada que tocar
-        formato.setAlignment(self._alineacion)
+        formato.setAlignment(self._alignment)
         cursor.mergeBlockFormat(formato)
 
     def finish_editing(self) -> None:

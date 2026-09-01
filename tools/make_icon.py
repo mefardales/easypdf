@@ -38,9 +38,9 @@ def _squared(image):
 
     if image.width == image.height:
         return image
-    lado = max(image.width, image.height)
-    lienzo = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
-    lienzo.paste(image, ((lado - image.width) // 2, (lado - image.height) // 2), image)
+    side = max(image.width, image.height)
+    lienzo = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    lienzo.paste(image, ((side - image.width) // 2, (side - image.height) // 2), image)
     return lienzo
 
 

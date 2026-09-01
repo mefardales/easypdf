@@ -45,14 +45,14 @@ def _arrastrar(window, desde, hasta, modificador=Qt.NoModifier):
     QApplication.processEvents()
 
 
-def test_abrir_documento_configura_la_ventana(window):
+def test_opening_a_document_sets_up_the_window(window):
     assert window.view.page_count == 3
     assert window.page_label.text() == tr("status_of", total=3)
     assert "muestra.pdf" in window.windowTitle()
     assert window.act_print.isEnabled()
 
 
-def test_dibujar_cada_herramienta(window):
+def test_draw_with_every_tool(window):
     window.select_tool(Tool.RECT)
     _arrastrar(window, (150, 150), (400, 260))
     window.select_tool(Tool.LINE)
@@ -66,7 +66,7 @@ def test_dibujar_cada_herramienta(window):
     assert window.view.tool is Tool.SELECT  # vuelve a seleccionar al terminar
 
 
-def test_dibujo_libre_acumula_puntos(window):
+def test_freehand_accumulates_points(window):
     window.select_tool(Tool.INK)
     viewport = window.view.viewport()
     QTest.mousePress(viewport, Qt.LeftButton, Qt.NoModifier, QPoint(200, 500))
@@ -80,7 +80,7 @@ def test_dibujo_libre_acumula_puntos(window):
     assert len(annotations[0].strokes[0]) > 5
 
 
-def test_cuadro_de_texto_guarda_lo_escrito(window, tmp_path):
+def test_a_text_box_keeps_what_was_typed(window, tmp_path):
     window.select_tool(Tool.TEXT)
     _arrastrar(window, (150, 600), (420, 650))
     selection = window.view.selected_items()
@@ -92,11 +92,11 @@ def test_cuadro_de_texto_guarda_lo_escrito(window, tmp_path):
     window.view.document.save_as(str(target), window.view.annotations())
     output = pymupdf.open(str(target))
     page_item = output[0]
-    contenidos = [a.info.get("content", "") for a in page_item.annots()]
-    assert "Nota de prueba" in contenidos
+    contents = [a.info.get("content", "") for a in page_item.annots()]
+    assert "Nota de prueba" in contents
 
 
-def test_clic_sin_arrastrar_crea_un_cuadro_de_texto_usable(window):
+def test_a_click_without_dragging_makes_a_usable_text_box(window):
     window.select_tool(Tool.TEXT)
     _arrastrar(window, (200, 300), (203, 302))
     annotations = list(window.view.annotations())
@@ -105,7 +105,7 @@ def test_clic_sin_arrastrar_crea_un_cuadro_de_texto_usable(window):
     assert x1 - x0 > 100 and y1 - y0 > 10
 
 
-def test_deshacer_y_rehacer(window):
+def test_undo_and_redo(window):
     window.select_tool(Tool.RECT)
     _arrastrar(window, (150, 150), (400, 260))
     assert window.view.annotation_count() == 1
@@ -115,7 +115,7 @@ def test_deshacer_y_rehacer(window):
     assert window.view.annotation_count() == 1
 
 
-def test_eliminar_seleccion(window):
+def test_delete_selection(window):
     window.select_tool(Tool.RECT)
     _arrastrar(window, (150, 150), (400, 260))
     window.view.select_all_annotations()
@@ -126,7 +126,7 @@ def test_eliminar_seleccion(window):
     assert window.view.annotation_count() == 1
 
 
-def test_mover_y_deshacer_conserva_la_posicion(window):
+def test_move_and_undo_restores_the_position(window):
     window.select_tool(Tool.RECT)
     _arrastrar(window, (150, 150), (400, 260))
     item = window.view.selected_items()[0]
@@ -140,7 +140,7 @@ def test_mover_y_deshacer_conserva_la_posicion(window):
     assert item.ann.rect == pytest.approx(inicial)
 
 
-def test_cambiar_estilo_de_la_seleccion(window):
+def test_change_the_style_of_the_selection(window):
     window.select_tool(Tool.RECT)
     _arrastrar(window, (150, 150), (400, 260))
     item = window.view.selected_items()[0]
@@ -151,7 +151,7 @@ def test_cambiar_estilo_de_la_seleccion(window):
     assert item.ann.width != 4.0
 
 
-def test_buscar_texto(window):
+def test_search_text(window):
     window.search_edit.setText("EasyPDF")
     window.run_search()
     assert window.view.hit_count == 3
@@ -165,7 +165,7 @@ def test_buscar_texto(window):
     assert window.view.hit_count == 0
 
 
-def test_navegacion_entre_paginas(window):
+def test_navigating_between_pages(window):
     window.view.go_to_page(2)
     QApplication.processEvents()
     assert window.view.current_page == 2
@@ -184,19 +184,19 @@ def test_zoom(window):
     assert window.view.zoom > 0
 
 
-def test_miniaturas(window, qapp):
+def test_thumbnails(window, qapp):
     QTest.qWait(400)
     qapp.processEvents()
     assert window.thumb_list.count() == 3
 
 
-def test_cerrar_documento(window):
+def test_close_document(window):
     assert window.close_document()
     assert not window.view.has_document()
     assert window.windowTitle() == __app_name__
 
 
-def test_color_ida_y_vuelta():
+def test_colour_round_trip():
     from PySide6.QtGui import QColor
 
     color = QColor("#1565c0")
@@ -204,7 +204,7 @@ def test_color_ida_y_vuelta():
     assert qcolor(to_rgb(color)).name() == "#1565c0"
 
 
-def test_item_de_cuadro_sincroniza_el_modelo(qapp):
+def test_a_box_item_syncs_the_model(qapp):
     from PySide6.QtWidgets import QGraphicsScene
 
     scene = QGraphicsScene()
@@ -218,7 +218,7 @@ def test_item_de_cuadro_sincroniza_el_modelo(qapp):
     assert ann.rect == (15, 25, 115, 75)
 
 
-def test_crear_el_item_no_altera_el_modelo(qapp):
+def test_creating_the_item_does_not_alter_the_model(qapp):
     """Regresion: setPos() disparaba itemChange y machacaba la geometria."""
     from PySide6.QtWidgets import QGraphicsScene
 
@@ -239,7 +239,7 @@ def test_crear_el_item_no_altera_el_modelo(qapp):
         assert ann.strokes == expected.strokes
 
 
-def test_add_annotation_es_deshacible(window):
+def test_add_annotation_is_undoable(window):
     ann = Annotation(kind=Kind.RECT, page=1, rect=(50, 60, 300, 200))
     item = window.view.add_annotation(ann)
     assert item in window.view._annotation_items()
@@ -251,7 +251,7 @@ def test_add_annotation_es_deshacible(window):
         window.view.add_annotation(Annotation(kind=Kind.RECT, page=99, rect=(1, 1, 50, 50)))
 
 
-def test_escribir_texto_libera_supr_y_ctrl_a(window):
+def test_typing_text_frees_del_and_ctrl_a(window):
     """Mientras se escribe, los atajos globales no pueden robar las teclas."""
     window.select_tool(Tool.TEXT)
     _arrastrar(window, (150, 600), (420, 650))
@@ -266,7 +266,7 @@ def test_escribir_texto_libera_supr_y_ctrl_a(window):
     assert window.act_select_all.isEnabled()
 
 
-def test_arrastrar_un_dibujo_no_lo_manda_fuera_de_la_pantalla(window):
+def test_dragging_a_drawing_does_not_fling_it_off_screen(window):
     """Regresion: mover la posicion dentro de itemChange disparaba el dibujo."""
     window.select_tool(Tool.INK)
     viewport = window.view.viewport()
@@ -299,7 +299,7 @@ def test_arrastrar_un_dibujo_no_lo_manda_fuera_de_la_pantalla(window):
     assert item.scene() is not None and item.isVisible()
 
 
-def test_la_punta_de_flecha_es_la_misma_en_pantalla_y_en_el_pdf(qapp):
+def test_the_arrow_head_is_the_same_on_screen_and_in_the_pdf(qapp):
     """La punta que se dibuja y la que se guarda tienen que medir lo mismo."""
     from easypdf.model import arrow_head
 
@@ -314,7 +314,7 @@ def test_la_punta_de_flecha_es_la_misma_en_pantalla_y_en_el_pdf(qapp):
     assert fin.x() < punta[0] and fin.y() < punta[1]
 
 
-def test_crear_una_tabla_y_escribir_en_sus_celdas(window, tmp_path):
+def test_create_a_table_and_type_in_its_cells(window, tmp_path):
     window.rows_spin.setValue(2)
     window.cols_spin.setValue(3)
     window.select_tool(Tool.TABLE)
@@ -339,7 +339,7 @@ def test_crear_una_tabla_y_escribir_en_sus_celdas(window, tmp_path):
     assert tipos.count("Ink") == 1 and tipos.count("FreeText") == 6
 
 
-def test_una_tabla_pequena_recibe_un_tamano_util(window):
+def test_a_tiny_table_gets_a_usable_size(window):
     window.select_tool(Tool.TABLE)
     _arrastrar(window, (200, 300), (204, 303))
     tabla = window.view.selected_items()[0]
@@ -347,7 +347,7 @@ def test_una_tabla_pequena_recibe_un_tamano_util(window):
     assert (x1 - x0) > 100 and (y1 - y0) > 40
 
 
-def test_los_estilos_de_texto_se_aplican_a_la_seleccion(window):
+def test_text_styles_apply_to_the_selection(window):
     from easypdf.model import Align, Font
 
     window.select_tool(Tool.TEXT)
@@ -368,7 +368,7 @@ def test_los_estilos_de_texto_se_aplican_a_la_seleccion(window):
     assert window.view.style_defaults["bold"] is True
 
 
-def test_cerrar_la_busqueda_quita_el_resaltado(window):
+def test_closing_the_search_clears_the_highlight(window):
     window.search_edit.setText("EasyPDF")
     window.run_search()
     assert window.view.hit_count == 3
@@ -387,7 +387,7 @@ def test_cerrar_la_busqueda_quita_el_resaltado(window):
     assert window.view.hit_count == 0
 
 
-def test_colocar_una_imagen_arrastrandola_al_documento(window, sample_image, tmp_path):
+def test_placing_an_image_by_dropping_it_on_the_document(window, sample_image, tmp_path):
     assert window.insert_image_from_file(sample_image)
     image = window.view._annotation_items()[0]
     assert image.ann.kind is Kind.IMAGE
@@ -400,7 +400,7 @@ def test_colocar_una_imagen_arrastrandola_al_documento(window, sample_image, tmp
     assert len(pymupdf.open(str(target))[0].get_images()) == 1
 
 
-def test_la_imagen_conserva_la_proporcion_al_colocarla(window, sample_image_bytes):
+def test_the_image_keeps_its_aspect_when_placed(window, sample_image_bytes):
     window.view.style_defaults["image"] = ("logo.png", sample_image_bytes)
     window.view.set_tool(Tool.IMAGE)
     _arrastrar(window, (200, 300), (500, 600))
@@ -409,7 +409,7 @@ def test_la_imagen_conserva_la_proporcion_al_colocarla(window, sample_image_byte
     assert (x1 - x0) / (y1 - y0) == pytest.approx(200 / 120, rel=0.02)
 
 
-def test_redimensionar_una_imagen_por_la_esquina_mantiene_la_proporcion(
+def test_resizing_an_image_by_the_corner_keeps_the_aspect(
     window, sample_image
 ):
     window.insert_image_from_file(sample_image)
@@ -423,7 +423,7 @@ def test_redimensionar_una_imagen_por_la_esquina_mantiene_la_proporcion(
     )
 
 
-def test_crear_un_documento_en_blanco_y_anadir_paginas(window, tmp_path):
+def test_create_a_blank_document_and_add_pages(window, tmp_path):
     window._modified = False
     window.view.undo_stack.setClean()
     window.new_document()
@@ -448,7 +448,7 @@ def test_crear_un_documento_en_blanco_y_anadir_paginas(window, tmp_path):
     assert len(list(stored[0].annots())) == 1
 
 
-def test_borrar_una_pagina_se_puede_deshacer(window):
+def test_deleting_a_page_can_be_undone(window):
     window.view.add_annotation(
         Annotation(kind=Kind.RECT, page=1, rect=(50, 50, 200, 150)), undoable=False
     )
@@ -463,7 +463,7 @@ def test_borrar_una_pagina_se_puede_deshacer(window):
     assert window.view.annotations()[0].page == 1
 
 
-def test_insertar_una_pagina_recoloca_las_anotaciones(window):
+def test_inserting_a_page_shifts_the_annotations(window):
     window.view.add_annotation(
         Annotation(kind=Kind.RECT, page=2, rect=(50, 50, 200, 150)), undoable=False
     )
@@ -473,7 +473,7 @@ def test_insertar_una_pagina_recoloca_las_anotaciones(window):
     assert window.view.annotations()[0].page == 2
 
 
-def test_guardar_y_reutilizar_una_plantilla(window, tmp_path, sample_image_bytes):
+def test_save_and_reuse_a_template(window, tmp_path, sample_image_bytes):
     folder = tmp_path / "plantillas"
     window.templates_dir = lambda: str(folder)
 
@@ -506,7 +506,7 @@ def test_guardar_y_reutilizar_una_plantilla(window, tmp_path, sample_image_bytes
     assert window.view.annotation_count() == 2
 
 
-def test_documento_nuevo_desde_una_plantilla(window, tmp_path):
+def test_new_document_from_a_template(window, tmp_path):
     folder = tmp_path / "plantillas"
     window.templates_dir = lambda: str(folder)
     from easypdf.templates import save_template
@@ -526,7 +526,7 @@ def test_documento_nuevo_desde_una_plantilla(window, tmp_path):
     assert window.view.annotations()[0].page == 1
 
 
-def test_cambiar_el_idioma_de_la_interfaz(window):
+def test_changing_the_interface_language(window):
     """La ventana se retraduce entera sin reiniciar."""
     set_language("en")
     window.retranslate()
@@ -566,7 +566,7 @@ ANNOTATIONS_TO_REPAINT = {
 
 
 @pytest.mark.parametrize("name", sorted(ANNOTATIONS_TO_REPAINT))
-def test_el_item_no_pinta_fuera_de_su_bounding_rect(qapp, name):
+def test_the_item_paints_nothing_outside_its_bounding_rect(qapp, name):
     from PySide6.QtGui import QImage, QPainter
     from PySide6.QtWidgets import QGraphicsScene, QStyleOptionGraphicsItem
 
@@ -611,7 +611,7 @@ def _primera_linea(window, page_item):
     return lines[0] if lines else ""
 
 
-def test_arrastrar_una_miniatura_reordena_el_documento(window, qapp):
+def test_dragging_a_thumbnail_reorders_the_document(window, qapp):
     assert window.view.page_count >= 3   # el PDF de prueba ya trae varias
     antes = [_primera_linea(window, i) for i in range(window.view.page_count)]
 
@@ -628,9 +628,9 @@ def test_arrastrar_una_miniatura_reordena_el_documento(window, qapp):
     assert [_primera_linea(window, i) for i in range(window.view.page_count)] == antes
 
 
-def test_el_menu_de_una_miniatura_ofrece_todas_las_operaciones(window):
-    _menu, acciones = window.build_page_menu(0)
-    valores = set(acciones.values())
+def test_a_thumbnails_menu_offers_every_operation(window):
+    _menu, actions = window.build_page_menu(0)
+    valores = set(actions.values())
     # las de insertar llevan el tamano detras ("insert_after:A4"), asi que se
     # comparan por el prefijo
     familias = {v.split(":", 1)[0] for v in valores}
@@ -641,7 +641,7 @@ def test_el_menu_de_una_miniatura_ofrece_todas_las_operaciones(window):
     }
 
 
-def test_insertar_y_duplicar_desde_el_menu_de_la_miniatura(window, qapp):
+def test_insert_and_duplicate_from_the_thumbnail_menu(window, qapp):
     total = window.view.page_count
 
     window.run_page_action("insert_after", 0)
@@ -660,7 +660,7 @@ def test_insertar_y_duplicar_desde_el_menu_de_la_miniatura(window, qapp):
     assert window.view.page_count == total
 
 
-def test_girar_la_pagina_arrastra_consigo_las_anotaciones(window, qapp):
+def test_rotating_the_page_carries_the_annotations_along(window, qapp):
     width, height = window.view.document.page_size(0)
     ann = Annotation(kind=Kind.RECT, page=0, rect=(50.0, 100.0, 150.0, 200.0), width=2)
     window.view.add_annotation(ann)
@@ -682,7 +682,7 @@ def test_girar_la_pagina_arrastra_consigo_las_anotaciones(window, qapp):
     assert ann.rect == (50.0, 100.0, 150.0, 200.0)
 
 
-def test_girar_180_conserva_el_tamano_de_la_pagina(window, qapp):
+def test_rotating_180_keeps_the_page_size(window, qapp):
     size = window.view.document.page_size(0)
     window.run_page_action("rotate_180", 0)
     qapp.processEvents()
@@ -690,9 +690,9 @@ def test_girar_180_conserva_el_tamano_de_la_pagina(window, qapp):
     assert window.view.document.page_size(0) == size
 
 
-def test_insertar_una_pagina_permite_elegir_el_tamano(window, qapp):
-    _menu, acciones = window.build_page_menu(0)
-    options = {v for v in acciones.values() if v.startswith("insert_")}
+def test_inserting_a_page_lets_you_choose_the_size(window, qapp):
+    _menu, actions = window.build_page_menu(0)
+    options = {v for v in actions.values() if v.startswith("insert_")}
     # "igual que esta pagina" mas cada tamano, por delante y por detras
     assert "insert_after:" in options
     assert "insert_after:A4" in options
@@ -709,13 +709,13 @@ def test_insertar_una_pagina_permite_elegir_el_tamano(window, qapp):
     assert window.view.page_count == total
 
 
-def test_insertar_sin_tamano_copia_el_de_la_pagina_vecina(window, qapp):
+def test_inserting_without_a_size_copies_the_neighbouring_page(window, qapp):
     window.run_page_action("insert_before:", 0)
     qapp.processEvents()
     assert window.view.document.page_size(0) == window.view.document.page_size(1)
 
 
-def test_los_tamanos_de_pagina_se_traducen(window):
+def test_page_sizes_are_translated(window):
     from easypdf.i18n import page_size_label
 
     set_language("en")
@@ -729,7 +729,7 @@ def test_los_tamanos_de_pagina_se_traducen(window):
     set_language("en")
 
 
-def test_soltar_donde_qt_no_ve_miniatura_no_manda_la_pagina_al_final(window, qapp):
+def test_dropping_where_qt_sees_no_thumbnail_does_not_send_the_page_to_the_end(window, qapp):
     """El fallo original: si indexAt() no devolvia nada, drop_row daba la
     ultima posicion y la pagina se iba al final de todas.
 
@@ -741,7 +741,7 @@ def test_soltar_donde_qt_no_ve_miniatura_no_manda_la_pagina_al_final(window, qap
 
     items = window.thumb_list
     assert items.count() >= 3
-    ultima = items.count() - 1
+    last_tick = items.count() - 1
 
     r0 = items.visualRect(items.model().index(0, 0))
     encima = QPoint(r0.center().x(), max(0, r0.top() - 40))
@@ -749,10 +749,10 @@ def test_soltar_donde_qt_no_ve_miniatura_no_manda_la_pagina_al_final(window, qap
 
     target = items.drop_row(encima)
     assert target == 0, f"por encima de la primera deberia dar 0, dio {target}"
-    assert target != ultima
+    assert target != last_tick
 
 
-def test_la_miniatura_mas_cercana_se_busca_por_geometria(window):
+def test_the_nearest_thumbnail_is_found_by_geometry(window):
     """La parte que arregla el fallo, sin depender de donde caiga el raton."""
     from PySide6.QtCore import QPoint
 
@@ -765,7 +765,7 @@ def test_la_miniatura_mas_cercana_se_busca_por_geometria(window):
     assert items.nearest_row(r1.center()) == 1
 
 
-def test_el_destino_al_soltar_nunca_retrocede_al_bajar_el_raton(window):
+def test_the_drop_target_never_goes_backwards_as_the_mouse_descends(window):
     """Bajar el raton solo puede dar una posicion igual o mayor."""
     from PySide6.QtCore import QPoint
 
@@ -782,7 +782,7 @@ def test_el_destino_al_soltar_nunca_retrocede_al_bajar_el_raton(window):
         previous = target
 
 
-def test_soltar_sobre_una_miniatura_da_su_posicion_o_la_siguiente(window):
+def test_dropping_on_a_thumbnail_gives_its_slot_or_the_next(window):
     items = window.thumb_list
     for row in range(min(3, items.count())):
         centro = items.visualRect(items.model().index(row, 0)).center()
@@ -793,7 +793,7 @@ def test_soltar_sobre_una_miniatura_da_su_posicion_o_la_siguiente(window):
 # Goma
 # --------------------------------------------------------------------------
 
-def test_ctrl_mas_y_menos_cambian_la_goma_cuando_esta_activa(window):
+def test_ctrl_plus_and_minus_resize_the_eraser_when_active(window):
     from easypdf.model import ERASER_SIZES
 
     window.select_tool(Tool.ERASER)
@@ -815,7 +815,7 @@ def test_ctrl_mas_y_menos_cambian_la_goma_cuando_esta_activa(window):
     assert window.view.eraser_size == ERASER_SIZES[0]
 
 
-def test_con_otra_herramienta_ctrl_mas_vuelve_a_ser_zoom(window):
+def test_with_another_tool_ctrl_plus_is_zoom_again(window):
     window.select_tool(Tool.SELECT)
     zoom, eraser = window.view.zoom, window.view.eraser_size
     window.zoom_or_eraser(1)
@@ -842,7 +842,7 @@ def _pasar_la_goma(window, points, page_item=0):
     return ann
 
 
-def test_la_goma_se_lleva_lo_que_hay_debajo(window, qapp):
+def test_the_eraser_takes_away_what_is_underneath(window, qapp):
     """Borra de verdad: lo que pisa desaparece, lo de al lado se queda."""
     box = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0), width=2)
     far = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 500.0, 200.0, 560.0), width=2)
@@ -859,7 +859,7 @@ def test_la_goma_se_lleva_lo_que_hay_debajo(window, qapp):
     assert stroke.kind is Kind.ERASE
 
 
-def test_una_pasada_de_goma_se_deshace_entera(window, qapp):
+def test_a_whole_eraser_pass_undoes_at_once(window, qapp):
     """La pasada y lo que se llevo por delante son un solo paso de deshacer."""
     box = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0), width=2)
     window.view.add_annotation(box)
@@ -876,7 +876,7 @@ def test_una_pasada_de_goma_se_deshace_entera(window, qapp):
     assert not [a for a in window.view.annotations() if a.kind is Kind.ERASE]
 
 
-def test_la_goma_tapa_en_blanco_por_defecto(window, qapp):
+def test_the_eraser_covers_in_white_by_default(window, qapp):
     window.select_tool(Tool.ERASER)
     assert window.view.eraser_color == (1.0, 1.0, 1.0)
     stroke = _pasar_la_goma(window, [(100, 100), (150, 120)])
@@ -884,7 +884,7 @@ def test_la_goma_tapa_en_blanco_por_defecto(window, qapp):
     assert stroke.color == (1.0, 1.0, 1.0)
 
 
-def test_se_puede_elegir_el_color_de_la_goma(window, qapp):
+def test_the_eraser_colour_can_be_chosen(window, qapp):
     window.select_tool(Tool.ERASER)
     window.view.set_eraser_color((0.2, 0.4, 0.9))
     stroke = _pasar_la_goma(window, [(100, 100), (150, 120)])
@@ -892,7 +892,7 @@ def test_se_puede_elegir_el_color_de_la_goma(window, qapp):
     assert stroke.color == (0.2, 0.4, 0.9)
 
 
-def test_el_trazo_de_la_goma_usa_el_tamano_elegido(window, qapp):
+def test_the_eraser_stroke_uses_the_chosen_size(window, qapp):
     window.select_tool(Tool.ERASER)
     window.view.set_eraser_size(36)
     stroke = _pasar_la_goma(window, [(100, 100), (150, 120)])
@@ -900,7 +900,7 @@ def test_el_trazo_de_la_goma_usa_el_tamano_elegido(window, qapp):
     assert stroke.width == 36
 
 
-def test_lo_que_pinta_la_goma_se_deshace_de_una_vez(window, qapp):
+def test_what_the_eraser_paints_undoes_in_one_step(window, qapp):
     window.select_tool(Tool.ERASER)
     total = len(window.view.store)
     _pasar_la_goma(window, [(100, 100), (120, 110), (140, 120), (160, 130)])
@@ -912,7 +912,7 @@ def test_lo_que_pinta_la_goma_se_deshace_de_una_vez(window, qapp):
     assert len(window.view.store) == total
 
 
-def test_un_toque_suelto_de_goma_no_deja_nada(window, qapp):
+def test_a_single_eraser_tap_leaves_nothing(window, qapp):
     window.select_tool(Tool.ERASER)
     total = len(window.view.store)
     steps = window.view.undo_stack.count()
@@ -922,7 +922,7 @@ def test_un_toque_suelto_de_goma_no_deja_nada(window, qapp):
     assert window.view.undo_stack.count() == steps
 
 
-def test_las_reglas_miden_desde_la_esquina_de_la_hoja(window, qapp):
+def test_the_rulers_measure_from_the_corner_of_the_sheet(window, qapp):
     from PySide6.QtCore import QPointF
 
     from easypdf.ui.rulers import PT_PER_MM
@@ -943,7 +943,7 @@ def test_las_reglas_miden_desde_la_esquina_de_la_hoja(window, qapp):
     assert abs(window.ruler_v.value_at(point.y()) - 50) < 0.6
 
 
-def test_las_reglas_cambian_de_unidad(window):
+def test_the_rulers_change_unit(window):
     from PySide6.QtCore import QPointF
 
     from easypdf.ui.rulers import PT_PER_MM
@@ -960,9 +960,9 @@ def test_las_reglas_cambian_de_unidad(window):
     window.set_ruler_unit("mm")
 
 
-def test_al_arrastrar_se_alinea_con_otra_anotacion(window, qapp):
-    referencia = Annotation(kind=Kind.RECT, page=0, rect=(200.0, 200.0, 240.0, 260.0), width=2)
-    window.view.add_annotation(referencia)
+def test_dragging_snaps_to_another_annotation(window, qapp):
+    reference = Annotation(kind=Kind.RECT, page=0, rect=(200.0, 200.0, 240.0, 260.0), width=2)
+    window.view.add_annotation(reference)
     movida = Annotation(kind=Kind.RECT, page=0, rect=(200.0, 400.0, 280.0, 450.0), width=2)
     window.view.add_annotation(movida)
     qapp.processEvents()
@@ -980,7 +980,7 @@ def test_al_arrastrar_se_alinea_con_otra_anotacion(window, qapp):
     assert abs(movida.bounds()[0] - 200.0) < 0.01
 
 
-def test_al_arrastrar_se_alinea_con_el_centro_de_la_hoja(window, qapp):
+def test_dragging_snaps_to_the_centre_of_the_sheet(window, qapp):
     width, _alto = window.view.document.page_size(0)
     box = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 400.0, 180.0, 450.0), width=2)
     window.view.add_annotation(box)
@@ -999,7 +999,7 @@ def test_al_arrastrar_se_alinea_con_el_centro_de_la_hoja(window, qapp):
     assert abs(centro - middle) < 0.01
 
 
-def test_con_el_iman_apagado_no_se_alinea_nada(window, qapp):
+def test_with_snapping_off_nothing_snaps(window, qapp):
     box = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 400.0, 180.0, 450.0), width=2)
     window.view.add_annotation(box)
     qapp.processEvents()
@@ -1017,7 +1017,7 @@ def test_con_el_iman_apagado_no_se_alinea_nada(window, qapp):
         window.view.set_snap(True)
 
 
-def test_las_reglas_se_pueden_ocultar(window):
+def test_the_rulers_can_be_hidden(window):
     window.toggle_rulers(False)
     assert not window.ruler_h.isVisible()
     assert not window.ruler_v.isVisible()
@@ -1025,7 +1025,7 @@ def test_las_reglas_se_pueden_ocultar(window):
     assert window.ruler_h.isVisible()
 
 
-def test_colocar_una_anotacion_no_deja_guias_pintadas(window, qapp):
+def test_placing_an_annotation_leaves_no_snap_lines_painted(window, qapp):
     """El iman solo actua al arrastrar con el raton.
 
     Si actuara tambien al crear o cargar anotaciones, quedarian guias rosas
@@ -1048,19 +1048,19 @@ def test_colocar_una_anotacion_no_deja_guias_pintadas(window, qapp):
 # Tablas
 # --------------------------------------------------------------------------
 
-def _tabla(window, qapp, alineacion=Align.CENTER):
+def _tabla(window, qapp, alignment=Align.CENTER):
     ann = Annotation(
         kind=Kind.TABLE, page=0, rect=(80.0, 150.0, 460.0, 290.0), rows=3, cols=3,
         cells=["Nombre", "Cantidad", "Precio", "Tornillo", "120", "3,50",
                "Tuerca", "80", "1,20"],
-        align=alineacion, width=1,
+        align=alignment, width=1,
     )
     window.view.add_annotation(ann)
     qapp.processEvents()
     return ann, window.view._items[ann.id]
 
 
-def test_el_editor_de_celda_usa_la_alineacion_de_la_tabla(window, qapp):
+def test_the_cell_editor_uses_the_tables_alignment(window, qapp):
     """Si no, el texto se ve a la izquierda al escribir y salta al terminar."""
     from PySide6.QtCore import Qt
 
@@ -1068,8 +1068,8 @@ def test_el_editor_de_celda_usa_la_alineacion_de_la_tabla(window, qapp):
     item.edit_cell(4)
     qapp.processEvents()
     try:
-        alineacion = item._editor.document().defaultTextOption().alignment()
-        assert alineacion == Qt.AlignHCenter
+        alignment = item._editor.document().defaultTextOption().alignment()
+        assert alignment == Qt.AlignHCenter
     finally:
         item.finish_editing()
         qapp.processEvents()
@@ -1084,7 +1084,7 @@ def test_el_editor_de_celda_usa_la_alineacion_de_la_tabla(window, qapp):
         qapp.processEvents()
 
 
-def test_el_editor_de_celda_ocupa_el_mismo_sitio_que_el_texto_pintado(window, qapp):
+def test_the_cell_editor_sits_exactly_where_the_painted_text_does(window, qapp):
     from easypdf.ui.items import CELL_PADDING
 
     _ann, item = _tabla(window, qapp)
@@ -1101,7 +1101,7 @@ def test_el_editor_de_celda_ocupa_el_mismo_sitio_que_el_texto_pintado(window, qa
         qapp.processEvents()
 
 
-def test_se_puede_borrar_una_tabla_con_del_despues_de_editarla(window, qapp):
+def test_a_table_can_be_deleted_with_del_after_editing_it(window, qapp):
     """Tras editar una celda y pulsar Escape, DEL tiene que borrar la tabla.
 
     El editor de la celda se quedaba vivo con el foco y se comia la tecla.
@@ -1128,14 +1128,14 @@ def test_se_puede_borrar_una_tabla_con_del_despues_de_editarla(window, qapp):
     assert len(window.view.store) == total
 
 
-def test_la_tabla_se_dibuja_en_cache_para_que_arrastrarla_no_la_repinte(window, qapp):
+def test_the_table_is_cached_so_dragging_does_not_repaint_it(window, qapp):
     from PySide6.QtWidgets import QGraphicsItem
 
     _ann, item = _tabla(window, qapp)
     assert item.cacheMode() == QGraphicsItem.DeviceCoordinateCache
 
 
-def test_los_rectangulos_de_celda_se_memorizan_y_se_rehacen_al_cambiar(window, qapp):
+def test_cell_rects_are_cached_and_rebuilt_on_change(window, qapp):
     ann, item = _tabla(window, qapp)
     primeros = item.local_cell_rects()
     assert item.local_cell_rects() is primeros        # memorizados
@@ -1160,7 +1160,7 @@ NOVEDAD = {
 }
 
 
-def test_el_aviso_de_version_ofrece_descargar_esperar_o_saltar(window, monkeypatch):
+def test_the_version_notice_offers_download_wait_or_skip(window, monkeypatch):
     from PySide6.QtWidgets import QPushButton
 
     from easypdf import __version__
@@ -1188,7 +1188,7 @@ def test_el_aviso_de_version_ofrece_descargar_esperar_o_saltar(window, monkeypat
     assert tr("update_skip") in visto["botones"]
 
 
-def test_saltar_la_version_desde_el_aviso_queda_apuntado(window, monkeypatch):
+def test_skipping_the_version_from_the_notice_is_remembered(window, monkeypatch):
     from easypdf.ui.update_download import UpdateDialog
 
     def falso_exec(self):
@@ -1203,7 +1203,7 @@ def test_saltar_la_version_desde_el_aviso_queda_apuntado(window, monkeypatch):
     window.settings.set_value("updates/skip", "")
 
 
-def test_no_se_avisa_dos_veces_de_una_version_saltada(window, monkeypatch):
+def test_a_skipped_version_is_not_announced_twice(window, monkeypatch):
     from easypdf.ui.update_download import UpdateDialog
 
     visto = {}
@@ -1221,7 +1221,7 @@ def test_no_se_avisa_dos_veces_de_una_version_saltada(window, monkeypatch):
     window.settings.set_value("updates/skip", "")
 
 
-def test_instalar_cierra_el_programa_y_arranca_el_instalador(window, monkeypatch):
+def test_installing_closes_the_program_and_starts_the_installer(window, monkeypatch):
     from PySide6.QtWidgets import QApplication
 
     from easypdf import updates
@@ -1236,7 +1236,7 @@ def test_instalar_cierra_el_programa_y_arranca_el_instalador(window, monkeypatch
     assert arrancados == ["C:/tmp/EasyPDF-9.9.9-Setup.exe"]
 
 
-def test_si_no_se_puede_cerrar_no_se_instala_nada(window, monkeypatch):
+def test_if_it_cannot_close_nothing_is_installed(window, monkeypatch):
     """Con cambios sin guardar el usuario puede cancelar: entonces no se toca nada."""
     from easypdf import updates
     from easypdf.ui.main_window import MainWindow
@@ -1249,23 +1249,23 @@ def test_si_no_se_puede_cerrar_no_se_instala_nada(window, monkeypatch):
     assert arrancados == []
 
 
-def test_sin_novedad_solo_avisa_si_lo_pidio_el_usuario(window, monkeypatch):
+def test_with_no_news_it_only_speaks_if_asked(window, monkeypatch):
     from PySide6.QtWidgets import QMessageBox
 
-    llamadas = []
+    calls = []
     monkeypatch.setattr(QMessageBox, "information",
-                        staticmethod(lambda *a, **k: llamadas.append(a)))
+                        staticmethod(lambda *a, **k: calls.append(a)))
 
     window._update_manual = False
     window._on_update_result(None)
-    assert not llamadas                    # al arrancar, en silencio
+    assert not calls                    # al arrancar, en silencio
 
     window._update_manual = True
     window._on_update_result(None)
-    assert llamadas                        # buscando a mano, contesta
+    assert calls                        # buscando a mano, contesta
 
 
-def test_el_aviso_al_arrancar_se_puede_desactivar(window):
+def test_the_start_up_check_can_be_switched_off(window):
     window.act_update_auto.setChecked(False)
     assert window.settings.value("updates/auto", True, type_=bool) is False
     window.act_update_auto.setChecked(True)
@@ -1276,7 +1276,7 @@ def test_el_aviso_al_arrancar_se_puede_desactivar(window):
 # Guias sacadas de las reglas
 # --------------------------------------------------------------------------
 
-def test_arrastrar_desde_la_regla_deja_una_guia(window):
+def test_dragging_from_the_ruler_drops_a_guide(window):
     view = window.view
     view.start_guide("h", 200.0)
     view.move_guide(250.0)
@@ -1288,7 +1288,7 @@ def test_arrastrar_desde_la_regla_deja_una_guia(window):
     assert view.page_guides(0)["v"] == [150.0]
 
 
-def test_soltar_la_guia_fuera_de_la_pagina_no_la_crea(window):
+def test_dropping_a_guide_off_the_page_does_not_create_it(window):
     view = window.view
     _ancho, height = view.document.page_size(0)
 
@@ -1301,7 +1301,7 @@ def test_soltar_la_guia_fuera_de_la_pagina_no_la_crea(window):
     assert view.page_guides(0)["h"] == []
 
 
-def test_una_guia_se_mueve_y_sacandola_fuera_se_borra(window):
+def test_a_guide_moves_and_dragging_it_off_deletes_it(window):
     view = window.view
     view.start_guide("h", 300.0)
     view.drop_guide(300.0)
@@ -1315,7 +1315,7 @@ def test_una_guia_se_mueve_y_sacandola_fuera_se_borra(window):
     assert view.page_guides(0)["h"] == []
 
 
-def test_se_encuentra_la_guia_que_hay_bajo_el_raton(window):
+def test_the_guide_under_the_mouse_is_found(window):
     from PySide6.QtCore import QPointF
 
     view = window.view
@@ -1324,14 +1324,14 @@ def test_se_encuentra_la_guia_que_hay_bajo_el_raton(window):
     page_item = view._page_items[0]
 
     encima = page_item.mapToScene(QPointF(100.0, 300.0))
-    hallada = view.guide_at(encima)
-    assert hallada is not None
-    assert hallada[0] == "h" and hallada[3] == 300.0
+    found_one = view.guide_at(encima)
+    assert found_one is not None
+    assert found_one[0] == "h" and found_one[3] == 300.0
 
     assert view.guide_at(page_item.mapToScene(QPointF(100.0, 520.0))) is None
 
 
-def test_las_anotaciones_se_alinean_con_las_guias(window, qapp):
+def test_annotations_snap_to_the_guides(window, qapp):
     from PySide6.QtCore import QPointF
 
     view = window.view
@@ -1349,7 +1349,7 @@ def test_las_anotaciones_se_alinean_con_las_guias(window, qapp):
     assert abs(box.bounds()[0] - 150.0) < 0.01
 
 
-def test_se_pueden_quitar_todas_las_guias(window):
+def test_every_guide_can_be_cleared(window):
     view = window.view
     view.start_guide("h", 200.0)
     view.drop_guide(200.0)
@@ -1379,19 +1379,19 @@ def _hojas_de_plantilla(window):
     return output
 
 
-def test_el_panel_ensena_las_plantillas_de_serie_por_tipo(window):
+def test_the_panel_lists_the_builtin_templates_by_category(window):
     hojas = _hojas_de_plantilla(window)
     assert len(hojas) >= 4
     assert len({rama for _g, rama, _i in hojas}) >= 3   # varios tipos
 
 
-def test_una_plantilla_de_serie_se_aplica_sobre_el_documento(window, qapp):
+def test_a_builtin_template_applies_over_the_document(window, qapp):
     hojas = _hojas_de_plantilla(window)
     from easypdf.templates import builtin_infos
 
     # se busca por su rama, no por el nombre: cambia con el idioma
-    primera = builtin_infos()[0].name
-    membrete = next(i for _g, _r, i in hojas if primera in i.text(0))
+    first_tick = builtin_infos()[0].name
+    membrete = next(i for _g, _r, i in hojas if first_tick in i.text(0))
     window.tpl_tree.setCurrentItem(membrete)
     assert window.btn_tpl_use.isEnabled()
 
@@ -1401,14 +1401,14 @@ def test_una_plantilla_de_serie_se_aplica_sobre_el_documento(window, qapp):
     assert len(window.view.store) > antes
 
 
-def test_las_de_serie_no_se_pueden_borrar(window):
+def test_builtin_templates_cannot_be_deleted(window):
     hojas = _hojas_de_plantilla(window)
     window.tpl_tree.setCurrentItem(hojas[0][2])
     assert not window.btn_tpl_del.isEnabled()
     assert window.delete_selected_template() is False
 
 
-def test_documento_nuevo_desde_una_plantilla_de_serie(window, qapp):
+def test_new_document_from_a_builtin_template(window, qapp):
     hojas = _hojas_de_plantilla(window)
     from easypdf.templates import builtin_infos
 
@@ -1426,7 +1426,7 @@ def test_documento_nuevo_desde_una_plantilla_de_serie(window, qapp):
     assert Kind.TABLE in tipos and Kind.TEXT in tipos
 
 
-def test_guardar_y_borrar_una_plantilla_propia_desde_el_panel(window, qapp, tmp_path,
+def test_save_and_delete_your_own_template_from_the_panel(window, qapp, tmp_path,
                                                               monkeypatch):
     from PySide6.QtWidgets import QInputDialog, QMessageBox
 
@@ -1456,7 +1456,7 @@ def test_guardar_y_borrar_una_plantilla_propia_desde_el_panel(window, qapp, tmp_
                 if "Mi informe" in i.text(0)]
 
 
-def test_la_regla_ensena_donde_estan_las_guias(window, qapp):
+def test_the_ruler_shows_where_the_guides_are(window, qapp):
     """Una guia horizontal se mide en la regla vertical, y al reves."""
     view = window.view
     view.start_guide("v", 150.0)      # linea vertical: va en la regla de arriba
@@ -1471,7 +1471,7 @@ def test_la_regla_ensena_donde_estan_las_guias(window, qapp):
     assert abs(real - 150.0 / PT_PER_MM) < 0.6
 
 
-def test_al_mover_una_guia_se_ensena_su_medida(window, qapp):
+def test_moving_a_guide_shows_its_measurement(window, qapp):
     view = window.view
     view.start_guide("h", 200.0)
     view.drop_guide(200.0)
@@ -1481,14 +1481,14 @@ def test_al_mover_una_guia_se_ensena_su_medida(window, qapp):
     view.move_guide(300.0)
     qapp.processEvents()
 
-    mensaje = window.statusBar().currentMessage()
-    assert mensaje, "no se dijo donde esta la guia"
+    message = window.statusBar().currentMessage()
+    assert message, "no se dijo donde esta la guia"
     # 300 pt son unos 105,8 mm
-    assert "105" in mensaje or "106" in mensaje, mensaje
+    assert "105" in message or "106" in message, message
     view.drop_guide(300.0)
 
 
-def test_las_reglas_se_repintan_al_tocar_las_guias(window, qapp):
+def test_the_rulers_repaint_when_the_guides_change(window, qapp):
     """Sin este aviso, la marca de la regla no se movia con la guia."""
     avisos = []
     window.view.guidesChanged.connect(lambda: avisos.append(1))
@@ -1516,7 +1516,7 @@ def _seleccionar(window, *annotations):
         view._items[ann.id].setSelected(True)
 
 
-def test_copiar_y_pegar_duplica_lo_seleccionado(window, qapp):
+def test_copy_and_paste_duplicates_the_selection(window, qapp):
     box = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0))
     window.view.add_annotation(box)
     qapp.processEvents()
@@ -1537,7 +1537,7 @@ def test_copiar_y_pegar_duplica_lo_seleccionado(window, qapp):
     assert [i.ann for i in window.view.selected_items()] == [copia]
 
 
-def test_pegar_arrastra_todo_lo_que_define_la_anotacion(window, qapp):
+def test_pasting_carries_everything_that_defines_the_annotation(window, qapp):
     """Una linea no vive en su rectangulo: hay que mover tambien sus extremos."""
     line = Annotation(kind=Kind.LINE, page=0, p1=(50.0, 300.0), p2=(250.0, 380.0))
     stroke = Annotation(kind=Kind.INK, page=0, strokes=[[(10.0, 20.0), (30.0, 40.0)]])
@@ -1558,7 +1558,7 @@ def test_pegar_arrastra_todo_lo_que_define_la_anotacion(window, qapp):
     assert copia_trazo.strokes == [[(10 + salto, 20 + salto), (30 + salto, 40 + salto)]]
 
 
-def test_pegar_una_tabla_conserva_su_contenido(window, qapp):
+def test_pasting_a_table_keeps_its_content(window, qapp):
     tabla = Annotation(kind=Kind.TABLE, page=0, rect=(60.0, 60.0, 400.0, 200.0),
                        rows=2, cols=2, cells=["a", "b", "c", "d"], font_size=9.0)
     window.view.add_annotation(tabla)
@@ -1574,7 +1574,7 @@ def test_pegar_una_tabla_conserva_su_contenido(window, qapp):
     assert copia.font_size == 9.0
 
 
-def test_pegar_dos_veces_no_deja_una_copia_encima_de_otra(window, qapp):
+def test_pasting_twice_does_not_stack_the_copies(window, qapp):
     box = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0))
     window.view.add_annotation(box)
     qapp.processEvents()
@@ -1589,7 +1589,7 @@ def test_pegar_dos_veces_no_deja_una_copia_encima_de_otra(window, qapp):
     assert esquinas == [100.0, 100 + salto, 100 + 2 * salto]
 
 
-def test_una_pegada_entera_se_deshace_de_una_vez(window, qapp):
+def test_a_whole_paste_undoes_in_one_step(window, qapp):
     """Pegar tres cosas es un solo paso de deshacer, no tres."""
     originales = [
         Annotation(kind=Kind.RECT, page=0, rect=(10.0, 10.0, 60.0, 60.0)),
@@ -1610,7 +1610,7 @@ def test_una_pegada_entera_se_deshace_de_una_vez(window, qapp):
     assert window.view.annotation_count() == 3
 
 
-def test_cortar_copia_y_quita_lo_seleccionado(window, qapp):
+def test_cut_copies_and_removes_the_selection(window, qapp):
     box = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0))
     window.view.add_annotation(box)
     qapp.processEvents()
@@ -1625,14 +1625,14 @@ def test_cortar_copia_y_quita_lo_seleccionado(window, qapp):
     assert window.view.annotation_count() == 1
 
 
-def test_sin_nada_copiado_pegar_no_hace_nada(window, qapp):
+def test_with_nothing_copied_paste_does_nothing(window, qapp):
     _vaciar_portapapeles()
     antes = window.view.annotation_count()
     assert window.view.paste_clipboard() == 0
     assert window.view.annotation_count() == antes
 
 
-def test_se_pega_en_la_pagina_que_se_esta_viendo(window, qapp):
+def test_it_pastes_on_the_page_being_viewed(window, qapp):
     box = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0))
     window.view.add_annotation(box)
     qapp.processEvents()
@@ -1645,7 +1645,7 @@ def test_se_pega_en_la_pagina_que_se_esta_viendo(window, qapp):
     assert copia.page == 2
 
 
-def test_copiar_y_pegar_no_roban_el_atajo_mientras_se_escribe(window, qapp):
+def test_copy_and_paste_do_not_steal_the_shortcut_while_typing(window, qapp):
     """Dentro de un texto, Ctrl+C y Ctrl+V son los del editor, no los nuestros."""
     text = Annotation(kind=Kind.TEXT, page=0, rect=(80.0, 80.0, 300.0, 130.0),
                        text="hola")
@@ -1666,7 +1666,7 @@ def test_copiar_y_pegar_no_roban_el_atajo_mientras_se_escribe(window, qapp):
     qapp.processEvents()
 
 
-def test_los_atajos_de_teclado_copian_y_pegan(window, qapp):
+def test_the_keyboard_shortcuts_copy_and_paste(window, qapp):
     """Lo que se pidio: Ctrl+C y Ctrl+V, no solo el menu."""
     box = Annotation(kind=Kind.RECT, page=0, rect=(100.0, 100.0, 200.0, 160.0))
     window.view.add_annotation(box)
@@ -1687,7 +1687,7 @@ def test_los_atajos_de_teclado_copian_y_pegan(window, qapp):
     assert window.view.annotation_count() == 1
 
 
-def test_lo_copiado_por_otro_programa_no_se_pega(window, qapp):
+def test_what_another_program_copied_is_not_pasted(window, qapp):
     """Un texto cualquiera del portapapeles no puede convertirse en anotaciones."""
     from PySide6.QtGui import QGuiApplication
 
@@ -1748,7 +1748,7 @@ def _claros_fuera_de_la_pagina(window, page_item: int = 0, margin: int = 40) -> 
     return light_pixels
 
 
-def test_la_goma_no_pinta_fuera_de_la_hoja(window, qapp):
+def test_the_eraser_paints_nothing_outside_the_sheet(window, qapp):
     """Sacando la goma de la pagina se comia el fondo gris de alrededor."""
     window.select_tool(Tool.ERASER)
     window.view.set_eraser_size(24)
@@ -1757,7 +1757,7 @@ def test_la_goma_no_pinta_fuera_de_la_hoja(window, qapp):
     assert _claros_fuera_de_la_pagina(window) == 0
 
 
-def test_una_anotacion_tampoco_se_pinta_fuera_de_la_hoja(window, qapp):
+def test_an_annotation_is_not_painted_outside_the_sheet_either(window, qapp):
     """Lo que sale del papel no se imprime, asi que tampoco se ve en pantalla."""
     window.view.add_annotation(
         Annotation(kind=Kind.RECT, page=0, rect=(-200.0, 100.0, 300.0, 200.0),
@@ -1768,7 +1768,7 @@ def test_una_anotacion_tampoco_se_pinta_fuera_de_la_hoja(window, qapp):
 
 
 # -- DEL y el aviso de que no hay nada seleccionado -----------------------
-def test_del_avisa_en_vez_de_no_hacer_nada_con_otra_herramienta(window, qapp):
+def test_del_says_something_instead_of_doing_nothing_with_another_tool(window, qapp):
     """Con la goma activa no se puede seleccionar, y DEL se quedaba mudo."""
     window.select_tool(Tool.ERASER)
     _pasar_la_goma(window, [(120, 150), (200, 150)])
@@ -1783,7 +1783,7 @@ def test_del_avisa_en_vez_de_no_hacer_nada_con_otra_herramienta(window, qapp):
     assert window.statusBar().currentMessage() == tr("status_pick_select")
 
 
-def test_con_seleccionar_activo_el_aviso_es_el_de_siempre(window, qapp):
+def test_with_the_select_tool_the_usual_message_shows(window, qapp):
     window.select_tool(Tool.SELECT)
     window.view.scene().clearSelection()
     qapp.processEvents()
@@ -1792,7 +1792,7 @@ def test_con_seleccionar_activo_el_aviso_es_el_de_siempre(window, qapp):
     assert window.statusBar().currentMessage() == tr("status_no_selection")
 
 
-def test_tras_la_goma_se_puede_volver_a_seleccionar_y_borrar(window, qapp):
+def test_after_the_eraser_you_can_select_and_delete_again(window, qapp):
     """El camino completo del que se quejaba el usuario, de punta a punta."""
     from PySide6.QtCore import QPointF
 
@@ -1820,7 +1820,7 @@ def test_tras_la_goma_se_puede_volver_a_seleccionar_y_borrar(window, qapp):
 
 
 # -- el acerca de y las licencias ----------------------------------------
-def test_el_acerca_de_no_lleva_la_letra_pequena_de_las_bibliotecas():
+def test_the_about_box_has_no_library_small_print():
     """Se pidio quitarla de ahi; sigue estando, pero en su propia ventana."""
     text = tr("about_html", url="https://easypdf.surf")
     assert "PySide6" not in text
@@ -1828,7 +1828,7 @@ def test_el_acerca_de_no_lleva_la_letra_pequena_de_las_bibliotecas():
     assert "warranty" not in text.lower()
 
 
-def test_las_licencias_siguen_estando_a_un_clic(window, qapp):
+def test_the_licences_are_still_one_click_away(window, qapp):
     """PySide6 es LGPL: hay que avisar de que se usa y bajo que licencia."""
     from easypdf.ui.main_window import AboutDialog, LicencesDialog
 
@@ -1853,14 +1853,14 @@ def test_las_licencias_siguen_estando_a_un_clic(window, qapp):
 
 
 # -- el panel de plantillas ----------------------------------------------
-def test_el_panel_lateral_cabe_para_el_arbol_de_plantillas(window, qapp):
+def test_the_side_panel_has_room_for_the_templates_tree(window, qapp):
     """Con 190 px el arbol ensenaba tres filas y el boton de guardar no se veia."""
     qapp.processEvents()
     assert window.side_tabs.minimumHeight() >= 300
     assert window.bookmark_dock.height() >= 300
 
 
-def test_el_panel_de_plantillas_tiene_su_boton_de_guardar(window, qapp):
+def test_the_templates_panel_has_its_save_button(window, qapp):
     window.side_tabs.setCurrentIndex(2)
     qapp.processEvents()
     window._update_template_buttons()
@@ -1868,7 +1868,7 @@ def test_el_panel_de_plantillas_tiene_su_boton_de_guardar(window, qapp):
     assert window.btn_tpl_save.isEnabled()      # hay documento abierto
 
 
-def test_una_plantilla_nueva_se_guarda_en_la_carpeta_templates(window, tmp_path, monkeypatch):
+def test_a_new_template_is_saved_in_the_templates_folder(window, tmp_path, monkeypatch):
     """Lo guardado tiene que acabar en Templates, no en cualquier sitio."""
     import os
 
@@ -1889,11 +1889,11 @@ def test_una_plantilla_nueva_se_guarda_en_la_carpeta_templates(window, tmp_path,
     assert os.path.basename(folder) == "Templates"
     files = os.listdir(folder)
     assert files == ["Mi membrete.easypdf-template.json"]
-    guardadas = list_templates(folder)
-    assert [(i.name, i.category) for i in guardadas] == [("Mi membrete", "letterhead")]
+    saved_ones = list_templates(folder)
+    assert [(i.name, i.category) for i in saved_ones] == [("Mi membrete", "letterhead")]
 
 
-def test_deshacer_la_goma_dice_que_fue_la_goma(window, qapp):
+def test_undoing_the_eraser_says_it_was_the_eraser(window, qapp):
     """En el menu de deshacer ponia 'Anadir dibujo': por dentro es tinta,
     pero lo que hizo el usuario fue borrar."""
     window.select_tool(Tool.ERASER)
@@ -1914,7 +1914,7 @@ def _elegir_elemento(window, key):
     raise AssertionError(f"no esta la pieza {key}")
 
 
-def test_el_panel_tiene_pestana_de_elementos(window, qapp):
+def test_the_panel_has_an_elements_tab(window, qapp):
     """Lo que se pidio: una lista de piezas para montar formularios."""
     from easypdf.elements import ELEMENTS
 
@@ -1929,7 +1929,7 @@ def test_el_panel_tiene_pestana_de_elementos(window, qapp):
     assert claves == set(ELEMENTS)
 
 
-def test_insertar_una_pieza_la_pone_en_la_pagina_que_se_ve(window, qapp):
+def test_inserting_a_piece_puts_it_on_the_visible_page(window, qapp):
     window.view.go_to_page(1)
     qapp.processEvents()
     _elegir_elemento(window, "checklist")
@@ -1945,7 +1945,7 @@ def test_insertar_una_pieza_la_pone_en_la_pagina_que_se_ve(window, qapp):
     assert len(window.view.selected_items()) == 8
 
 
-def test_la_pieza_cae_dentro_del_papel(window, qapp):
+def test_the_piece_lands_inside_the_paper(window, qapp):
     _elegir_elemento(window, "table")
     antes = window.view.annotation_count()
     window.insert_selected_element()
@@ -1957,7 +1957,7 @@ def test_la_pieza_cae_dentro_del_papel(window, qapp):
         assert x1 <= sheet.width() and y1 <= sheet.height()
 
 
-def test_una_pieza_entera_se_deshace_de_una_vez(window, qapp):
+def test_a_whole_piece_undoes_in_one_step(window, qapp):
     _elegir_elemento(window, "checklist")
     antes = window.view.annotation_count()
     window.insert_selected_element()
@@ -1969,7 +1969,7 @@ def test_una_pieza_entera_se_deshace_de_una_vez(window, qapp):
     assert window.view.annotation_count() == antes
 
 
-def test_sin_documento_no_se_puede_insertar(window, qapp):
+def test_with_no_document_nothing_can_be_inserted(window, qapp):
     window.close_document()
     qapp.processEvents()
     _elegir_elemento(window, "checkbox")
@@ -1978,7 +1978,7 @@ def test_sin_documento_no_se_puede_insertar(window, qapp):
     assert not window.insert_selected_element()
 
 
-def test_las_pestanas_del_panel_no_se_confunden_al_cambiar_de_idioma(window, qapp):
+def test_the_panel_tabs_do_not_get_mixed_up_when_the_language_changes(window, qapp):
     """Se nombraban por indice, y al meter Elementos en medio se cruzaban."""
     from easypdf.i18n import set_language
 
@@ -2018,7 +2018,7 @@ def _dibujar_tabla(window, qapp, desde=(80.0, 120.0), hasta=(420.0, 300.0)):
     return point
 
 
-def test_al_pinchar_fuera_la_celda_deja_de_editarse(window, qapp):
+def test_clicking_outside_ends_the_cell_edit(window, qapp):
     """El editor es hijo de la tabla: al perder el foco, ella no se enteraba.
 
     Se quedaba en modo edicion para siempre, y en ese modo se le ceden los
@@ -2034,7 +2034,7 @@ def test_al_pinchar_fuera_la_celda_deja_de_editarse(window, qapp):
     assert not window.view.is_editing_text
 
 
-def test_una_tabla_se_puede_borrar_con_del(window, qapp):
+def test_a_table_can_be_deleted_with_del(window, qapp):
     point = _dibujar_tabla(window, qapp)
     QTest.mouseClick(window.view.viewport(), Qt.LeftButton, Qt.NoModifier,
                      point(500.0, 620.0))
@@ -2050,7 +2050,7 @@ def test_una_tabla_se_puede_borrar_con_del(window, qapp):
     assert window.view.annotation_count() == 0
 
 
-def test_una_tabla_se_puede_copiar_y_pegar(window, qapp):
+def test_a_table_can_be_copied_and_pasted(window, qapp):
     point = _dibujar_tabla(window, qapp)
     QTest.mouseClick(window.view.viewport(), Qt.LeftButton, Qt.NoModifier,
                      point(500.0, 620.0))
@@ -2068,7 +2068,7 @@ def test_una_tabla_se_puede_copiar_y_pegar(window, qapp):
     assert tablas[0].id != tablas[1].id
 
 
-def test_tab_pasa_de_celda_y_shift_tab_vuelve(window, qapp):
+def test_tab_moves_to_the_next_cell_and_shift_tab_back(window, qapp):
     """La ayuda lo prometia desde siempre y no ocurria: el tabulador se lo
     quedaba el widget para mover el foco antes de llegar a la tabla."""
     tabla = Annotation(kind=Kind.TABLE, page=0, rect=(80.0, 120.0, 420.0, 300.0),
@@ -2095,7 +2095,7 @@ def test_tab_pasa_de_celda_y_shift_tab_vuelve(window, qapp):
     assert tabla.cells[:2] == ["uno", "dos"]
 
 
-def test_mientras_se_escribe_en_una_celda_del_no_borra_la_tabla(window, qapp):
+def test_while_typing_in_a_cell_del_does_not_delete_the_table(window, qapp):
     """Lo contrario tambien tiene que seguir siendo cierto."""
     tabla = Annotation(kind=Kind.TABLE, page=0, rect=(80.0, 120.0, 420.0, 300.0),
                        rows=2, cols=2)
@@ -2111,7 +2111,7 @@ def test_mientras_se_escribe_en_una_celda_del_no_borra_la_tabla(window, qapp):
     qapp.processEvents()
 
 
-def test_la_goma_avisa_de_que_el_borrado_es_definitivo(window, qapp):
+def test_the_eraser_warns_the_erasure_is_permanent(window, qapp):
     """Al guardar desaparece del archivo: el usuario tiene que saberlo."""
     window.select_tool(Tool.ERASER)
     window.statusBar().clearMessage()
@@ -2121,7 +2121,7 @@ def test_la_goma_avisa_de_que_el_borrado_es_definitivo(window, qapp):
 
 
 # -- ensenar y esconder el panel lateral ----------------------------------
-def test_el_menu_ver_ensena_y_esconde_el_panel_lateral(window, qapp):
+def test_the_view_menu_shows_and_hides_the_side_panel(window, qapp):
     """Se podia cerrar con el aspa y luego no habia forma de recuperarlo."""
     assert window.act_side_panel.isCheckable()
     assert window.bookmark_dock.isVisible()
@@ -2136,7 +2136,7 @@ def test_el_menu_ver_ensena_y_esconde_el_panel_lateral(window, qapp):
     assert window.bookmark_dock.isVisible()
 
 
-def test_cerrar_el_panel_con_su_aspa_desmarca_la_opcion(window, qapp):
+def test_closing_the_panel_unchecks_the_menu_option(window, qapp):
     window.bookmark_dock.close()
     qapp.processEvents()
     assert not window.act_side_panel.isChecked()
@@ -2145,7 +2145,7 @@ def test_cerrar_el_panel_con_su_aspa_desmarca_la_opcion(window, qapp):
     assert window.bookmark_dock.isVisible()
 
 
-def test_una_guia_vale_para_todas_las_paginas(window, qapp):
+def test_one_guide_serves_every_page(window, qapp):
     """Se ponen para alinear lo mismo en todas las hojas, no en una sola."""
     view = window.view
     view.clear_all_guides()
@@ -2160,7 +2160,7 @@ def test_una_guia_vale_para_todas_las_paginas(window, qapp):
     assert view.page_guides(0) is view.page_guides(2)
 
 
-def test_una_anotacion_de_otra_pagina_se_alinea_con_la_guia(window, qapp):
+def test_an_annotation_on_another_page_snaps_to_the_guide(window, qapp):
     """De poco sirve verla en todas las paginas si solo tira en la suya."""
     view = window.view
     view.clear_all_guides()
@@ -2182,7 +2182,7 @@ def test_una_anotacion_de_otra_pagina_se_alinea_con_la_guia(window, qapp):
     assert abs(box.bounds()[1] - 250.0) < 0.01
 
 
-def test_quitar_las_guias_las_quita_de_todo_el_documento(window, qapp):
+def test_clearing_guides_clears_the_whole_document(window, qapp):
     view = window.view
     view.start_guide("h", 100.0)
     view.drop_guide(100.0)
@@ -2218,7 +2218,7 @@ def _dibujar(window, qapp, tool, desde, hasta):
 
 
 @pytest.mark.parametrize("tool", [Tool.TEXT, Tool.RECT, Tool.TABLE, Tool.ARROW])
-def test_esc_sale_del_elemento_y_lo_deja_listo_para_copiar(window, qapp, tool):
+def test_esc_leaves_the_element_ready_to_copy(window, qapp, tool):
     """Esc soltaba tambien la seleccion, y Ctrl+C se quedaba sin nada que copiar."""
     _vaciar_portapapeles()
     _dibujar(window, qapp, tool, (80.0, 100.0), (350.0, 160.0))
@@ -2239,7 +2239,7 @@ def test_esc_sale_del_elemento_y_lo_deja_listo_para_copiar(window, qapp, tool):
 
 
 @pytest.mark.parametrize("tool", [Tool.TEXT, Tool.TABLE])
-def test_el_primer_clic_fuera_sale_del_cuadro_sin_soltarlo(window, qapp, tool):
+def test_the_first_click_outside_leaves_the_box_still_selected(window, qapp, tool):
     """Salir de un texto o una celda no puede dejarte sin nada seleccionado."""
     _vaciar_portapapeles()
     point = _dibujar(window, qapp, tool, (80.0, 100.0), (350.0, 160.0))
@@ -2260,7 +2260,7 @@ def test_el_primer_clic_fuera_sale_del_cuadro_sin_soltarlo(window, qapp, tool):
     assert window.view.annotation_count() == antes + 1
 
 
-def test_el_segundo_clic_en_vacio_si_suelta_la_seleccion(window, qapp):
+def test_the_second_click_on_empty_space_does_clear_the_selection(window, qapp):
     """Se sigue pudiendo deseleccionar, que si no no habria forma."""
     point = _dibujar(window, qapp, Tool.TEXT, (80.0, 100.0), (350.0, 160.0))
     QTest.mouseClick(window.view.viewport(), Qt.LeftButton, Qt.NoModifier,
@@ -2274,7 +2274,7 @@ def test_el_segundo_clic_en_vacio_si_suelta_la_seleccion(window, qapp):
     assert not window.view.selected_items()
 
 
-def test_esc_sigue_cancelando_lo_que_se_esta_dibujando(window, qapp):
+def test_esc_still_cancels_what_is_being_drawn(window, qapp):
     """Lo que Esc si tiene que tirar: el trazo a medias."""
     from PySide6.QtCore import QPointF
 

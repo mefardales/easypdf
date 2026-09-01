@@ -653,16 +653,16 @@ class MainWindow(QMainWindow):
         self.align_group = QActionGroup(self)
         self.align_group.setExclusive(True)
         self.align_actions = {}
-        for alineacion, name in (
+        for alignment, name in (
             (Align.LEFT, "align_left"),
             (Align.CENTER, "align_center"),
             (Align.RIGHT, "align_right"),
         ):
-            act = QAction(icons.icon(name), tr(f"act_align_{alineacion.name.lower()}"), self)
+            act = QAction(icons.icon(name), tr(f"act_align_{alignment.name.lower()}"), self)
             act.setCheckable(True)
-            act.triggered.connect(lambda checked=False, a=alineacion: self._set_align(a))
+            act.triggered.connect(lambda checked=False, a=alignment: self._set_align(a))
             self.align_group.addAction(act)
-            self.align_actions[alineacion] = act
+            self.align_actions[alignment] = act
             tools.addAction(act)
         self.align_actions[Align.LEFT].setChecked(True)
 
@@ -1010,7 +1010,7 @@ class MainWindow(QMainWindow):
 
         if not hasattr(self, "el_tree"):
             return
-        remembered = self._elemento_elegido()
+        remembered = self._chosen_element()
         self.el_tree.clear()
         por_grupo: dict[str, list] = {c: [] for c in EL_CATEGORIES}
         for info in element_infos():
@@ -1033,7 +1033,7 @@ class MainWindow(QMainWindow):
                         self.el_tree.setCurrentItem(root.child(i))
         self._update_element_buttons()
 
-    def _elemento_elegido(self) -> str | None:
+    def _chosen_element(self) -> str | None:
         item = self.el_tree.currentItem() if hasattr(self, "el_tree") else None
         return item.data(0, Qt.UserRole) if item is not None else None
 
@@ -1041,14 +1041,14 @@ class MainWindow(QMainWindow):
         if not hasattr(self, "btn_el_insert"):
             return
         self.btn_el_insert.setEnabled(
-            self._elemento_elegido() is not None and self.view.has_document()
+            self._chosen_element() is not None and self.view.has_document()
         )
 
     def insert_selected_element(self) -> bool:
         """Suelta la pieza elegida en la pagina que se esta viendo."""
         from ..elements import build
 
-        key = self._elemento_elegido()
+        key = self._chosen_element()
         if key is None or not self.view.has_document():
             return False
         pieces = build(key, 0.0, 0.0)
@@ -1398,10 +1398,10 @@ class MainWindow(QMainWindow):
         self.settings.set_tool_italic(checked)
         self.view.apply_style_to_selection(italic=bool(checked))
 
-    def _set_align(self, alineacion: Align) -> None:
-        self.view.style_defaults["align"] = alineacion
-        self.settings.set_tool_align(int(alineacion))
-        self.view.apply_style_to_selection(align=alineacion)
+    def _set_align(self, alignment: Align) -> None:
+        self.view.style_defaults["align"] = alignment
+        self.settings.set_tool_align(int(alignment))
+        self.view.apply_style_to_selection(align=alignment)
 
     def _set_rows(self, value: int) -> None:
         self.view.style_defaults["rows"] = int(value)
@@ -1812,8 +1812,8 @@ class MainWindow(QMainWindow):
         self.act_bold.setToolTip(tr("bold_tip"))
         self.act_italic.setText(tr("italic"))
         self.act_italic.setToolTip(tr("italic_tip"))
-        for alineacion, action in self.align_actions.items():
-            action.setText(tr(f"act_align_{alineacion.name.lower()}"))
+        for alignment, action in self.align_actions.items():
+            action.setText(tr(f"act_align_{alignment.name.lower()}"))
         self.act_close_search.setText(tr("search_close"))
         self.search_edit.setPlaceholderText(tr("search_placeholder"))
         self.color_button.setToolTip(tr("color_tip"))
@@ -2010,7 +2010,7 @@ class MainWindow(QMainWindow):
     def _build_thumbnails(self) -> None:
         # Se rehace la lista entera sin avisar: quien llama coloca despues la
         # pagina que toca, y sin esto el setCurrentRow(0) saltaria a la primera.
-        bloqueado = self.thumb_list.blockSignals(True)
+        blocked = self.thumb_list.blockSignals(True)
         try:
             self.thumb_list.clear()
             self._thumb_queue.clear()
@@ -2025,7 +2025,7 @@ class MainWindow(QMainWindow):
                 self._thumb_queue.append(index)
             self.thumb_list.setCurrentRow(min(self.view.current_page, document.page_count - 1))
         finally:
-            self.thumb_list.blockSignals(bloqueado)
+            self.thumb_list.blockSignals(blocked)
         self._thumb_timer.start()
 
     def _render_next_thumbnail(self) -> None:
@@ -2090,24 +2090,24 @@ class MainWindow(QMainWindow):
             return
         page_item = self.thumb_list.row(item)
         self.thumb_list.setCurrentRow(page_item)
-        menu, acciones = self.build_page_menu(page_item)
+        menu, actions = self.build_page_menu(page_item)
         chosen = menu.exec(self.thumb_list.viewport().mapToGlobal(pos))
         if chosen is not None:
-            self.run_page_action(acciones.get(chosen), page_item)
+            self.run_page_action(actions.get(chosen), page_item)
 
     def build_page_menu(self, page_item: int):
         """Menu de una pagina. Separado del gesto para poder probarlo."""
         menu = QMenu(self)
-        acciones = {}
+        actions = {}
 
         def submenu_insertar(key: str, text: str) -> None:
             """Insertar una pagina, eligiendo su tamano en el momento."""
             sub = menu.addMenu(text)
             igual = sub.addAction(tr("size_same"))
-            acciones[igual] = f"{key}:"          # sin tamano = como la vecina
+            actions[igual] = f"{key}:"          # sin tamano = como la vecina
             sub.addSeparator()
             for name in PAGE_SIZES:
-                acciones[sub.addAction(page_size_label(name))] = f"{key}:{name}"
+                actions[sub.addAction(page_size_label(name))] = f"{key}:{name}"
 
         submenu_insertar("insert_before", tr("page_insert_before"))
         submenu_insertar("insert_after", tr("page_insert_after"))
@@ -2125,7 +2125,7 @@ class MainWindow(QMainWindow):
         menu.addSeparator()
         erase_it = menu.addAction(tr("page_delete"))
         erase_it.setEnabled(self.view.page_count > 1)
-        acciones.update({
+        actions.update({
             duplicar: "duplicate",
             girar_izq: "rotate_left",
             girar_der: "rotate_right",
@@ -2134,7 +2134,7 @@ class MainWindow(QMainWindow):
             bottom: "down",
             erase_it: "delete",
         })
-        return menu, acciones
+        return menu, actions
 
     def run_page_action(self, action: str | None, page_item: int) -> None:
         """Ejecuta una de las opciones del menu de pagina."""
@@ -2236,7 +2236,7 @@ class MainWindow(QMainWindow):
         self.bookmark_dock.setVisible(checked)
         self.settings.set_value("view/side_panel", bool(checked))
 
-    def _sin_seleccion(self) -> None:
+    def _nothing_selected(self) -> None:
         """Explica por que no pasa nada, en vez de quedarse callado.
 
         Con una herramienta de dibujo activa el clic pinta en lugar de
@@ -2250,21 +2250,21 @@ class MainWindow(QMainWindow):
         if self.view.delete_selected():
             self.statusBar().clearMessage()   # no dejar colgado el aviso anterior
         else:
-            self._sin_seleccion()
+            self._nothing_selected()
 
     def copy_selection(self) -> None:
         how_many = self.view.copy_selected()
         if how_many:
             self.statusBar().showMessage(tr("status_copied", count=how_many), 3000)
         else:
-            self._sin_seleccion()
+            self._nothing_selected()
 
     def cut_selection(self) -> None:
         how_many = self.view.cut_selected()
         if how_many:
             self.statusBar().showMessage(tr("status_cut", count=how_many), 3000)
         else:
-            self._sin_seleccion()
+            self._nothing_selected()
 
     def paste_clipboard(self) -> None:
         how_many = self.view.paste_clipboard()
@@ -2321,20 +2321,20 @@ class MainWindow(QMainWindow):
             act.setEnabled(has_doc)
         for act in self.tool_group.actions():
             act.setEnabled(has_doc)
-        editando = self.view.is_editing_text
+        editing = self.view.is_editing_text
         # Estas tres van activas aunque no haya nada seleccionado: si se
         # desactivan, el atajo no llega a dispararse y DEL o Ctrl+C no hacen
         # nada ni dicen nada. Prefieren avisar en la barra de estado.
-        self.act_delete.setEnabled(has_doc and not editando)
+        self.act_delete.setEnabled(has_doc and not editing)
         # Mientras se escribe dentro de un texto, copiar y pegar son los del
         # editor: si las acciones siguieran activas robarian el atajo y no se
         # podria copiar una palabra.
-        self.act_copy.setEnabled(has_doc and not editando)
-        self.act_cut.setEnabled(has_doc and not editando)
-        self.act_paste.setEnabled(has_doc and not editando)
+        self.act_copy.setEnabled(has_doc and not editing)
+        self.act_cut.setEnabled(has_doc and not editing)
+        self.act_paste.setEnabled(has_doc and not editing)
         self._update_element_buttons()
         self.act_page_delete.setEnabled(has_doc and self.view.page_count > 1)
-        self.act_select_all.setEnabled(has_doc and not editando)
+        self.act_select_all.setEnabled(has_doc and not editing)
         count = self.view.annotation_count()
         self.page_spin.setEnabled(has_doc)
         self.page_spin.setMaximum(max(1, self.view.page_count))

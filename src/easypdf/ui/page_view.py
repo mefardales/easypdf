@@ -610,8 +610,8 @@ class PdfView(QGraphicsView):
 
     def _eraser_cursor(self) -> QCursor:
         """Circulo del tamano real de la goma, para ver que se va a borrar."""
-        lado = max(8, min(128, int(self._eraser_size * self._zoom)))
-        pixmap = QPixmap(lado + 2, lado + 2)
+        side = max(8, min(128, int(self._eraser_size * self._zoom)))
+        pixmap = QPixmap(side + 2, side + 2)
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -621,12 +621,12 @@ class PdfView(QGraphicsView):
         relleno.setAlpha(150)
         painter.setBrush(relleno)                 # el color con el que tapa
         painter.setPen(QPen(QColor(255, 255, 255, 220), 3))
-        painter.drawEllipse(1, 1, lado, lado)
+        painter.drawEllipse(1, 1, side, side)
         painter.setPen(QPen(QColor(20, 20, 20, 230), 1))
         painter.setBrush(Qt.NoBrush)
-        painter.drawEllipse(1, 1, lado, lado)
+        painter.drawEllipse(1, 1, side, side)
         painter.end()
-        return QCursor(pixmap, lado // 2, lado // 2)
+        return QCursor(pixmap, side // 2, side // 2)
 
     def _annotation_items(self) -> list[AnnotationItemMixin]:
         return [item for item in self._items.values() if item.scene() is not None]
@@ -706,9 +706,9 @@ class PdfView(QGraphicsView):
         ann = Annotation(kind=Kind.IMAGE, page=page, image_name=name, image_data=data)
         ann.rect = (point.x(), point.y(), point.x(), point.y())
         item = create_item(ann, self._page_items[page])
-        proporcion = getattr(item, "aspect", 1.0) or 1.0
+        aspect = getattr(item, "aspect", 1.0) or 1.0
         width = min(self._page_items[page].boundingRect().width() * 0.4, 260.0)
-        ann.rect = (point.x(), point.y(), point.x() + width, point.y() + width / proporcion)
+        ann.rect = (point.x(), point.y(), point.x() + width, point.y() + width / aspect)
         item.apply_model()
         self._items[ann.id] = item
         self.undo_stack.push(AddAnnotationCommand(self, ann, item))
@@ -808,10 +808,10 @@ class PdfView(QGraphicsView):
             x0, y0, x1, y1 = ann.normalized_rect()
             if (x1 - x0) < 20 or (y1 - y0) < 20:
                 # Un clic sencillo coloca la imagen a un tamano comodo.
-                proporcion = getattr(item, "aspect", 1.0) or 1.0
+                aspect = getattr(item, "aspect", 1.0) or 1.0
                 page_item = self._page_items[ann.page].boundingRect()
                 width = min(page_item.width() * 0.4, 260.0)
-                ann.rect = (x0, y0, x0 + width, y0 + width / proporcion)
+                ann.rect = (x0, y0, x0 + width, y0 + width / aspect)
             item.apply_model()
         if ann.kind is Kind.TABLE:
             x0, y0, x1, y1 = ann.normalized_rect()
@@ -1067,7 +1067,7 @@ class PdfView(QGraphicsView):
         self.erased.emit()
 
     # ------------------------------------------------------------------ raton
-    def _salir_de_la_edicion(self, event) -> bool:
+    def _leave_editing(self, event) -> bool:
         """Cierra el texto o la celda que se este editando al pinchar fuera.
 
         El editor de una celda es hijo de la tabla, asi que al pinchar fuera
@@ -1087,15 +1087,15 @@ class PdfView(QGraphicsView):
         """
         if not self._text_editing:
             return False
-        tocado = self._scene.itemAt(
+        touched = self._scene.itemAt(
             self.mapToScene(event.position().toPoint()), self.transform()
         )
         being_edited = self._items_editandose()
-        if any(tocado is getattr(item, "_editor", None) is not None
+        if any(touched is getattr(item, "_editor", None) is not None
                for item in being_edited):
             return False                 # se sigue escribiendo en esa celda
         self.finish_all_editing()
-        if tocado is None or not isinstance(tocado, AnnotationItemMixin):
+        if touched is None or not isinstance(touched, AnnotationItemMixin):
             self._scene.clearSelection()
             for item in being_edited:
                 item.setSelected(True)
@@ -1104,7 +1104,7 @@ class PdfView(QGraphicsView):
         return False
 
     def mousePressEvent(self, event) -> None:
-        if self._salir_de_la_edicion(event):
+        if self._leave_editing(event):
             return
         if (self._tool is Tool.SELECT and event.button() == Qt.LeftButton
                 and self._guide_drag is None):
@@ -1186,9 +1186,9 @@ class PdfView(QGraphicsView):
             x1, y1 = local.x(), local.y()
             if ann.kind is Kind.IMAGE:
                 # La imagen conserva su proporcion mientras se coloca.
-                proporcion = getattr(self._draft_item, "aspect", 1.0) or 1.0
+                aspect = getattr(self._draft_item, "aspect", 1.0) or 1.0
                 width = abs(x1 - x0)
-                height = width / proporcion
+                height = width / aspect
                 x1 = x0 + width * (1 if x1 >= x0 else -1)
                 y1 = y0 + height * (1 if y1 >= y0 else -1)
             elif event.modifiers() & Qt.ShiftModifier:
@@ -1279,8 +1279,8 @@ class PdfView(QGraphicsView):
             return
         if event.key() in (Qt.Key_Delete, Qt.Key_Backspace):
             focus = self._scene.focusItem()
-            editando = self._text_editing or isinstance(focus, QGraphicsTextItem)
-            if not editando and (not isinstance(focus, TextItem) or not focus.hasFocus()):
+            editing = self._text_editing or isinstance(focus, QGraphicsTextItem)
+            if not editing and (not isinstance(focus, TextItem) or not focus.hasFocus()):
                 if self.delete_selected():
                     event.accept()
                     return
@@ -1349,13 +1349,13 @@ class PdfView(QGraphicsView):
 
         if self.document is None:
             return 0
-        copiadas = clipboard_annotations()
-        if not copiadas:
+        copied = clipboard_annotations()
+        if not copied:
             return 0
         target = self.current_page if page is None else page
         # shift_to_page da identidad nueva a cada copia y conserva la
         # distancia entre paginas, para poder pegar lo copiado de varias.
-        placed = shift_to_page(copiadas, target, self.page_count)
+        placed = shift_to_page(copied, target, self.page_count)
         if not placed:
             return 0
         self._paste_count += 1

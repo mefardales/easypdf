@@ -30,7 +30,7 @@ def document():
         (Annotation(kind=Kind.INK, page=0, strokes=[[(10, 10), (60, 60), (90, 20)]]), "Ink"),
     ],
 )
-def test_cada_tipo_genera_su_anotacion(document, ann, expected):
+def test_every_kind_produces_its_annotation(document, ann, expected):
     doc, page = document
     assert apply_annotations(doc, [ann]) == 1
     created = list(page.annots())
@@ -38,7 +38,7 @@ def test_cada_tipo_genera_su_anotacion(document, ann, expected):
     assert created[0].info.get("title") == AUTHOR
 
 
-def test_colores_y_opacidad(document):
+def test_colours_and_opacity(document):
     doc, page = document
     ann = Annotation(
         kind=Kind.RECT, page=0, rect=(50, 50, 200, 150),
@@ -52,7 +52,7 @@ def test_colores_y_opacidad(document):
     assert annot.border["width"] == pytest.approx(3.0)
 
 
-def test_se_ignoran_las_vacias_y_las_paginas_inexistentes(document):
+def test_empty_ones_and_missing_pages_are_ignored(document):
     doc, _page = document
     annotations = [
         Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 11, 11)),   # demasiado pequena
@@ -62,7 +62,7 @@ def test_se_ignoran_las_vacias_y_las_paginas_inexistentes(document):
     assert apply_annotations(doc, annotations) == 1
 
 
-def test_pagina_girada_conserva_la_posicion(document):
+def test_a_rotated_page_keeps_the_position(document):
     """Lo dibujado sobre una pagina girada se guarda donde el usuario lo ve."""
     doc, page = document
     page.set_rotation(90)
@@ -80,7 +80,7 @@ def test_pagina_girada_conserva_la_posicion(document):
     assert rojo > 180 and verde < 90 and azul < 90
 
 
-def test_tipo_desconocido_falla(document):
+def test_an_unknown_kind_fails(document):
     doc, _page = document
     ann = Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 90, 90))
     ann.kind = "inventado"  # type: ignore[assignment]
@@ -88,7 +88,7 @@ def test_tipo_desconocido_falla(document):
         apply_annotations(doc, [ann])
 
 
-def test_la_flecha_lleva_su_propia_punta(document):
+def test_the_arrow_carries_its_own_head(document):
     """La punta es un triangulo propio: la estandar del PDF sale gigante."""
     doc, page = document
     ann = Annotation(kind=Kind.ARROW, page=0, p1=(50, 50), p2=(250, 50), width=4.0)
@@ -108,7 +108,7 @@ def test_la_flecha_lleva_su_propia_punta(document):
     assert poligono.colors["fill"] == [pytest.approx(c) for c in ann.color]
 
 
-def test_la_tabla_se_guarda_como_rejilla_y_textos(document):
+def test_the_table_is_stored_as_a_grid_plus_texts(document):
     doc, page = document
     tabla = Annotation(
         kind=Kind.TABLE, page=0, rect=(40, 40, 340, 160), rows=2, cols=3,
@@ -121,11 +121,11 @@ def test_la_tabla_se_guarda_como_rejilla_y_textos(document):
     # una tinta con toda la rejilla y un texto por celda con contenido
     assert tipos[0] == "Ink"
     assert tipos.count("FreeText") == 5
-    contenidos = [a.info.get("content", "") for a in annotations if a.type[1] == "FreeText"]
-    assert "Concepto" in contenidos and "12" in contenidos
+    contents = [a.info.get("content", "") for a in annotations if a.type[1] == "FreeText"]
+    assert "Concepto" in contents and "12" in contents
 
 
-def test_la_tabla_con_relleno_lleva_fondo(document):
+def test_a_filled_table_gets_a_background(document):
     doc, page = document
     apply_annotations(doc, [Annotation(
         kind=Kind.TABLE, page=0, rect=(40, 40, 200, 100), rows=1, cols=1,
@@ -143,12 +143,12 @@ def test_la_tabla_con_relleno_lleva_fondo(document):
         (Font.MONO, True, True, "cobi"),
     ],
 )
-def test_codigo_de_fuente(family, bold_flag, italic_flag, expected):
+def test_font_code(family, bold_flag, italic_flag, expected):
     ann = Annotation(kind=Kind.TEXT, page=0, font=family, bold=bold_flag, italic=italic_flag)
     assert font_code(ann) == expected
 
 
-def test_negrita_y_cursiva_llegan_al_pdf():
+def test_bold_and_italic_reach_the_pdf():
     """PyMuPDF ignora las variantes en texto normal: hay que usar el enriquecido."""
 
     def tinta(**estilo):
@@ -171,7 +171,7 @@ def test_negrita_y_cursiva_llegan_al_pdf():
     assert tinta(font=Font.MONO) != normal
 
 
-def test_la_alineacion_se_guarda(document):
+def test_alignment_is_stored(document):
     doc, page = document
     apply_annotations(doc, [Annotation(
         kind=Kind.TEXT, page=0, rect=(20, 20, 300, 60), text="hola",
@@ -181,7 +181,7 @@ def test_la_alineacion_se_guarda(document):
     assert annot.info.get("content") == "hola"
 
 
-def test_la_imagen_se_inserta_en_la_pagina(document, sample_image_bytes):
+def test_the_image_is_embedded_in_the_page(document, sample_image_bytes):
     doc, page = document
     assert not page.get_images()
     apply_annotations(doc, [Annotation(
@@ -194,7 +194,7 @@ def test_la_imagen_se_inserta_en_la_pagina(document, sample_image_bytes):
     assert list(page.annots()) == []
 
 
-def test_una_imagen_sin_datos_se_ignora(document):
+def test_an_image_without_data_is_ignored(document):
     doc, _page = document
     ann = Annotation(kind=Kind.IMAGE, page=0, rect=(50, 50, 250, 170))
     assert ann.is_empty()
@@ -202,7 +202,7 @@ def test_una_imagen_sin_datos_se_ignora(document):
 
 
 # -- la goma borra de verdad ---------------------------------------------
-def test_la_goma_quita_el_texto_del_archivo_no_lo_tapa():
+def test_the_eraser_removes_the_text_from_the_file_not_just_covers_it():
     """Pintar de blanco no vale: el texto tapado se seguia pudiendo copiar.
 
     Quien borra un dato confidencial de un PDF se cree a salvo; si lo unico
@@ -222,14 +222,14 @@ def test_la_goma_quita_el_texto_del_archivo_no_lo_tapa():
     output = doc.tobytes(garbage=3, deflate=True)
     doc.close()
 
-    leido = pymupdf.open("pdf", output)
-    text = leido[0].get_text()
-    leido.close()
+    read_flag = pymupdf.open("pdf", output)
+    text = read_flag[0].get_text()
+    read_flag.close()
     assert "SALARIO" not in text
     assert "Esto se queda" in text
 
 
-def test_la_pasada_de_goma_no_se_escribe_como_dibujo():
+def test_the_eraser_stroke_is_not_written_as_a_drawing():
     """La goma hace su trabajo borrando; no se guarda como una raya blanca."""
     doc = pymupdf.open()
     doc.new_page().insert_text((72, 120), "algo", fontsize=14)
@@ -245,7 +245,7 @@ def test_la_pasada_de_goma_no_se_escribe_como_dibujo():
     doc.close()
 
 
-def test_lo_dibujado_despues_de_borrar_sobrevive():
+def test_what_is_drawn_after_erasing_survives():
     """Se borra primero y se dibuja despues: si no, la goma se lo llevaria."""
     doc = pymupdf.open()
     doc.new_page().insert_text((72, 120), "fuera", fontsize=14)
@@ -261,7 +261,7 @@ def test_lo_dibujado_despues_de_borrar_sobrevive():
     doc.close()
 
 
-def test_una_goma_vacia_no_toca_nada():
+def test_an_empty_eraser_touches_nothing():
     doc = pymupdf.open()
     doc.new_page().insert_text((72, 120), "intacto", fontsize=14)
     eraser = Annotation(kind=Kind.ERASE, page=0, strokes=[])

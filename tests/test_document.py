@@ -8,7 +8,7 @@ from easypdf.i18n import tr
 from easypdf.model import Annotation, Kind
 
 
-def test_abrir_y_metadatos(sample_pdf):
+def test_open_and_metadata(sample_pdf):
     doc = PdfDocument.open(sample_pdf)
     assert doc.page_count == 3
     assert doc.name == "muestra.pdf"
@@ -18,7 +18,7 @@ def test_abrir_y_metadatos(sample_pdf):
     doc.close()
 
 
-def test_render_devuelve_pixeles(sample_pdf_bytes):
+def test_render_returns_pixels(sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     page = doc.render_page(0, 2.0)
     assert page.width == 1190 and page.height == 1684
@@ -26,7 +26,7 @@ def test_render_devuelve_pixeles(sample_pdf_bytes):
     doc.close()
 
 
-def test_busqueda_encuentra_todas_las_paginas(sample_pdf_bytes):
+def test_search_finds_every_page(sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     hits = doc.search("EasyPDF")
     assert len(hits) == 3
@@ -35,13 +35,13 @@ def test_busqueda_encuentra_todas_las_paginas(sample_pdf_bytes):
     doc.close()
 
 
-def test_texto_de_pagina(sample_pdf_bytes):
+def test_page_text(sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     assert "Pagina 2" in doc.page_text(1)
     doc.close()
 
 
-def test_exportar_incluye_las_anotaciones(sample_pdf_bytes):
+def test_export_includes_the_annotations(sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     anns = [
         Annotation(kind=Kind.RECT, page=0, rect=(50, 50, 200, 150)),
@@ -54,7 +54,7 @@ def test_exportar_incluye_las_anotaciones(sample_pdf_bytes):
     doc.close()
 
 
-def test_exportar_dos_veces_no_duplica(sample_pdf_bytes):
+def test_exporting_twice_does_not_duplicate(sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     anns = [Annotation(kind=Kind.RECT, page=0, rect=(50, 50, 200, 150))]
     doc.export_bytes(anns)
@@ -63,7 +63,7 @@ def test_exportar_dos_veces_no_duplica(sample_pdf_bytes):
     doc.close()
 
 
-def test_guardar_como_escribe_el_archivo(tmp_path, sample_pdf_bytes):
+def test_save_as_writes_the_file(tmp_path, sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     target = tmp_path / "salida.pdf"
     doc.save_as(str(target), [Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 90, 90))])
@@ -75,19 +75,19 @@ def test_guardar_como_escribe_el_archivo(tmp_path, sample_pdf_bytes):
     doc.close()
 
 
-def test_documento_protegido(tmp_path, sample_pdf_bytes):
+def test_protected_document(tmp_path, sample_pdf_bytes):
     source = pymupdf.open(stream=sample_pdf_bytes, filetype="pdf")
-    protegido = tmp_path / "protegido.pdf"
+    protected = tmp_path / "protegido.pdf"
     source.save(
-        str(protegido),
+        str(protected),
         encryption=pymupdf.PDF_ENCRYPT_AES_256,
         owner_pw="duenno",
         user_pw="secreta",
     )
     source.close()
     with pytest.raises(PasswordRequired):
-        PdfDocument.open(str(protegido))
-    doc = PdfDocument.open(str(protegido), password="secreta")
+        PdfDocument.open(str(protected))
+    doc = PdfDocument.open(str(protected), password="secreta")
     assert doc.page_count == 3
     assert len(list(pymupdf.open(
         stream=doc.export_bytes([Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 90, 90))]),
@@ -96,7 +96,7 @@ def test_documento_protegido(tmp_path, sample_pdf_bytes):
     doc.close()
 
 
-def test_archivo_invalido(tmp_path):
+def test_invalid_file(tmp_path):
     roto = tmp_path / "roto.pdf"
     roto.write_bytes(b"esto no es un pdf")
     with pytest.raises(PdfError):
@@ -105,7 +105,7 @@ def test_archivo_invalido(tmp_path):
         PdfDocument.open(str(tmp_path / "no-existe.pdf"))
 
 
-def test_documento_en_blanco():
+def test_blank_document():
     doc = PdfDocument.blank(3, "Letter")
     assert doc.page_count == 3
     assert [round(v) for v in doc.page_size(0)] == [612, 792]
@@ -114,7 +114,7 @@ def test_documento_en_blanco():
     doc.close()
 
 
-def test_anadir_duplicar_y_borrar_paginas(sample_pdf_bytes):
+def test_add_duplicate_and_delete_pages(sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     assert doc.page_count == 3
     assert doc.add_blank_page(1) == 1
@@ -128,14 +128,14 @@ def test_anadir_duplicar_y_borrar_paginas(sample_pdf_bytes):
     doc.close()
 
 
-def test_no_se_puede_borrar_la_ultima_pagina():
+def test_the_last_page_cannot_be_deleted():
     doc = PdfDocument.blank(1)
     with pytest.raises(PdfError):
         doc.delete_page(0)
     doc.close()
 
 
-def test_extraer_y_devolver_una_pagina(sample_pdf_bytes):
+def test_extract_and_put_back_a_page(sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     data = doc.extract_page(1)
     doc.delete_page(1)
@@ -147,7 +147,7 @@ def test_extraer_y_devolver_una_pagina(sample_pdf_bytes):
     doc.close()
 
 
-def test_mover_una_pagina(sample_pdf_bytes):
+def test_move_a_page(sample_pdf_bytes):
     doc = PdfDocument(sample_pdf_bytes)
     doc.move_page(0, 2)
     assert "Pagina 1" in doc.page_text(2)
@@ -156,7 +156,7 @@ def test_mover_una_pagina(sample_pdf_bytes):
     doc.close()
 
 
-def test_las_paginas_nuevas_se_guardan(tmp_path):
+def test_new_pages_are_saved(tmp_path):
     doc = PdfDocument.blank(1)
     doc.add_blank_page()
     target = tmp_path / "nuevo.pdf"
@@ -167,7 +167,7 @@ def test_las_paginas_nuevas_se_guardan(tmp_path):
     doc.close()
 
 
-def test_girar_una_pagina_cambia_su_orientacion():
+def test_rotating_a_page_changes_its_orientation():
     document = PdfDocument.blank(pages=1, size="A4")
     width, height = document.page_size(0)
     assert document.page_rotation(0) == 0
@@ -185,7 +185,7 @@ def test_girar_una_pagina_cambia_su_orientacion():
     document.close()
 
 
-def test_el_giro_se_normaliza_y_se_guarda_en_el_pdf(tmp_path):
+def test_rotation_is_normalised_and_stored_in_the_pdf(tmp_path):
     document = PdfDocument.blank(pages=1, size="A4")
     document.set_page_rotation(0, 450)             # 450 = 90
     assert document.page_rotation(0) == 90
@@ -199,7 +199,7 @@ def test_el_giro_se_normaliza_y_se_guarda_en_el_pdf(tmp_path):
     stored.close()
 
 
-def test_los_marcadores_sobreviven_al_guardar(tmp_path):
+def test_bookmarks_survive_saving(tmp_path):
     document = PdfDocument.blank(pages=3, size="A4")
     assert document.bookmarks() == []
 
@@ -220,14 +220,14 @@ def test_los_marcadores_sobreviven_al_guardar(tmp_path):
     crudo.close()
 
 
-def test_no_se_guarda_un_marcador_a_una_pagina_que_no_existe():
+def test_a_bookmark_to_a_missing_page_is_not_saved():
     document = PdfDocument.blank(pages=2, size="A4")
     document.set_bookmarks([("Bueno", 0), ("Imposible", 99)])
     assert document.bookmarks() == [("Bueno", 0)]
     document.close()
 
 
-def test_take_notes_saca_las_notas_una_sola_vez(tmp_path):
+def test_take_notes_removes_the_notes_only_once(tmp_path):
     from easypdf.annotations import apply_annotations
     from easypdf.model import Annotation, Kind
 

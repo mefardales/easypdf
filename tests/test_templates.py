@@ -36,7 +36,7 @@ def annotations(sample_image_bytes):
     ]
 
 
-def test_ida_y_vuelta_de_cada_tipo(annotations):
+def test_round_trip_of_every_kind(annotations):
     for original in annotations:
         copia = annotation_from_dict(annotation_to_dict(original))
         assert copia.kind is original.kind
@@ -48,28 +48,28 @@ def test_ida_y_vuelta_de_cada_tipo(annotations):
         assert copia.bold == original.bold and copia.align == original.align
 
 
-def test_guardar_y_cargar(tmp_path, annotations):
+def test_save_and_load(tmp_path, annotations):
     path = save_template(str(tmp_path), "Factura mensual", annotations, [(595, 842), (595, 842)])
     assert path.endswith(EXTENSION)
-    name, page_items, cargadas = load_template(path)
+    name, page_items, loaded = load_template(path)
     assert name == "Factura mensual"
     assert page_items == [(595.0, 842.0), (595.0, 842.0)]
-    assert [a.kind for a in cargadas] == [a.kind for a in annotations]
-    image = [a for a in cargadas if a.kind is Kind.IMAGE][0]
+    assert [a.kind for a in loaded] == [a.kind for a in annotations]
+    image = [a for a in loaded if a.kind is Kind.IMAGE][0]
     assert image.image_data == annotations[2].image_data
 
 
-def test_listar_y_borrar(tmp_path, annotations):
+def test_list_and_delete(tmp_path, annotations):
     save_template(str(tmp_path), "Uno", annotations[:1])
     save_template(str(tmp_path), "Dos", annotations)
-    listadas = list_templates(str(tmp_path))
-    assert [t.name for t in listadas] == ["Dos", "Uno"]
-    assert listadas[0].annotations == len(annotations)
-    delete_template(listadas[0].path)
+    listed = list_templates(str(tmp_path))
+    assert [t.name for t in listed] == ["Dos", "Uno"]
+    assert listed[0].annotations == len(annotations)
+    delete_template(listed[0].path)
     assert [t.name for t in list_templates(str(tmp_path))] == ["Uno"]
 
 
-def test_las_anotaciones_vacias_no_se_guardan(tmp_path):
+def test_empty_annotations_are_not_saved(tmp_path):
     path = save_template(str(tmp_path), "Casi vacia", [
         Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 11, 11)),   # diminuta
         Annotation(kind=Kind.RECT, page=0, rect=(10, 10, 90, 90)),   # valida
@@ -77,7 +77,7 @@ def test_las_anotaciones_vacias_no_se_guardan(tmp_path):
     assert len(json.loads(open(path, encoding="utf-8").read())["annotations"]) == 1
 
 
-def test_un_archivo_roto_no_rompe_la_lista(tmp_path, annotations):
+def test_a_broken_file_does_not_break_the_listing(tmp_path, annotations):
     save_template(str(tmp_path), "Buena", annotations)
     (tmp_path / ("rota" + EXTENSION)).write_text("{esto no es json", encoding="utf-8")
     assert [t.name for t in list_templates(str(tmp_path))] == ["Buena"]
@@ -85,12 +85,12 @@ def test_un_archivo_roto_no_rompe_la_lista(tmp_path, annotations):
         load_template(str(tmp_path / ("rota" + EXTENSION)))
 
 
-def test_nombre_de_archivo_seguro():
+def test_safe_file_name():
     assert safe_filename("Factura / ACME: 2026") == "Factura ACME 2026"
     assert safe_filename("   ") == "plantilla"
 
 
-def test_aplicar_desde_una_pagina_concreta(annotations):
+def test_apply_starting_at_a_given_page(annotations):
     movidas = shift_to_page(annotations, first_page=2, page_count=5)
     assert [a.page for a in movidas] == [2, 2, 3, 3]
     # no se sale del documento
@@ -100,12 +100,12 @@ def test_aplicar_desde_una_pagina_concreta(annotations):
     assert movidas[0].id != annotations[0].id
 
 
-def test_sin_nombre_no_se_guarda(tmp_path, annotations):
+def test_without_a_name_it_is_not_saved(tmp_path, annotations):
     with pytest.raises(TemplateError):
         save_template(str(tmp_path), "   ", annotations)
 
 
-def test_lista_vacia_si_no_hay_carpeta(tmp_path):
+def test_empty_list_when_there_is_no_folder(tmp_path):
     assert list_templates(str(tmp_path / "no-existe")) == []
 
 
@@ -113,20 +113,20 @@ def test_lista_vacia_si_no_hay_carpeta(tmp_path):
 # Tipos y plantillas de serie
 # --------------------------------------------------------------------------
 
-def test_una_plantilla_guarda_su_tipo(tmp_path):
+def test_a_template_stores_its_category(tmp_path):
     from easypdf.templates import list_templates, save_template
 
     ann = Annotation(kind=Kind.RECT, page=0, rect=(0.0, 0.0, 50.0, 50.0), width=1)
     save_template(str(tmp_path), "Membrete", [ann], [(595.0, 842.0)],
                   category="letterhead")
 
-    guardadas = list_templates(str(tmp_path))
-    assert len(guardadas) == 1
-    assert guardadas[0].category == "letterhead"
-    assert guardadas[0].builtin is False
+    saved_ones = list_templates(str(tmp_path))
+    assert len(saved_ones) == 1
+    assert saved_ones[0].category == "letterhead"
+    assert saved_ones[0].builtin is False
 
 
-def test_un_tipo_desconocido_cae_en_otras(tmp_path):
+def test_an_unknown_category_falls_into_other(tmp_path):
     from easypdf.templates import DEFAULT_CATEGORY, list_templates, save_template
 
     ann = Annotation(kind=Kind.RECT, page=0, rect=(0.0, 0.0, 50.0, 50.0), width=1)
@@ -134,7 +134,7 @@ def test_un_tipo_desconocido_cae_en_otras(tmp_path):
     assert list_templates(str(tmp_path))[0].category == DEFAULT_CATEGORY
 
 
-def test_una_plantilla_vieja_sin_tipo_se_sigue_leyendo(tmp_path):
+def test_an_old_template_without_a_category_is_still_read(tmp_path):
     """Los archivos guardados antes de que existieran los tipos valen igual."""
     import json
 
@@ -147,12 +147,12 @@ def test_una_plantilla_vieja_sin_tipo_se_sigue_leyendo(tmp_path):
         "annotations": [],
     }), encoding="utf-8")
 
-    guardadas = list_templates(str(tmp_path))
-    assert len(guardadas) == 1
-    assert guardadas[0].category == "other"
+    saved_ones = list_templates(str(tmp_path))
+    assert len(saved_ones) == 1
+    assert saved_ones[0].category == "other"
 
 
-def test_las_plantillas_de_serie_estan_completas():
+def test_the_builtin_templates_are_complete():
     from easypdf.templates import CATEGORIES, builtin_infos
 
     incluidas = builtin_infos()
@@ -165,7 +165,7 @@ def test_las_plantillas_de_serie_estan_completas():
         assert info.path.startswith("builtin:")
 
 
-def test_se_puede_cargar_una_plantilla_de_serie():
+def test_a_builtin_template_can_be_loaded():
     """Se busca por tipo, no por nombre: el nombre cambia con el idioma."""
     from easypdf.templates import builtin_infos, load_builtin
 
@@ -176,7 +176,7 @@ def test_se_puede_cargar_una_plantilla_de_serie():
     assert any(a.kind is Kind.TEXT for a in annotations)
 
 
-def test_cargar_una_de_serie_da_copias_independientes():
+def test_loading_a_builtin_gives_independent_copies():
     """Usarla dos veces no puede compartir las mismas anotaciones."""
     from easypdf.templates import builtin_infos, load_builtin
 
@@ -187,7 +187,7 @@ def test_cargar_una_de_serie_da_copias_independientes():
     assert others[0].text != "cambiado"
 
 
-def test_pedir_una_de_serie_que_no_existe_avisa():
+def test_asking_for_a_missing_builtin_complains():
     from easypdf.templates import TemplateError, load_builtin
 
     with pytest.raises(TemplateError):
@@ -195,7 +195,7 @@ def test_pedir_una_de_serie_que_no_existe_avisa():
 
 
 # -- portapapeles ---------------------------------------------------------
-def test_lo_copiado_va_y_vuelve_igual():
+def test_what_is_copied_comes_back_unchanged():
     from easypdf.ui.clipboard import decode, encode
 
     originales = [
@@ -210,7 +210,7 @@ def test_lo_copiado_va_y_vuelve_igual():
     assert vueltas[1].cells == ["a", "b", "c", "d"]
 
 
-def test_un_texto_de_otro_programa_no_se_lee_como_anotaciones():
+def test_another_programs_text_is_not_read_as_annotations():
     from easypdf.ui.clipboard import decode
 
     assert decode("una nota cualquiera") == []
@@ -219,7 +219,7 @@ def test_un_texto_de_otro_programa_no_se_lee_como_anotaciones():
     assert decode('[1, 2, 3]') == []
 
 
-def test_una_anotacion_rota_no_tira_las_demas():
+def test_one_broken_annotation_does_not_sink_the_rest():
     """Si una entrada esta mal, se salta y se pegan las que si valen."""
     import json
 
@@ -232,7 +232,7 @@ def test_una_anotacion_rota_no_tira_las_demas():
     assert read_ones[0].kind is Kind.RECT
 
 
-def test_copiar_no_deja_el_programa_reventando_al_cerrarse(tmp_path):
+def test_copying_does_not_leave_the_program_crashing_on_exit(tmp_path):
     """Un QMimeData creado en Python se lo quedan Qt y Python a la vez.
 
     Los dos lo borran, y el programa se caia con un fallo de segmentacion al

@@ -20,20 +20,20 @@ def _leer(relativa: str) -> str:
     return (RAIZ / relativa).read_text(encoding="utf-8")
 
 
-def test_pyproject_declara_la_misma_version():
+def test_pyproject_declares_the_same_version():
     found = re.search(r'^version\s*=\s*"([^"]+)"', _leer("pyproject.toml"), re.M)
     assert found, "no hay version en pyproject.toml"
     assert found.group(1) == __version__
 
 
-def test_el_instalador_declara_la_misma_version():
+def test_the_installer_declares_the_same_version():
     text = _leer("packaging/installer.iss")
     found = re.search(r'#define MyAppVersion "([^"]+)"', text)
     assert found, "no hay MyAppVersion en installer.iss"
     assert found.group(1) == __version__
 
 
-def test_los_metadatos_de_windows_declaran_la_misma_version():
+def test_the_windows_metadata_declares_the_same_version():
     text = _leer("packaging/version_info.txt")
     expected = tuple(int(p) for p in __version__.split(".")) + (0,)
 
@@ -51,7 +51,7 @@ def test_los_metadatos_de_windows_declaran_la_misma_version():
         assert found.group(1) == f"{__version__}.0"
 
 
-def test_la_web_enlaza_la_version_del_paquete():
+def test_the_site_links_the_packages_version():
     """Los enlaces de descarga tienen que apuntar a esta version."""
     for page_item in ("site/index.html", "site/es/index.html"):
         enlaces = re.findall(r"releases/download/v([\d.]+)/EasyPDF-([\d.]+)-", _leer(page_item))

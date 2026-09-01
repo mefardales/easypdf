@@ -153,8 +153,8 @@ class Ruler(QWidget):
         painter.setFont(font)
 
         # if the minor ticks would touch, only the major ones are drawn
-        pintar_menores = minor * pixels_per_pt >= 3.0
-        step = minor if pintar_menores else major
+        draw_minor = minor * pixels_per_pt >= 3.0
+        step = minor if draw_minor else major
         first_tick = int(start // step) - 1
         last_tick = int(end // step) + 1
         for i in range(first_tick, last_tick + 1):

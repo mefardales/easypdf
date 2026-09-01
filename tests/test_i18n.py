@@ -20,20 +20,20 @@ def idioma_limpio():
     set_language(previous)
 
 
-def test_los_dos_idiomas_tienen_las_mismas_claves():
+def test_both_languages_have_the_same_keys():
     claves = {codigo: set(textos) for codigo, textos in TEXTS.items()}
-    referencia = claves[DEFAULT_LANGUAGE]
+    reference = claves[DEFAULT_LANGUAGE]
     for codigo, propias in claves.items():
-        assert propias == referencia, f"faltan textos en {codigo}: {referencia ^ propias}"
+        assert propias == reference, f"faltan textos en {codigo}: {reference ^ propias}"
 
 
-def test_no_hay_textos_vacios():
+def test_there_are_no_empty_texts():
     for codigo, textos in TEXTS.items():
         vacios = [key for key, value in textos.items() if not value.strip()]
         assert not vacios, f"{codigo} tiene textos vacios: {vacios}"
 
 
-def test_los_campos_de_cada_texto_coinciden_entre_idiomas():
+def test_the_format_fields_match_across_languages():
     """Si un texto lleva {name}, la traduccion tiene que llevarlo tambien."""
     import string
 
@@ -45,7 +45,7 @@ def test_los_campos_de_cada_texto_coinciden_entre_idiomas():
             assert campos(textos[key]) == campos(text), f"{key} en {codigo}"
 
 
-def test_traduce_y_cambia_de_idioma():
+def test_it_translates_and_switches_language():
     set_language("en")
     assert tr("save") == "&Save"
     set_language("es")
@@ -53,23 +53,23 @@ def test_traduce_y_cambia_de_idioma():
     assert language() == "es"
 
 
-def test_rellena_los_campos():
+def test_it_fills_in_the_fields():
     set_language("en")
     assert tr("status_of", total=7) == "of 7"
     assert "3 x 4" in tr("hint_table", rows=3, cols=4)
 
 
-def test_una_clave_desconocida_no_rompe():
+def test_an_unknown_key_does_not_break_it():
     assert tr("clave-que-no-existe") == "clave-que-no-existe"
 
 
-def test_idioma_del_sistema():
+def test_system_language():
     assert system_language("es_ES") == "es"
     assert system_language("en-GB") == "en"
     assert system_language("fr_FR") == DEFAULT_LANGUAGE   # sin traducir: ingles
     assert system_language("") == DEFAULT_LANGUAGE
 
 
-def test_un_idioma_desconocido_cae_al_predeterminado():
+def test_an_unknown_language_falls_back_to_the_default():
     assert set_language("klingon") == DEFAULT_LANGUAGE
     assert set(LANGUAGES) == set(TEXTS)
