@@ -1,7 +1,7 @@
-"""Iconos dibujados con QPainter.
+"""Icons drawn with QPainter.
 
-Se generan por codigo para que el ejecutable no dependa de archivos externos y
-para que los iconos se adapten al tema claro u oscuro del sistema.
+They are generated in code so the executable does not depend on external
+files, and so the icons follow the system's light or dark theme.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ _cache: dict[str, QIcon] = {}
 
 
 def _ink_color() -> QColor:
-    """Color de trazo legible sobre la barra de herramientas actual."""
+    """A stroke colour that reads well on the current toolbar."""
     app = QApplication.instance()
     if app is not None:
         base = app.palette().window().color()
@@ -141,7 +141,7 @@ def _draw_select(p: QPainter) -> None:
 
 
 def _draw_hand(p: QPainter) -> None:
-    """Herramienta de desplazamiento: cruz de cuatro flechas."""
+    """Pan tool: a cross of four arrows."""
     _pen(p, 4.5)
     p.drawLine(32, 12, 32, 52)
     p.drawLine(12, 32, 52, 32)
@@ -203,8 +203,8 @@ def _draw_ink(p: QPainter) -> None:
 
 
 def _draw_note(p: QPainter) -> None:
-    """Nota adhesiva amarilla con la esquina doblada."""
-    amarillo = QColor("#fbc02d")
+    """Yellow sticky note with a folded corner."""
+    yellow = QColor("#fbc02d")
     body = QPainterPath()
     body.moveTo(12, 10)
     body.lineTo(52, 10)
@@ -213,14 +213,14 @@ def _draw_note(p: QPainter) -> None:
     body.lineTo(12, 54)
     body.closeSubpath()
     _pen(p, 3.5)
-    p.setBrush(QBrush(amarillo))
+    p.setBrush(QBrush(yellow))
     p.drawPath(body)
-    doblez = QPainterPath()
-    doblez.moveTo(38, 54)
-    doblez.lineTo(38, 40)
-    doblez.lineTo(52, 40)
-    p.setBrush(QBrush(amarillo.darker(125)))
-    p.drawPath(doblez)
+    fold = QPainterPath()
+    fold.moveTo(38, 54)
+    fold.lineTo(38, 40)
+    fold.lineTo(52, 40)
+    p.setBrush(QBrush(yellow.darker(125)))
+    p.drawPath(fold)
     p.setBrush(Qt.NoBrush)
     _pen(p, 3, QColor("#6d4c41"))
     p.drawLine(20, 22, 44, 22)
@@ -229,18 +229,18 @@ def _draw_note(p: QPainter) -> None:
 
 
 def _draw_eraser(p: QPainter) -> None:
-    """Goma inclinada, con la parte de borrar en rosa y el cuerpo en gris."""
-    # cuerpo (la mitad que se agarra)
+    """Tilted eraser, the rubbing end in pink and the body in grey."""
+    # body (the half you hold)
     body = QPolygonF([QPointF(30, 12), QPointF(52, 34), QPointF(40, 46), QPointF(18, 24)])
     p.setPen(_pen(p, 3.5))
     p.setBrush(QBrush(QColor("#b0bec5")))
     p.drawPolygon(body)
-    # punta que borra
-    punta = QPolygonF([QPointF(18, 24), QPointF(40, 46), QPointF(28, 58), QPointF(6, 36)])
+    # the end that rubs out
+    tip = QPolygonF([QPointF(18, 24), QPointF(40, 46), QPointF(28, 58), QPointF(6, 36)])
     p.setBrush(QBrush(QColor("#ef9a9a")))
-    p.drawPolygon(punta)
+    p.drawPolygon(tip)
     p.setBrush(Qt.NoBrush)
-    # restos de lo borrado
+    # crumbs left behind
     _pen(p, 3, QColor("#90a4ae"))
     p.drawLine(46, 54, 58, 54)
     p.drawLine(48, 46, 58, 46)
@@ -291,7 +291,7 @@ def _draw_next(p: QPainter) -> None:
 
 
 def _pencil(p: QPainter, tip: QPointF, angle_deg: float, length: float, half: float) -> None:
-    """Lapiz rojo con punta de madera y virola azul, apuntando a ``tip``."""
+    """Red pencil with a wooden point and a blue ferrule, aimed at ``tip``."""
     angle = math.radians(angle_deg)
     dx, dy = math.cos(angle), math.sin(angle)
     px, py = -dy * half, dx * half
@@ -402,18 +402,18 @@ def _draw_align(p: QPainter, modo: str) -> None:
 
 
 def _draw_app(p: QPainter) -> None:
-    """Icono de easypdf.surf: hoja de PDF, ola y lapiz.
+    """The easypdf.surf icon: a PDF sheet, a wave and a pencil.
 
-    La ola es el guino al nombre; el lapiz, a que se puede escribir encima.
+    The wave nods at the name; the pencil, at being able to write on top.
     """
     p.setPen(Qt.NoPen)
 
-    # --- Hoja con la esquina superior derecha doblada ---------------------
-    doblez = 15.0
+    # --- Sheet with the top right corner folded --------------------------
+    fold = 15.0
     sheet = QPainterPath()
     sheet.moveTo(19, 2)
-    sheet.lineTo(54 - doblez, 2)
-    sheet.lineTo(54, 2 + doblez)
+    sheet.lineTo(54 - fold, 2)
+    sheet.lineTo(54, 2 + fold)
     sheet.lineTo(54, 47)
     sheet.quadTo(54, 53, 48, 53)
     sheet.lineTo(25, 53)
@@ -423,15 +423,15 @@ def _draw_app(p: QPainter) -> None:
     p.drawPath(sheet)
     p.setBrush(QColor("#ef3b26"))
     p.drawPolygon(
-        QPolygonF([QPointF(54 - doblez, 2), QPointF(54, 2 + doblez), QPointF(54, 2)])
+        QPolygonF([QPointF(54 - fold, 2), QPointF(54, 2 + fold), QPointF(54, 2)])
     )
 
-    # Renglones del documento
+    # The document's lines of text
     p.setBrush(QColor("#ccd1d9"))
     for y, width in ((26, 15), (33, 12)):
         p.drawRoundedRect(QRectF(37, y, width, 4.2), 2.1, 2.1)
 
-    # --- Ola: masa de agua que barre la parte de abajo --------------------
+    # --- Wave: the body of water sweeping the bottom ---------------------
     background = QPainterPath()
     background.moveTo(3, 42)
     background.cubicTo(12, 36, 22, 54, 34, 50)
@@ -454,7 +454,7 @@ def _draw_app(p: QPainter) -> None:
     p.setBrush(QColor("#1e88e5"))
     p.drawPath(middle)
 
-    # --- Cresta que se enrosca sobre si misma ----------------------------
+    # --- The crest curling over itself -----------------------------------
     cresta = QPainterPath()
     cresta.moveTo(3, 50)
     cresta.cubicTo(-1, 28, 16, 18, 28, 26)
@@ -471,7 +471,7 @@ def _draw_app(p: QPainter) -> None:
     p.setBrush(QColor("#29b6f6"))
     p.drawPath(cresta)
 
-    # Espuma blanca en lo alto de la cresta
+    # White foam at the top of the crest
     espuma = QPainterPath()
     espuma.moveTo(9, 27)
     espuma.cubicTo(16, 19, 28, 21, 32, 29)
@@ -480,12 +480,12 @@ def _draw_app(p: QPainter) -> None:
     p.setBrush(QColor("#ffffff"))
     p.drawPath(espuma)
 
-    # Gotas que saltan
+    # Droplets flying off
     p.setBrush(QColor("#29b6f6"))
     for cx, cy, r in ((17, 16, 2.2), (34, 21, 1.7), (35, 41, 1.5)):
         p.drawEllipse(QPointF(cx, cy), r, r)
 
-    # --- Lapiz ------------------------------------------------------------
+    # --- Pencil -----------------------------------------------------------
     _pencil(p, QPointF(41, 47), -45.0, 27.0, 4.4)
 
 
@@ -527,7 +527,7 @@ _DRAWINGS: dict[str, Callable[[QPainter], None]] = {
 
 
 def render(name: str, size: int = SIZE) -> QPixmap:
-    """Dibuja el icono al tamano pedido (el trazo se escala, no se estira)."""
+    """Draw the icon at the size asked for (the stroke scales, it is not stretched)."""
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
@@ -542,7 +542,7 @@ def render(name: str, size: int = SIZE) -> QPixmap:
 
 
 def icon(name: str) -> QIcon:
-    """Devuelve (y memoriza) el icono con ese nombre."""
+    """Return (and remember) the icon with that name."""
     if name in _cache:
         return _cache[name]
     result = QIcon()
@@ -552,14 +552,14 @@ def icon(name: str) -> QIcon:
     return result
 
 
-#: Tamanos que se incrustan en el icono de la aplicacion y en el .ico.
+#: Sizes embedded in the application icon and in the .ico.
 APP_ICON_SIZES = (16, 24, 32, 48, 64, 128, 256)
 
 
 def asset_path(*parts: str) -> str | None:
-    """Ruta a un archivo de assets/, tanto en el repo como dentro del .exe."""
+    """Path to a file in assets/, both in the repo and inside the .exe."""
     roots = []
-    bundle = getattr(sys, "_MEIPASS", None)      # ejecutable de PyInstaller
+    bundle = getattr(sys, "_MEIPASS", None)      # PyInstaller executable
     if bundle:
         roots.append(bundle)
     roots.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
@@ -571,17 +571,17 @@ def asset_path(*parts: str) -> str | None:
 
 
 def app_icon() -> QIcon:
-    """Icono de la aplicacion en todos los tamanos que pide Windows.
+    """The application icon in every size Windows asks for.
 
-    Si hay un icono en ``assets/`` (por ejemplo uno propio generado con
-    ``tools/make_icon.py``) se usa ese; si no, se dibuja por codigo.
+    If there is an icon in ``assets/`` (for instance one generated with
+    ``tools/make_icon.py``) that one is used; otherwise it is drawn in code.
     """
     for name in ("easypdf.ico", "easypdf.png"):
         path = asset_path(name)
         if path:
-            candidato = QIcon(path)
-            if not candidato.isNull():
-                return candidato
+            candidate = QIcon(path)
+            if not candidate.isNull():
+                return candidate
     result = QIcon()
     for size in APP_ICON_SIZES:
         result.addPixmap(render("app", size))
@@ -589,5 +589,5 @@ def app_icon() -> QIcon:
 
 
 def clear_cache() -> None:
-    """Vacia la cache (util al cambiar de tema)."""
+    """Empty the cache (handy when the theme changes)."""
     _cache.clear()

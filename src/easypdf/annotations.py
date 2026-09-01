@@ -1,8 +1,8 @@
-"""Traduccion del modelo de easypdf.surf a anotaciones reales de PDF (PyMuPDF).
+"""Translation of the easypdf.surf model into real PDF annotations (PyMuPDF).
 
-Las anotaciones se escriben como objetos PDF estandar (Square, Line, FreeText,
-Ink, Highlight), asi que cualquier otro lector -Adobe Reader, Edge, Firefox-
-las muestra igual y siguen siendo seleccionables.
+Annotations are written as standard PDF objects (Square, Line, FreeText, Ink,
+Highlight), so any other reader - Adobe Reader, Edge, Firefox - shows them the
+same way and they stay selectable.
 """
 
 from __future__ import annotations
@@ -14,11 +14,11 @@ import pymupdf
 
 from .model import Align, Annotation, Font, Kind, arrow_head, stroke_boxes
 
-#: Nombre que se guarda en el campo /T de la anotacion.
+#: Name stored in the annotation's /T field.
 AUTHOR = "easypdf.surf"
 
-#: Nombres de las 14 fuentes basicas del PDF: cualquier lector las tiene, asi
-#: que no hace falta incrustar nada en el archivo.
+#: Names of the 14 base PDF fonts: every reader has them, so nothing needs
+#: embedding in the file.
 FONT_CODES = {
     (Font.SANS, False, False): "helv",
     (Font.SANS, True, False): "hebo",
@@ -34,17 +34,17 @@ FONT_CODES = {
     (Font.MONO, True, True): "cobi",
 }
 
-#: Margen entre el borde de una celda y su texto, en puntos.
+#: Padding between a cell border and its text, in points.
 CELL_PADDING = 2.5
 
-#: Familias CSS equivalentes, para el texto con negrita o cursiva.
+#: Equivalent CSS families, for bold or italic text.
 CSS_FAMILIES = {Font.SANS: "sans-serif", Font.SERIF: "serif", Font.MONO: "monospace"}
 
 CSS_ALIGN = {Align.LEFT: "left", Align.CENTER: "center", Align.RIGHT: "right"}
 
 
 def font_code(ann: Annotation) -> str:
-    """Nombre de fuente PDF segun familia, negrita y cursiva."""
+    """PDF font name for a family plus bold and italic."""
     return FONT_CODES.get((Font(ann.font), bool(ann.bold), bool(ann.italic)), "helv")
 
 
@@ -54,7 +54,7 @@ def _hex_color(rgb) -> str:
 
 
 def _rich_html(ann: Annotation, text: str) -> str:
-    """Texto en HTML sencillo para negrita y cursiva."""
+    """Simple HTML text for bold and italic."""
     body = html.escape(text).replace("\n", "<br>")
     if ann.bold:
         body = f"<b>{body}</b>"
@@ -71,15 +71,15 @@ def _add_freetext(
     border_width: float,
     fill: bool = True,
 ) -> pymupdf.Annot:
-    """Texto libre con familia, tamano, alineacion y, si toca, negrita/cursiva.
+    """Free text with family, size, alignment and, where needed, bold/italic.
 
-    PyMuPDF ignora las variantes negrita y cursiva en el texto normal (todas
-    acaban dibujadas con la fuente base), asi que en ese caso se usa el modo de
-    texto enriquecido, donde si se respetan.
+    PyMuPDF ignores the bold and italic variants in plain text (they all end
+    up drawn with the base font), so in that case the rich text mode is used,
+    where they are honoured.
     """
-    relleno = _color(ann.fill) if fill else None
+    fill_color = _color(ann.fill) if fill else None
     if ann.bold or ann.italic:
-        estilo = (
+        style = (
             f"font-family:{CSS_FAMILIES.get(Font(ann.font), 'sans-serif')};"
             f"font-size:{max(1.0, ann.font_size):g}px;"
             f"color:{_hex_color(ann.color)};"
@@ -89,11 +89,11 @@ def _add_freetext(
             rect,
             _rich_html(ann, text),
             fontsize=max(1.0, ann.font_size),
-            fill_color=relleno,
+            fill_color=fill_color,
             border_width=border_width,
             opacity=_clamp01(ann.opacity),
             richtext=True,
-            style=estilo,
+            style=style,
         )
         return annot
     return page.add_freetext_annot(
@@ -103,7 +103,7 @@ def _add_freetext(
         fontname=font_code(ann),
         align=int(Align(ann.align)),
         text_color=_color(ann.color),
-        fill_color=relleno,
+        fill_color=fill_color,
         border_width=border_width,
         opacity=_clamp01(ann.opacity),
     )
@@ -120,25 +120,25 @@ def _color(rgb: Iterable[float] | None) -> list[float] | None:
 
 
 def _set_plain_content(annot: pymupdf.Annot, text: str) -> None:
-    """Guarda el texto en claro sin rehacer el aspecto de la anotacion.
+    """Store the plain text without rebuilding the annotation appearance.
 
-    En el texto enriquecido el contenido viaja como HTML. Usar set_info() para
-    dejarlo tambien en claro haria que PyMuPDF regenerase la apariencia desde
-    ese texto plano y se perderian la negrita y la cursiva, asi que se escribe
-    directamente en el objeto PDF.
+    In rich text the content travels as HTML. Using set_info() to also leave
+    it in plain form would make PyMuPDF regenerate the appearance from that
+    plain text, losing bold and italic, so it is written straight into the
+    PDF object.
     """
     try:
         annot.parent.parent.xref_set_key(annot.xref, "Contents", pymupdf.get_pdf_str(text))
-    except Exception:  # pragma: no cover - depende de la version de PyMuPDF
+    except Exception:  # pragma: no cover - depends on the PyMuPDF version
         pass
 
 
 def _apply_common(annot: pymupdf.Annot, ann: Annotation) -> None:
-    """Ajustes comunes: opacidad, autor y aspecto."""
+    """Common settings: opacity, author and appearance."""
     annot.set_opacity(_clamp01(ann.opacity))
     try:
         annot.set_info(title=AUTHOR)
-    except Exception:  # pragma: no cover - depende de la version de PyMuPDF
+    except Exception:  # pragma: no cover - depends on the PyMuPDF version
         pass
     annot.update()
 
@@ -154,7 +154,7 @@ def _point(pt, page: pymupdf.Page) -> pymupdf.Point:
 
 
 def add_annotation(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
-    """Anade una anotacion del modelo a una pagina de PyMuPDF."""
+    """Add a model annotation to a PyMuPDF page."""
     if ann.kind is Kind.RECT:
         annot = page.add_rect_annot(_rect(ann, page))
         annot.set_colors(stroke=_color(ann.color), fill=_color(ann.fill))
@@ -163,8 +163,8 @@ def add_annotation(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
         return annot
 
     if ann.kind is Kind.NOTE:
-        # Nota adhesiva estandar del PDF: cualquier lector ensena el icono y
-        # deja leer el texto al pulsarlo, no hace falta EasyPDF para verla.
+        # Standard PDF sticky note: any reader shows the icon and lets you
+        # read the text on click, no easypdf.surf needed to see it.
         x0, y0, _x1, _y1 = ann.normalized_rect()
         annot = page.add_text_annot(_point((x0, y0), page), ann.text, icon="Note")
         annot.set_colors(stroke=_color(ann.color))
@@ -185,28 +185,27 @@ def add_annotation(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
         return annot
 
     if ann.kind is Kind.ARROW:
-        # La punta se dibuja como un triangulo propio en vez de usar la punta
-        # estandar del PDF: PyMuPDF la hace diez veces el grosor de la linea,
-        # que con trazos gruesos tapa media pagina y no coincide con lo que se
-        # ve en pantalla.
-        base, punta, left, right = arrow_head(ann.p1, ann.p2, ann.width)
-        fin = ((base[0] + punta[0]) / 2.0, (base[1] + punta[1]) / 2.0)
-        annot = page.add_line_annot(_point(ann.p1, page), _point(fin, page))
+        # The head is drawn as our own triangle instead of the standard PDF
+        # one: PyMuPDF makes it ten times the line width, which with thick
+        # strokes covers half the page and does not match what is on screen.
+        base, tip, left, right = arrow_head(ann.p1, ann.p2, ann.width)
+        stroke_end = ((base[0] + tip[0]) / 2.0, (base[1] + tip[1]) / 2.0)
+        annot = page.add_line_annot(_point(ann.p1, page), _point(stroke_end, page))
         annot.set_colors(stroke=_color(ann.color))
         annot.set_border(width=max(0.1, ann.width))
         _apply_common(annot, ann)
 
-        cabeza = page.add_polygon_annot(
-            [tuple(_point(pt, page)) for pt in (punta, left, right)]
+        head = page.add_polygon_annot(
+            [tuple(_point(pt, page)) for pt in (tip, left, right)]
         )
-        cabeza.set_colors(stroke=_color(ann.color), fill=_color(ann.color))
-        cabeza.set_border(width=0.1)
-        _apply_common(cabeza, ann)
+        head.set_colors(stroke=_color(ann.color), fill=_color(ann.color))
+        head.set_border(width=0.1)
+        _apply_common(head, ann)
         return annot
 
     if ann.kind is Kind.TEXT:
         rect = _rect(ann, page)
-        # PyMuPDF necesita algo de holgura para no recortar la ultima linea.
+        # PyMuPDF needs some slack so the last line is not clipped.
         rect = pymupdf.Rect(
             rect.x0,
             rect.y0,
@@ -226,7 +225,7 @@ def add_annotation(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
             if len(stroke) >= 2
         ]
         if not strokes:
-            raise ValueError("un dibujo necesita al menos un trazo con dos puntos")
+            raise ValueError("a drawing needs at least one stroke with two points")
         annot = page.add_ink_annot(strokes)
         annot.set_colors(stroke=_color(ann.color))
         annot.set_border(width=max(0.1, ann.width))
@@ -239,30 +238,30 @@ def add_annotation(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
     if ann.kind is Kind.IMAGE:
         return _add_image(page, ann)
 
-    raise ValueError(f"tipo de anotacion desconocido: {ann.kind!r}")
+    raise ValueError(f"unknown annotation kind: {ann.kind!r}")
 
 
 def _add_image(page: pymupdf.Page, ann: Annotation) -> None:
-    """Coloca una imagen encima de la pagina.
+    """Place an image on top of the page.
 
-    El PDF no tiene una anotacion de imagen que todos los lectores dibujen
-    igual, asi que la imagen se inserta en el contenido de la pagina: se ve y
-    se imprime en cualquier programa. Como al guardar siempre se parte del
-    archivo original, volver a guardar no la duplica.
+    The PDF format has no image annotation that every reader draws the same
+    way, so the image is inserted into the page's content: it shows and
+    prints in any program. Since saving always starts from the original
+    file, saving again does not duplicate it.
     """
     if not ann.image_data:
-        raise ValueError("la imagen no tiene datos")
+        raise ValueError("the image has no data")
     rect = _rect(ann, page)
     page.insert_image(rect, stream=ann.image_data, keep_proportion=False, overlay=True)
     return None
 
 
 def _add_table(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
-    """Escribe una tabla: fondo, rejilla y el texto de cada celda.
+    """Write a table: background, grid and the text of every cell.
 
-    El PDF no tiene un tipo de anotacion "tabla", asi que la rejilla se guarda
-    como un unico trazo de tinta con todas sus lineas rectas y cada celda con
-    texto se guarda como un texto libre. Se ve igual en cualquier lector.
+    The PDF format has no "table" annotation type, so the grid is stored as a
+    single ink stroke holding all its straight lines, and every cell with
+    text is stored as a free text. It looks the same in any reader.
     """
     if ann.fill:
         background = page.add_rect_annot(_rect(ann, page))
@@ -273,10 +272,10 @@ def _add_table(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
     strokes = [
         [tuple(_point(a, page)), tuple(_point(b, page))] for a, b in ann.grid_lines()
     ]
-    rejilla = page.add_ink_annot(strokes)
-    rejilla.set_colors(stroke=_color(ann.color))
-    rejilla.set_border(width=max(0.1, ann.width))
-    _apply_common(rejilla, ann)
+    grid = page.add_ink_annot(strokes)
+    grid.set_colors(stroke=_color(ann.color))
+    grid.set_border(width=max(0.1, ann.width))
+    _apply_common(grid, ann)
 
     for text, cell in zip(ann.normalized_cells(), ann.cell_rects()):
         if not text.strip():
@@ -287,7 +286,7 @@ def _add_table(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
         )
         if box.is_empty or box.width < 2 or box.height < 2:
             continue
-        celda_annot = _add_freetext(
+        cell_annot = _add_freetext(
             page,
             pymupdf.Rect(box * page.derotation_matrix).normalize(),
             ann,
@@ -295,62 +294,63 @@ def _add_table(page: pymupdf.Page, ann: Annotation) -> pymupdf.Annot:
             border_width=0,
             fill=False,
         )
-        _apply_common(celda_annot, ann)
+        _apply_common(cell_annot, ann)
         if ann.bold or ann.italic:
-            _set_plain_content(celda_annot, text)
+            _set_plain_content(cell_annot, text)
 
-    return rejilla
+    return grid
 
 
 def apply_erasures(doc: pymupdf.Document, erasures: Iterable[Annotation]) -> int:
-    """Quita de verdad lo que hay debajo de las pasadas de goma.
+    """Really remove whatever lies under the eraser strokes.
 
-    Pintar encima no basta: el texto tapado se sigue pudiendo seleccionar y
-    copiar de un PDF, asi que quien borra un dato confidencial se cree a salvo
-    y no lo esta. Aqui se usa la redaccion del PDF, que elimina el contenido de
-    esa zona del archivo. Es definitivo: una vez guardado no se recupera.
+    Painting over is not enough: covered text can still be selected and
+    copied out of a PDF, so anyone erasing a confidential detail believes
+    they are safe and is not. This uses the PDF's redaction, which removes
+    that area's content from the file. It is final: once saved there is no
+    getting it back.
 
-    Devuelve cuantas paginas se han tocado.
+    Returns how many pages were touched.
     """
-    por_pagina: dict[int, list[Annotation]] = {}
+    by_page: dict[int, list[Annotation]] = {}
     for ann in erasures:
         if ann.kind is not Kind.ERASE or ann.is_empty():
             continue
         if 0 <= ann.page < doc.page_count:
-            por_pagina.setdefault(ann.page, []).append(ann)
+            by_page.setdefault(ann.page, []).append(ann)
 
-    for index, passes in por_pagina.items():
+    for index, passes in by_page.items():
         page = doc[index]
         for ann in passes:
-            relleno = _color(ann.color)
+            fill_color = _color(ann.color)
             for box in stroke_boxes(ann.strokes, ann.width):
                 rect = pymupdf.Rect(*box) & page.rect
                 if rect.is_empty:
                     continue
-                page.add_redact_annot(rect, fill=relleno)
+                page.add_redact_annot(rect, fill=fill_color)
         page.apply_redactions(
-            # De una imagen se borran solo los pixeles que toca la goma: quitar
-            # la foto entera por pasarle por encima una esquina no es borrar,
-            # es otra cosa.
+            # Only the pixels the eraser touches are removed from an image:
+            # taking the whole photo away for brushing a corner of it is not
+            # erasing, it is something else.
             images=pymupdf.PDF_REDACT_IMAGE_PIXELS,
-            # Un dibujo vectorial (rayas, recuadros del propio PDF) se va si
-            # queda cubierto del todo.
+            # A vector drawing (rules, boxes from the PDF itself) goes if it
+            # ends up fully covered.
             graphics=pymupdf.PDF_REDACT_LINE_ART_REMOVE_IF_COVERED,
             text=pymupdf.PDF_REDACT_TEXT_REMOVE,
         )
-    return len(por_pagina)
+    return len(by_page)
 
 
 def apply_annotations(doc: pymupdf.Document, annotations: Iterable[Annotation]) -> int:
-    """Escribe todas las anotaciones en el documento. Devuelve cuantas se anadieron."""
+    """Write every annotation into the document. Returns how many were added."""
     items = list(annotations)
-    # Primero se borra y despues se dibuja: lo que el usuario haya puesto
-    # encima de una zona borrada tiene que sobrevivir.
+    # Erase first and draw afterwards: whatever the user put on top of an
+    # erased area has to survive.
     apply_erasures(doc, items)
     count = 0
     for ann in items:
         if ann.kind is Kind.ERASE:
-            continue          # ya ha hecho su trabajo al borrar
+            continue          # it already did its job when erasing
         if ann.is_empty():
             continue
         if not (0 <= ann.page < doc.page_count):
