@@ -1,18 +1,18 @@
-"""Textos de la interfaz en espanol e ingles.
+"""Interface texts in English and Spanish.
 
-No se usan los archivos .ts de Qt a proposito: con un diccionario el proyecto
-no necesita compilar traducciones ni herramientas aparte, y anadir un idioma es
-copiar un bloque y traducirlo.
+Qt's .ts files are deliberately not used: with a plain dictionary the project
+needs no translation compiler and no extra tooling, and adding a language is a
+matter of copying a block and translating it.
 
     from .i18n import tr
-    boton.setText(tr("open"))
+    button.setText(tr("open"))
 """
 
 from __future__ import annotations
 
 from typing import Callable
 
-#: Idiomas disponibles: codigo -> nombre en su propio idioma.
+#: Available languages: code -> name in its own language.
 LANGUAGES = {"es": "Espanol", "en": "English"}
 DEFAULT_LANGUAGE = "en"
 
@@ -103,7 +103,7 @@ TEXTS: dict[str, dict[str, str]] = {
             "the download against the published checksum, and on Windows runs the "
             "installer. Under <b>Help</b> you can check by hand or turn the check off.</p>"
         ),
-        # --- nombres cortos ---
+        # --- short names ---
         "font_sans": "Sans",
         "font_serif": "Serif",
         "font_mono": "Monospace",
@@ -131,7 +131,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "cmd_erase": "Erase",
         "cmd_template": "Apply template ({count} annotations)",
         "cmd_paste": "Paste ({count})",
-        # --- archivo ---
+        # --- file ---
         "new": "&New blank document",
         "new_tip": "Create an empty PDF to start from scratch",
         "open": "&Open...",
@@ -149,7 +149,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "menu_file": "&File",
         "recent": "Open &recent",
         "recent_clear": "Clear the list",
-        # --- editar ---
+        # --- edit ---
         "menu_edit": "&Edit",
         "undo": "Undo",
         "redo": "Redo",
@@ -168,7 +168,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "search_none": "  No results  ",
         "search_of": "  {current} of {total}  ",
         "search_not_found": "'{text}' was not found",
-        # --- ver ---
+        # --- view ---
         "menu_view": "&View",
         "zoom_in": "Zoom &in",
         "zoom_out": "Zoom &out",
@@ -184,7 +184,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "thumbnails": "&Thumbnails panel",
         "side_panel": "&Side panel (bookmarks, notes, elements)",
         "pages_dock": "Pages",
-        # --- documento ---
+        # --- document ---
         "menu_document": "&Document",
         "page_add": "&Add a page at the end",
         "page_insert": "&Insert a page after this one",
@@ -230,7 +230,7 @@ TEXTS: dict[str, dict[str, str]] = {
         ),
         "template_detail": "{count} annotations",
         "template_detail_pages": "{pages} pages, {count} annotations",
-        # --- herramientas ---
+        # --- tools ---
         "menu_tools": "&Tools",
         "tool_select": "&Select",
         "tool_pan": "&Move the view",
@@ -350,7 +350,7 @@ TEXTS: dict[str, dict[str, str]] = {
             "Tab moves to the next one"
         ),
         "hint_image": "Drag on the page to place {name}, or click once for a comfortable size",
-        # --- barras ---
+        # --- toolbars ---
         "toolbar_main": "Main",
         "toolbar_tools": "Tools",
         "toolbar_style": "Style",
@@ -383,14 +383,14 @@ TEXTS: dict[str, dict[str, str]] = {
         "rows_tip": "Table rows",
         "cols_prefix": "cols ",
         "cols_tip": "Table columns",
-        # --- ayuda ---
+        # --- help ---
         "menu_help": "&Help",
         "help": "&Quick guide",
         "about": "&About {app}",
         "website": "easypdf.surf &website",
         "language": "&Language",
         "language_changed": "Language changed to English",
-        # --- estado ---
+        # --- status bar ---
         "status_start": "Open a PDF with Ctrl+O or drag one here",
         "status_page": "Page",
         "status_of": "of {total}",
@@ -409,7 +409,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "status_annotations": "{count} annotations",
         "status_annotation": "1 annotation",
         "status_editing": "Type the note; Esc when done",
-        # --- dialogos ---
+        # --- dialogs ---
         "open_title": "Open PDF",
         "pdf_filter": "PDF documents (*.pdf);;All files (*)",
         "image_filter": (
@@ -867,18 +867,18 @@ _listeners: list[Callable[[str], None]] = []
 
 
 def language() -> str:
-    """Idioma activo."""
+    """The active language."""
     return _current
 
 
 def set_language(code: str) -> str:
-    """Cambia el idioma y avisa a quien lo haya pedido."""
+    """Change the language and tell whoever asked to be told."""
     global _current
     code = code if code in TEXTS else DEFAULT_LANGUAGE
     if code != _current:
         _current = code
-        for aviso in list(_listeners):
-            aviso(code)
+        for listener in list(_listeners):
+            listener(code)
     return _current
 
 
@@ -887,19 +887,19 @@ def on_language_changed(callback: Callable[[str], None]) -> None:
 
 
 def system_language(locale_name: str = "") -> str:
-    """Idioma que toca segun el sistema, si lo tenemos traducido."""
-    codigo = (locale_name or "").replace("-", "_").split("_")[0].lower()
-    return codigo if codigo in TEXTS else DEFAULT_LANGUAGE
+    """The language the system asks for, if we have it translated."""
+    code = (locale_name or "").replace("-", "_").split("_")[0].lower()
+    return code if code in TEXTS else DEFAULT_LANGUAGE
 
 
 def tr(key: str, /, **kwargs) -> str:
-    """Texto en el idioma activo. Si falta, cae al ingles y luego a la clave.
+    """Text in the active language. If missing, falls back to English, then the key.
 
-    La clave es un parametro solo posicional para que los textos puedan llevar
-    un campo llamado ``key`` (por ejemplo el atajo de teclado).
+    The key is positional-only so the texts can carry a field called ``key``
+    (the keyboard shortcut, for instance).
     """
-    texto = TEXTS.get(_current, {}).get(key) or TEXTS[DEFAULT_LANGUAGE].get(key) or key
-    return texto.format(**kwargs) if kwargs else texto
+    text = TEXTS.get(_current, {}).get(key) or TEXTS[DEFAULT_LANGUAGE].get(key) or key
+    return text.format(**kwargs) if kwargs else text
 
 
 __all__ = [
@@ -913,11 +913,11 @@ __all__ = [
 
 
 def page_size_label(name: str) -> str:
-    """Nombre visible de un tamano de pagina en el idioma actual.
+    """The visible name of a page size in the current language.
 
-    Las claves de PAGE_SIZES son identificadores internos (y estan en
-    castellano por historia); esto las traduce solo de cara al usuario, sin
-    tocar lo que se guarda en los ajustes ni en las plantillas.
+    The keys of PAGE_SIZES are internal identifiers; this translates them for
+    the user only, without touching what is stored in the settings or in the
+    templates.
     """
-    clave = f"size_{name}"
-    return tr(clave) if clave in TEXTS[DEFAULT_LANGUAGE] else name
+    key = f"size_{name}"
+    return tr(key) if key in TEXTS[DEFAULT_LANGUAGE] else name
